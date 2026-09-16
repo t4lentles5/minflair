@@ -115,6 +115,10 @@ hl.bind(mainMod .. " + V", hl.dsp.exec_cmd("socat - UNIX-CONNECT:/tmp/quickshell
 hl.bind("CTRL + ALT + W", hl.dsp.exec_cmd("socat - UNIX-CONNECT:/tmp/quickshell_wallpaper"))
 -- # Toggle Screenshot
 hl.bind(mainMod .. " + SHIFT + S", hl.dsp.exec_cmd("socat - UNIX-CONNECT:/tmp/quickshell_screenshot"))
+-- # Toggle Dashboard
+hl.bind("CTRL + ALT + D", hl.dsp.exec_cmd("socat - UNIX-CONNECT:/tmp/quickshell_dashboard"))
+-- # Toggle Music Popup
+hl.bind("CTRL + ALT + M", hl.dsp.exec_cmd("socat - UNIX-CONNECT:/tmp/quickshell_music"))
 
 -- ## Quickshell Apps
 

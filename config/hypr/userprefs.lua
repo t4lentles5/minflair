@@ -4,7 +4,7 @@ hl.config({
 	general = {
 		gaps_in = 4,
 		gaps_out = 8,
-		border_size = 2,
+		border_size = 0,
 		["col.active_border"] = colors.accent_alpha,
 		["col.inactive_border"] = colors.border_alpha,
 		allow_tearing = false,
@@ -18,7 +18,7 @@ hl.config({
 			["col.inactive"] = colors.border_alpha,
 			text_color = colors.accent_alpha,
 			text_color_inactive = colors.border_alpha,
-			font_size = 12,
+			font_size = 11,
 			font_family = "Geist",
 			font_weight_active = "bold",
 			blur = true,
@@ -47,9 +47,10 @@ hl.config({
 			special = true,
 		},
 		shadow = {
-			enabled = false,
-			range = 4,
+			enabled = true,
+			range = 8,
 			render_power = 3,
+			color = colors.shadow,
 		},
 	},
 	dwindle = {
