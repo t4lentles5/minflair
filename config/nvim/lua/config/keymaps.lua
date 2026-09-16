@@ -37,9 +37,9 @@ keymap.set("n", "<leader>e", "<cmd>Neotree toggle<CR>", { desc = "Toggle file ex
 keymap.set("n", "<leader>gg", "<cmd>LazyGit<CR>", { desc = "Toggle LazyGit" })
 
 -- Telescope
-keymap.set("n", "<leader>ff", "<cmd>Telescope find_files<cr>", { desc = "Find files" })
-keymap.set("n", "<leader>fg", "<cmd>Telescope live_grep<cr>", { desc = "Live grep (Find text)" })
-keymap.set("n", "<leader>so", "<cmd>Telescope spell_suggest<cr>", { desc = "Spelling Suggestions" })
+keymap.set("n", "<leader>ff", "<cmd>Telescope find_files<cr>", { desc = "Find files (Project)" })
+keymap.set("n", "<leader>fg", "<cmd>Telescope live_grep<cr>", { desc = "Live grep (Project)" })
+
 
 -- Spelling
 keymap.set("n", "<leader>sp", "<cmd>set spell!<CR>", { desc = "Toggle spell check" })
@@ -52,6 +52,7 @@ keymap.set("n", "zg", add_to_dict, { desc = "Add word to dictionary (lowercase)"
 keymap.set("n", "zw", "zw", { desc = "Mark word as incorrect" })
 keymap.set("n", "zug", "zug", { desc = "Undo add word to dictionary" })
 keymap.set("n", "zuw", "zuw", { desc = "Undo mark word as incorrect" })
+keymap.set("n", "<leader>so", "<cmd>Telescope spell_suggest<cr>", { desc = "Spelling Suggestions" })
 
 -- UI Toggles
 keymap.set("n", "<leader>un", "<cmd>set nu!<CR>", { desc = "Toggle line numbers" })
@@ -100,7 +101,13 @@ keymap.set("n", "<leader>md", "<Plug>(md-render-demo)", { desc = "Markdown rende
 keymap.set("v", "<", "<vgv", { desc = "Indent out" })
 keymap.set("v", ">", ">gv", { desc = "Indent in" })
 
--- Move Lines
+-- Move Lines (Ctrl + Alt + Up/Down)
+keymap.set("n", "<C-A-Down>", "<cmd>m .+1<CR>==", { desc = "Move line down" })
+keymap.set("n", "<C-A-Up>", "<cmd>m .-2<CR>==", { desc = "Move line up" })
+keymap.set("i", "<C-A-Down>", "<esc><cmd>m .+1<CR>==gi", { desc = "Move line down" })
+keymap.set("i", "<C-A-Up>", "<esc><cmd>m .-2<CR>==gi", { desc = "Move line up" })
+keymap.set("v", "<C-A-Down>", ":m '>+1<CR>gv=gv", { desc = "Move selection down" })
+keymap.set("v", "<C-A-Up>", ":m '<-2<CR>gv=gv", { desc = "Move selection up" })
 keymap.set("v", "J", ":m '>+1<CR>gv=gv", { desc = "Move line down" })
 keymap.set("v", "K", ":m '<-2<CR>gv=gv", { desc = "Move line up" })
 
