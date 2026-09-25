@@ -194,7 +194,7 @@ Item {
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.bottom: parent.bottom
         anchors.bottomMargin: root.bezelSize
-        customWidth: 448
+        customWidth: 512
         customHeight: 48
         contentPadding: 0
         safeMarginX: cornerRadius * 2

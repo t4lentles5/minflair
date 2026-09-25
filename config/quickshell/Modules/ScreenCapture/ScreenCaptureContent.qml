@@ -20,6 +20,11 @@ Item {
             "shotMode": "full",
             "actionType": "shot"
         }, {
+            "label": "Full (3s)",
+            "icon": "clock",
+            "shotMode": "full_3s",
+            "actionType": "shot"
+        }, {
             "label": "Select Area",
             "icon": "screenshot-area",
             "shotMode": "area",

@@ -106,18 +106,26 @@ take_screenshot() {
 }
 
 case "$MODE" in
-"area_3s" | "3s")
-  sleep 3
+"area_3s" | "3s" | "area_delay")
+  delay=3
+  if [ -n "$2" ] && [[ "$2" =~ ^[0-9]+$ ]]; then
+    delay="$2"
+  fi
+  sleep "$delay"
   if take_screenshot "area"; then
     copy_and_notify
   fi
   ;;
 
-"full_delay" | "area_delay" | "5s")
-  sleep 3
-  actual_mode="${MODE%_delay}"
-  if [ "$actual_mode" = "5s" ]; then actual_mode="full"; fi
-  if take_screenshot "$actual_mode"; then
+"full_3s" | "full_delay" | "5s")
+  delay=3
+  if [ "$MODE" = "5s" ]; then
+    delay=5
+  elif [ -n "$2" ] && [[ "$2" =~ ^[0-9]+$ ]]; then
+    delay="$2"
+  fi
+  sleep "$delay"
+  if take_screenshot "full"; then
     copy_and_notify
   fi
   ;;

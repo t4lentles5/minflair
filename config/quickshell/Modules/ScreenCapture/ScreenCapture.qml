@@ -11,7 +11,7 @@ OverlayWindow {
     contentPadding: 0
     borderWidth: 0
     windowRadius: Constants.sizeMd
-    preferredWidth: content.implicitWidth > 0 ? content.implicitWidth : 448
+    preferredWidth: content.implicitWidth > 0 ? content.implicitWidth : 512
     preferredHeight: 48
     initialFocusItem: content.initialFocusItem
     enableShadow: true
