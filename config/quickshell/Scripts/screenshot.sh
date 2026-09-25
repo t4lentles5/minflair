@@ -1,174 +1,154 @@
 #!/bin/bash
 
-export WAYLAND_DISPLAY=${WAYLAND_DISPLAY:-wayland-1}
+# Export essential environment variables for Wayland/Hyprland
 export XDG_RUNTIME_DIR=${XDG_RUNTIME_DIR:-/run/user/$(id -u)}
-export XDG_CURRENT_DESKTOP=Hyprland
+if [ -z "$WAYLAND_DISPLAY" ]; then
+  for sock in "$XDG_RUNTIME_DIR"/wayland-*; do
+    if [ -S "$sock" ]; then
+      export WAYLAND_DISPLAY=$(basename "$sock")
+      break
+    fi
+  done
+  export WAYLAND_DISPLAY=${WAYLAND_DISPLAY:-wayland-0}
+fi
+export XDG_CURRENT_DESKTOP=${XDG_CURRENT_DESKTOP:-Hyprland}
 
-LOG="/dev/null"
-MODE="$1"
-DIR="$HOME/Pictures/Screenshots"
+MODE="${1:-full}"
+DIR="${XDG_PICTURES_DIR:-$HOME/Pictures}/Screenshots"
 TIMESTAMP=$(date +%Y-%m-%d-%H%M%S)
 FILENAME="$DIR/Shot-${TIMESTAMP}.png"
 
 mkdir -p "$DIR"
 
+# Ensure any dangling slurp instance is terminated
 pkill -x slurp 2>/dev/null
 
-show_notification() {
-  if [ -f "$FILENAME" ]; then
-    notify-send -r 699 "Screenshot" "Copied to clipboard"
-  else
-    notify-send -r 699 "Screenshot" "Canceled"
+play_sound() {
+  local sound="/usr/share/sounds/freedesktop/stereo/screen-capture.oga"
+  if [ -f "$sound" ]; then
+    if command -v paplay &>/dev/null; then
+      paplay "$sound" >/dev/null 2>&1 &
+    elif command -v pw-play &>/dev/null; then
+      pw-play "$sound" >/dev/null 2>&1 &
+    fi
   fi
 }
 
-play_sound() {
-  if command -v paplay &>/dev/null; then
-    paplay /usr/share/sounds/freedesktop/stereo/screen-capture.oga >/dev/null 2>&1
+copy_and_notify() {
+  if [ -f "$FILENAME" ]; then
+    wl-copy <"$FILENAME"
+    play_sound
   fi
 }
 
 take_screenshot() {
-  sleep 0.5
+  local target_mode="$1"
 
-  case "$1" in
+  case "$target_mode" in
   "full")
-    grim "$FILENAME"
+    sleep 0.3
+    grim "$FILENAME" || return 1
     ;;
 
   "area" | "select")
-    TEMP_FULL="/tmp/screenshot_temp_full.png"
-    grim "$TEMP_FULL"
-
-    TIMEOUT=20
-    COUNT=0
-    GEOM=""
-
-    while [ $COUNT -lt $TIMEOUT ]; do
-      GEOM=$(slurp -d 2>>"$LOG")
-      RET=$?
-
-      if [ $RET -eq 0 ] && [ -n "$GEOM" ]; then
-        break
-      fi
-
-      sleep 0.1
-      COUNT=$((COUNT + 1))
-    done
-
-    if [ -n "$GEOM" ] && [ -f "$TEMP_FULL" ]; then
-      if [[ "$GEOM" =~ ^([0-9]+),([0-9]+)\ ([0-9]+)x([0-9]+)$ ]]; then
-        X="${BASH_REMATCH[1]}"
-        Y="${BASH_REMATCH[2]}"
-        W="${BASH_REMATCH[3]}"
-        H="${BASH_REMATCH[4]}"
-        CROP_GEOM="${W}x${H}+${X}+${Y}"
-        convert "$TEMP_FULL" -crop "$CROP_GEOM" +repage "$FILENAME"
-      else
-        grim -g "$GEOM" "$FILENAME"
-      fi
-      rm -f "$TEMP_FULL"
-    else
-      echo "Slurp timed out, canceled, or temp file missing" >>"$LOG"
-      rm -f "$TEMP_FULL"
+    local geom
+    geom=$(slurp -d 2>/dev/null)
+    if [ -z "$geom" ]; then
       return 1
     fi
+    sleep 0.2
+    grim -g "$geom" "$FILENAME" || return 1
     ;;
 
   "window")
-    sleep 0.5
-    RAW_JSON=$(hyprctl activewindow -j 2>>"$LOG")
-    WINDOW_GEOMETRY=$(echo "$RAW_JSON" | jq -r '"\(.at[0]),\(.at[1]) \(.size[0])x\(.size[1])"')
-    WIN_W=$(echo "$RAW_JSON" | jq -r '.size[0]')
-    WIN_H=$(echo "$RAW_JSON" | jq -r '.size[1]')
+    sleep 0.3
+    local raw_json win_w win_h geom rounding
+    raw_json=$(hyprctl activewindow -j 2>/dev/null)
+    geom=$(echo "$raw_json" | jq -r '"\(.at[0]),\(.at[1]) \(.size[0])x\(.size[1])"' 2>/dev/null)
+    win_w=$(echo "$raw_json" | jq -r '.size[0]' 2>/dev/null)
+    win_h=$(echo "$raw_json" | jq -r '.size[1]' 2>/dev/null)
 
-    if [ -n "$WINDOW_GEOMETRY" ] && [ "$WINDOW_GEOMETRY" != "null" ]; then
-      grim -g "$WINDOW_GEOMETRY" "$FILENAME"
+    if [ -z "$geom" ] || [ "$geom" = "null" ] || [ -z "$win_w" ] || [ "$win_w" -le 0 ]; then
+      return 1
+    fi
 
-      ROUNDING=$(hyprctl getoption decoration:rounding | awk '/int:/ {print $2}')
-      ROUNDING=${ROUNDING:-10}
+    grim -g "$geom" "$FILENAME" || return 1
 
-      convert "$FILENAME" \
+    rounding=$(hyprctl getoption decoration:rounding 2>/dev/null | awk '/int:/ {print $2}')
+    rounding=${rounding:-10}
+
+    local conv_cmd="convert"
+    if command -v magick &>/dev/null; then
+      conv_cmd="magick"
+    fi
+
+    if command -v "$conv_cmd" &>/dev/null; then
+      "$conv_cmd" "$FILENAME" \
         \( +clone \
         -alpha extract \
         -fill black -colorize 100 \
         -fill white \
-        -draw "roundrectangle 0,0 $((WIN_W - 1)),$((WIN_H - 1)) ${ROUNDING},${ROUNDING}" \
+        -draw "roundrectangle 0,0 $((win_w - 1)),$((win_h - 1)) ${rounding},${rounding}" \
         \) \
         -alpha off \
         -compose CopyOpacity \
         -composite \
-        PNG32:"$FILENAME"
-    else
-      return 1
+        PNG32:"$FILENAME" 2>/dev/null || true
     fi
     ;;
+
+  *)
+    return 1
+    ;;
   esac
+
+  return 0
 }
 
 case "$MODE" in
-"full_delay" | "area_delay")
-  NOTIFY_ID=$(notify-send -p -t 5000 "Screenshot" "Taking screenshot...")
-  CLOSED=false
-  trap 'CLOSED=true' USR2
-
-  gdbus monitor --session --dest org.freedesktop.Notifications --object-path /org/freedesktop/Notifications | while read -r line; do
-    if [[ "$line" == *"NotificationClosed (uint32 $NOTIFY_ID"* ]]; then
-      kill -USR2 $$ 2>/dev/null
-      break
-    fi
-  done &
-  MONITOR_PID=$!
-
-  trap 'kill $MONITOR_PID 2>/dev/null; exit 0' TERM INT EXIT
-
-  SILENT=false
-  for i in {5..1}; do
-    sleep 1 &
-    wait $!
-  done
-  if [ "$CLOSED" = true ]; then
-    SILENT=true
+"area_3s" | "3s")
+  sleep 3
+  if take_screenshot "area"; then
+    copy_and_notify
   fi
-  gdbus call --session --dest org.freedesktop.Notifications --object-path /org/freedesktop/Notifications --method org.freedesktop.Notifications.CloseNotification $NOTIFY_ID >/dev/null 2>&1
-  sleep 0.1
-  ACTUAL_MODE=${MODE%_delay}
-  take_screenshot "$ACTUAL_MODE"
   ;;
+
+"full_delay" | "area_delay" | "5s")
+  sleep 3
+  actual_mode="${MODE%_delay}"
+  if [ "$actual_mode" = "5s" ]; then actual_mode="full"; fi
+  if take_screenshot "$actual_mode"; then
+    copy_and_notify
+  fi
+  ;;
+
 "clipboard")
-  TEMP_FULL="/tmp/screenshot_temp_full.png"
-  grim "$TEMP_FULL"
-
-  GEOM=$(slurp -d 2>>"$LOG")
-  if [ -n "$GEOM" ] && [ -f "$TEMP_FULL" ]; then
-    if [[ "$GEOM" =~ ^([0-9]+),([0-9]+)\ ([0-9]+)x([0-9]+)$ ]]; then
-      X="${BASH_REMATCH[1]}"
-      Y="${BASH_REMATCH[2]}"
-      W="${BASH_REMATCH[3]}"
-      H="${BASH_REMATCH[4]}"
-      CROP_GEOM="${W}x${H}+${X}+${Y}"
-      convert "$TEMP_FULL" -crop "$CROP_GEOM" +repage png:- | wl-copy --type image/png
-    else
-      grim -g "$GEOM" - | wl-copy --type image/png
-    fi
+  geom=$(slurp -d 2>/dev/null)
+  if [ -n "$geom" ]; then
+    sleep 0.2
+    grim -g "$geom" - | wl-copy --type image/png
     play_sound
-    notify-send -r 699 "Screenshot" "Area copied to clipboard"
-    rm -f "$TEMP_FULL"
-  else
-    notify-send -r 699 "Screenshot" "Canceled"
-    rm -f "$TEMP_FULL"
   fi
-  exit 0
   ;;
+
+"ocr")
+  geom=$(slurp -d 2>/dev/null)
+  if [ -n "$geom" ]; then
+    sleep 0.2
+    temp_ocr="/tmp/ocr_temp_${TIMESTAMP}.png"
+    grim -g "$geom" "$temp_ocr" 2>/dev/null
+    if [ -f "$temp_ocr" ]; then
+      tesseract "$temp_ocr" stdout -l eng+spa 2>/dev/null | wl-copy
+      notify-send -r 699 "Screenshot" "Text extracted and copied to clipboard" 2>/dev/null || true
+      rm -f "$temp_ocr"
+      play_sound
+    fi
+  fi
+  ;;
+
 *)
-  take_screenshot "$MODE"
+  if take_screenshot "$MODE"; then
+    copy_and_notify
+  fi
   ;;
 esac
-
-if [ $? -eq 0 ] && [ -f "$FILENAME" ]; then
-  play_sound
-  wl-copy <"$FILENAME"
-  show_notification
-else
-  show_notification
-fi

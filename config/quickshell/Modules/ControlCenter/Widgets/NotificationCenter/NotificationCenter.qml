@@ -8,6 +8,7 @@ import qs.Core
 import qs.Core.Components
 import qs.Core.Services
 import qs.Core.Windows
+import qs.Modules.ControlCenter.Widgets.NotificationCenter.Components
 
 Card {
     id: root
@@ -51,14 +52,14 @@ Card {
 
                 ThemedText {
                     text: "Notifications"
-                    font.pixelSize: Constants.sizeLg
+                    customSize: Constants.sizeLg
                     font.bold: true
                     color: Theme.fg
                 }
 
                 ThemedText {
                     text: historyView.count > 0 ? (historyView.count + (historyView.count === 1 ? " active notification" : " active notifications")) : "All caught up"
-                    font.pixelSize: Constants.sizeXs + 2
+                    customSize: Constants.sizeXs + 2
                     color: Theme.muted
                 }
 
@@ -71,6 +72,20 @@ Card {
             RowLayout {
                 spacing: Constants.sizeXs
                 Layout.alignment: Qt.AlignVCenter
+
+                SvgIconButton {
+                    icon: (root.notificationService && root.notificationService.dndEnabled) ? "bell-off" : "bell"
+                    iconColor: (root.notificationService && root.notificationService.dndEnabled) ? Theme.muted : Theme.accent
+                    iconSize: Constants.sizeSm
+                    textIcon: (root.notificationService && root.notificationService.dndEnabled) ? "Unmute" : "Mute"
+                    textIconSize: Constants.sizeSm
+                    useCustomWidth: true
+                    onClicked: {
+                        if (root.notificationService)
+                            root.notificationService.dndEnabled = !root.notificationService.dndEnabled;
+
+                    }
+                }
 
                 SvgIconButton {
                     icon: "trash"
@@ -118,7 +133,6 @@ Card {
 
                     ThemedText {
                         text: "All caught up!"
-                        font.pixelSize: Constants.sizeSm
                         font.bold: true
                         color: Theme.fg
                         Layout.alignment: Qt.AlignHCenter
@@ -126,7 +140,7 @@ Card {
 
                     ThemedText {
                         text: "No new notifications at the moment."
-                        font.pixelSize: Constants.sizeXs + 2
+                        customSize: Constants.sizeXs + 2
                         color: Theme.muted
                         Layout.alignment: Qt.AlignHCenter
                     }
@@ -140,16 +154,6 @@ Card {
                     interactive: true
                     model: notificationService ? notificationService.historyList : null
                     spacing: Constants.sizeXs
-
-                    add: Transition {
-                        NumberAnimation {
-                            property: "opacity"
-                            from: 0
-                            to: 1
-                            duration: root.visible ? Constants.animSlow : 0
-                        }
-
-                    }
 
                     remove: Transition {
                         NumberAnimation {
@@ -183,148 +187,11 @@ Card {
 
                     }
 
-                    addDisplaced: Transition {
-                        NumberAnimation {
-                            properties: "y"
-                            duration: root.visible ? Constants.animSlow : 0
-                            easing.type: Easing.OutExpo
-                        }
-
-                    }
-
-                    delegate: Rectangle {
-                        id: delegateRoot
-
-                        property bool expanded: false
-
-                        width: ListView.view.width
-                        height: delegateLayout.implicitHeight + Constants.sizeLg * 2
-                        color: delegateMouseArea.containsMouse ? Theme.bgTertiary : Theme.bgSecondary
-                        radius: Constants.sizeXl
-                        border.width: 1
-                        border.color: delegateMouseArea.containsMouse ? Theme.accent : Theme.border
-
-                        MouseArea {
-                            id: delegateMouseArea
-
-                            anchors.fill: parent
-                            hoverEnabled: true
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: {
-                                if (notificationService)
-                                    notificationService.removeHistoryItem(index);
-
-                            }
-                        }
-
-                        RowLayout {
-                            id: delegateLayout
-
-                            anchors.fill: parent
-                            anchors.margins: Constants.sizeLg
-                            spacing: Constants.sizeLg
-
-                            NotificationIcon {
-                                id: iconContainer
-
-                                Layout.alignment: Qt.AlignTop
-                                Layout.preferredWidth: iconContainer.isUrgencyIcon ? Constants.sizeLg : Constants.size4Xl
-                                Layout.preferredHeight: iconContainer.isUrgencyIcon ? Constants.sizeLg : Constants.size4Xl
-                                notifData: model.notifData
-                                bgColor: "transparent"
-                            }
-
-                            ColumnLayout {
-                                Layout.fillWidth: true
-                                Layout.alignment: Qt.AlignTop
-                                spacing: 2
-
-                                RowLayout {
-                                    Layout.fillWidth: true
-                                    spacing: Constants.sizeXs
-
-                                    ThemedText {
-                                        id: summaryText
-
-                                        text: model.notifData.summary
-                                        color: Theme.fg
-                                        font.pixelSize: Constants.sizeSm
-                                        font.weight: Font.Medium
-                                        elide: Text.ElideRight
-                                        Layout.fillWidth: true
-                                        maximumLineCount: delegateRoot.expanded ? 100 : 1
-                                        wrapMode: Text.Wrap
-                                    }
-
-                                    ThemedText {
-                                        Layout.alignment: Qt.AlignTop
-                                        Layout.topMargin: 4
-                                        text: {
-                                            let ts = model.notifData.timestamp;
-                                            if (!ts)
-                                                return "Just now";
-
-                                            let n = Number(ts);
-                                            let d = new Date(n < 1e+10 ? n * 1000 : n);
-                                            return root.timeAgo(d, root.currentTime);
-                                        }
-                                        color: Theme.muted
-                                        font.pixelSize: Constants.sizeXs + 2
-                                    }
-
-                                    SvgIconButton {
-                                        id: expandButton
-
-                                        Layout.alignment: Qt.AlignTop
-                                        iconSize: Constants.sizeSm
-                                        icon: delegateRoot.expanded ? "chevron-up" : "chevron-down"
-                                        visible: bodyText.truncated || summaryText.truncated || delegateRoot.expanded
-                                        onClicked: {
-                                            delegateRoot.expanded = !delegateRoot.expanded;
-                                        }
-                                    }
-
-                                }
-
-                                ThemedText {
-                                    id: bodyText
-
-                                    text: model.notifData.body
-                                    color: Theme.muted
-                                    font.pixelSize: Constants.sizeXs + 2
-                                    wrapMode: Text.Wrap
-                                    Layout.fillWidth: true
-                                    maximumLineCount: delegateRoot.expanded ? 100 : 2
-                                    elide: Text.ElideRight
-                                }
-
-                            }
-
-                        }
-
-                        Behavior on scale {
-                            NumberAnimation {
-                                duration: Constants.animFast
-                                easing.type: Easing.OutQuint
-                            }
-
-                        }
-
-                        Behavior on height {
-                            NumberAnimation {
-                                duration: Constants.animSlow
-                                easing.type: Easing.OutExpo
-                            }
-
-                        }
-
-                        Behavior on border.color {
-                            ColorAnimation {
-                                duration: Constants.animNormal
-                            }
-
-                        }
-
+                    delegate: NotificationItemDelegate {
+                        notifData: model.notifData
+                        notificationService: root.notificationService
+                        itemIndex: index
+                        currentTime: root.currentTime
                     }
 
                 }

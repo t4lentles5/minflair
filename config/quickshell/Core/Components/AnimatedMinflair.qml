@@ -1,3 +1,4 @@
+import Qt5Compat.GraphicalEffects
 import QtQuick
 import QtQuick.Shapes
 import qs.Core
@@ -9,16 +10,23 @@ Item {
     property int iconSize: 32
     property color iconColor: Theme.accent
     property string plusStarPath: "M 11.6 2.5 Q 12 1.2 12.4 2.5 L 14 10 L 21.5 11.6 Q 22.8 12 21.5 12.4 L 14 14 L 12.4 21.5 Q 12 22.8 11.6 21.5 L 10 14 L 2.5 12.4 Q 1.2 12 2.5 11.6 L 10 10 Z"
+    readonly property int scaledIconSize: Math.round(iconSize * SettingsService.fontScale)
+    property bool enableIntroAnim: true
+    property bool enableIntervalAnim: true
 
-    width: iconSize
-    height: iconSize
-    implicitWidth: iconSize
-    implicitHeight: iconSize
+    width: scaledIconSize
+    height: scaledIconSize
+    implicitWidth: scaledIconSize
+    implicitHeight: scaledIconSize
+    layer.enabled: true
 
     Item {
+        id: starContainer
+
         width: 24
         height: 24
-        scale: root.iconSize / 24
+        scale: root.scaledIconSize / 24
+        rotation: 45
         anchors.centerIn: parent
         enabled: false
 
@@ -34,7 +42,7 @@ Item {
                 width: 24
                 height: 24
                 preferredRendererType: Shape.CurveRenderer
-                opacity: 1
+                opacity: 0.4
 
                 ShapePath {
                     fillColor: root.iconColor
@@ -58,7 +66,7 @@ Item {
             height: 24
             transformOrigin: Item.Center
             rotation: 45
-            scale: 0.78
+            scale: 1
 
             Shape {
                 width: 24
@@ -84,7 +92,7 @@ Item {
         SequentialAnimation {
             id: introAnim
 
-            running: HyprlandService.enableAnimations
+            running: HyprlandService.enableAnimations && root.enableIntroAnim
 
             PropertyAction {
                 target: mainStarShape
@@ -145,7 +153,7 @@ Item {
                         NumberAnimation {
                             target: xStarShape
                             property: "scale"
-                            to: 0.78
+                            to: 1
                             duration: 900
                             easing.type: Easing.OutBack
                             easing.overshoot: 1.2
@@ -169,43 +177,62 @@ Item {
         }
 
         SequentialAnimation {
-            id: extraIdleAnim
+            id: intervalAnim
 
-            running: HyprlandService.enableAnimations && !introAnim.running
-            onRunningChanged: {
-                if (!running) {
-                    mainStarShape.scale = 1;
-                    xStarShape.scale = 0.78;
-                    mainStarShape.rotation = 0;
-                    xStarShape.rotation = 45;
-                }
+            running: HyprlandService.enableAnimations && root.enableIntervalAnim && !introAnim.running
+            loops: Animation.Infinite
+
+            PauseAnimation {
+                duration: 5000
             }
 
-            SequentialAnimation {
-                loops: Animation.Infinite
-
+            ParallelAnimation {
                 NumberAnimation {
-                    target: xStarShape
-                    property: "scale"
-                    from: 0.78
-                    to: 0.5
-                    duration: 1500
-                    easing.type: Easing.InOutSine
+                    target: mainStarShape
+                    property: "rotation"
+                    from: 0
+                    to: 90
+                    duration: 1200
+                    easing.type: Easing.InOutBack
+                    easing.overshoot: 1.2
                 }
 
                 NumberAnimation {
                     target: xStarShape
-                    property: "scale"
-                    from: 0.5
-                    to: 0.78
-                    duration: 1500
-                    easing.type: Easing.InOutSine
+                    property: "rotation"
+                    from: 45
+                    to: -45
+                    duration: 1200
+                    easing.type: Easing.InOutBack
+                    easing.overshoot: 1.2
                 }
 
+            }
+
+            PropertyAction {
+                target: mainStarShape
+                property: "rotation"
+                value: 0
+            }
+
+            PropertyAction {
+                target: xStarShape
+                property: "rotation"
+                value: 45
             }
 
         }
 
+    }
+
+    layer.effect: DropShadow {
+        id: shadowEffect
+
+        transparentBorder: true
+        color: root.iconColor
+        radius: 8
+        samples: 17
+        spread: 0.1
     }
 
 }

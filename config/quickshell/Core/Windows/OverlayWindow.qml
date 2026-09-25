@@ -1,0 +1,344 @@
+import "OverlayStyles"
+import QtQuick
+import Quickshell
+import Quickshell.Io
+import Quickshell.Wayland
+import Quickshell.Widgets
+import qs.Core
+import qs.Core.Components
+import qs.Core.Services
+
+PanelWindow {
+    // Handover is handled internally by the style, it will signal when done
+
+    id: root
+
+    property var notificationService: null
+    property string popupId: ""
+    property bool isOpen: false
+    property Item initialFocusItem: null
+    property bool exclusive: true
+    // We bind the external content to our inner content holder
+    default property alias content: innerContentHolder.data
+    property int animationDuration: HyprlandService.enableAnimations ? Constants.animSlow : 0
+    readonly property int closeDuration: HyprlandService.enableAnimations ? Constants.animNormal : 0
+    property int fadeDuration: HyprlandService.enableAnimations ? Constants.animNormal : 0
+    property color backgroundColor: Theme.bg
+    property int preferredWidth: 600
+    property int preferredHeight: 500
+    property real smoothPreferredWidth: preferredWidth
+    property real smoothPreferredHeight: preferredHeight
+    property bool positionAtBottom: false
+    // Legacy properties for compatibility (in case anything externally relies on them)
+    property bool enableBottomNotch: true
+    property int notchFlareWidth: 18
+    property int notchFlareHeight: 16
+    property int notchSidePadding: 0
+    property int notchBottomPadding: 0
+    property bool _windowVisible: false
+    property bool forceVisible: false
+    property int contentPadding: Constants.sizeLg
+    property int windowRadius: Constants.size3Xl
+    property bool enableShadow: false
+    property real smoothWindowRadius: windowRadius
+    property int borderWidth: 0
+    property color borderColor: "transparent"
+    property real smoothContentPadding: contentPadding
+    property real openProgress: root.isOpen ? 1 : 0
+    property real bounceProgress: root.isOpen ? 1 : 0
+    property bool windowFocusable: true
+    // Determine the active style mode cleanly
+    readonly property string activeStyle: {
+        if (SettingsService.barIslandMode && !positionAtBottom)
+            return "island";
+
+        if (SettingsService.barNotchMode && positionAtBottom && enableBottomNotch)
+            return "notch";
+
+        if (SettingsService.barConvexMode)
+            return "convex";
+
+        if (SettingsService.barFramedMode)
+            return "framed";
+
+        return "minflair";
+    }
+    readonly property bool isIsland: activeStyle === "island"
+    readonly property bool isBottomNotch: activeStyle === "notch"
+    readonly property bool isConvex: activeStyle === "convex"
+    readonly property bool isFramed: activeStyle === "framed"
+
+    signal popupOpened()
+    signal popupClosed()
+    signal fullyClosed()
+
+    function finishClosing() {
+        closeDelayTimer.stop();
+        if (styleLoader.item && styleLoader.item.isHandover !== undefined && styleLoader.item.isHandover) {
+        } else {
+            root._windowVisible = false;
+            root.fullyClosed();
+        }
+    }
+
+    function close() {
+        isOpen = false;
+    }
+
+    surfaceFormat.opaque: false
+    color: "transparent"
+    focusable: root.isOpen && root.windowFocusable
+    exclusionMode: ExclusionMode.Ignore
+    visible: _windowVisible || forceVisible || (styleLoader.item && styleLoader.item.isHandover)
+    onIsOpenChanged: {
+        if (popupId === "")
+            return ;
+
+        if (isOpen) {
+            closeDelayTimer.stop();
+            if (exclusive && !AppState.isPopupOpen(popupId))
+                AppState.openPopup(popupId);
+
+            _windowVisible = true;
+            root.popupOpened();
+            if (root.initialFocusItem)
+                initialFocusTimer.start();
+
+        } else {
+            let anotherFocusOpen = AppState.isFocusPopupOpen && !AppState.isPopupOpen(popupId);
+            if (exclusive && anotherFocusOpen) {
+                closeDelayTimer.stop();
+                _windowVisible = false;
+                root.popupClosed();
+                root.fullyClosed();
+            } else {
+                closeDelayTimer.start();
+                root.popupClosed();
+            }
+        }
+    }
+    onInitialFocusItemChanged: {
+        if (isOpen && windowFocusable && initialFocusItem)
+            initialFocusTimer.restart();
+
+    }
+    onWindowFocusableChanged: {
+        if (isOpen && windowFocusable && initialFocusItem)
+            initialFocusTimer.restart();
+
+    }
+
+    anchors {
+        top: true
+        bottom: true
+        left: true
+        right: true
+    }
+
+    MouseArea {
+        anchors.fill: parent
+        enabled: root.isOpen
+        onClicked: root.isOpen = false
+    }
+
+    Timer {
+        id: closeDelayTimer
+
+        interval: HyprlandService.enableAnimations ? (root.isIsland ? (Constants.animNormal + 80) : (Constants.animSlow + 150)) : 10
+        repeat: false
+        onTriggered: {
+            if (exclusive && AppState.isPopupOpen(popupId))
+                AppState.closePopup(popupId);
+
+            root.finishClosing();
+        }
+    }
+
+    Timer {
+        id: initialFocusTimer
+
+        interval: 30
+        repeat: false
+        onTriggered: {
+            if (root.windowFocusable && root.initialFocusItem) {
+                if (root.initialFocusItem.textField)
+                    root.initialFocusItem.textField.forceActiveFocus();
+                else
+                    root.initialFocusItem.forceActiveFocus();
+            }
+        }
+    }
+
+    Loader {
+        id: styleLoader
+
+        anchors.fill: parent
+        sourceComponent: {
+            switch (root.activeStyle) {
+            case "island":
+                return islandComponent;
+            case "notch":
+                return notchComponent;
+            case "convex":
+                return convexComponent;
+            case "framed":
+                return framedComponent;
+            default:
+                return minflairComponent;
+            }
+        }
+        onStatusChanged: {
+            if (status === Loader.Ready && root.isOpen)
+                initialFocusTimer.restart();
+
+        }
+    }
+
+    // The inner holder automatically anchors inside the active style's content slot
+    Item {
+        id: innerContentHolder
+
+        parent: styleLoader.item ? styleLoader.item.contentSlot : root
+        anchors.fill: parent
+        visible: styleLoader.item !== null
+        // Forward keys to the focused item
+        Keys.forwardTo: (root.windowFocusable && root.initialFocusItem) ? [root.initialFocusItem] : []
+        Keys.enabled: root.isOpen && root.windowFocusable
+        Keys.onEscapePressed: {
+            if (root.windowFocusable)
+                root.isOpen = false;
+
+        }
+    }
+
+    Component {
+        id: minflairComponent
+
+        MinflairOverlayStyle {
+            widget: root
+        }
+
+    }
+
+    Component {
+        id: framedComponent
+
+        FramedOverlayStyle {
+            widget: root
+        }
+
+    }
+
+    Component {
+        id: convexComponent
+
+        ConvexOverlayStyle {
+            widget: root
+        }
+
+    }
+
+    Component {
+        id: notchComponent
+
+        NotchOverlayStyle {
+            widget: root
+        }
+
+    }
+
+    Component {
+        id: islandComponent
+
+        IslandOverlayStyle {
+            widget: root
+        }
+
+    }
+
+    mask: Region {
+        Region {
+            x: (root.isOpen && root.windowFocusable) ? 0 : ((root._windowVisible || (styleLoader.item && styleLoader.item.isHandover)) ? (styleLoader.item ? styleLoader.item.container.x : 0) : 0)
+            y: (root.isOpen && root.windowFocusable) ? 0 : ((root._windowVisible || (styleLoader.item && styleLoader.item.isHandover)) ? (styleLoader.item ? styleLoader.item.container.y : 0) : 0)
+            width: (root.isOpen && root.windowFocusable) ? root.width : ((root._windowVisible || (styleLoader.item && styleLoader.item.isHandover)) ? (styleLoader.item ? styleLoader.item.container.width : 0) : 0)
+            height: (root.isOpen && root.windowFocusable) ? root.height : ((root._windowVisible || (styleLoader.item && styleLoader.item.isHandover)) ? (styleLoader.item ? styleLoader.item.container.height : 0) : 0)
+        }
+
+    }
+
+    Behavior on smoothPreferredWidth {
+        enabled: HyprlandService.enableAnimations && (root.isIsland || (root.isOpen && root.bounceProgress >= 0.95))
+
+        NumberAnimation {
+            duration: Constants.animNormal
+            easing.type: root.isOpen ? Easing.OutQuint : Easing.OutCubic
+            onRunningChanged: {
+                if (!running && !root.isOpen && root.isIsland)
+                    root.finishClosing();
+
+            }
+        }
+
+    }
+
+    Behavior on smoothPreferredHeight {
+        enabled: HyprlandService.enableAnimations && (root.isIsland || (root.isOpen && root.bounceProgress >= 0.95))
+
+        NumberAnimation {
+            duration: Constants.animNormal
+            easing.type: root.isOpen ? Easing.OutQuint : Easing.OutCubic
+        }
+
+    }
+
+    Behavior on smoothWindowRadius {
+        enabled: HyprlandService.enableAnimations && (root.isIsland || (root.isOpen && root.bounceProgress >= 0.95))
+
+        NumberAnimation {
+            duration: Constants.animNormal
+            easing.type: root.isOpen ? Easing.OutQuint : Easing.OutCubic
+        }
+
+    }
+
+    Behavior on smoothContentPadding {
+        enabled: HyprlandService.enableAnimations && (root.isIsland || (root.isOpen && root.bounceProgress >= 0.95))
+
+        NumberAnimation {
+            duration: Constants.animNormal
+            easing.type: root.isOpen ? Easing.OutQuint : Easing.OutCubic
+        }
+
+    }
+
+    Behavior on openProgress {
+        enabled: HyprlandService.enableAnimations && (root.isFramed || root.isConvex || root.isBottomNotch)
+
+        NumberAnimation {
+            duration: root.isOpen ? root.fadeDuration : root.closeDuration
+            easing.type: root.isOpen ? Easing.OutCubic : Easing.InCubic
+        }
+
+    }
+
+    Behavior on bounceProgress {
+        enabled: HyprlandService.enableAnimations
+
+        NumberAnimation {
+            duration: root.isOpen ? ((root.isIsland && AppState.hasActiveNotification) ? Constants.animSlow : (root.isIsland ? Constants.animExpressive : (root.isFramed || root.isConvex) ? Constants.animSlow : Constants.animNormal)) : Constants.animNormal
+            easing.type: {
+                if (root.isIsland)
+                    return root.isOpen ? Easing.OutQuint : Easing.OutCubic;
+                else if (root.isFramed || root.isConvex)
+                    return root.isOpen ? Easing.OutCubic : Easing.InCubic;
+                else if (root.isBottomNotch)
+                    return root.isOpen ? Easing.OutQuint : Easing.InCubic;
+                else
+                    return root.isOpen ? Easing.OutBack : Easing.InCubic;
+            }
+            easing.overshoot: (!root.isFramed && !root.isConvex && !root.isIsland && !root.isBottomNotch && root.isOpen) ? 1.04 : 0
+        }
+
+    }
+
+}

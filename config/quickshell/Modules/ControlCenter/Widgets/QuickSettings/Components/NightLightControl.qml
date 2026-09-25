@@ -8,10 +8,10 @@ import qs.Core.Services
 SvgIconButton {
     id: root
 
-    icon: HyprlandService.nightLightActive ? "moon-filled" : "moon"
-    iconColor: HyprlandService.nightLightActive ? Theme.accent : Theme.muted
+    icon: DisplayProfileService.nightLightActive ? "moon-filled" : "moon"
+    iconColor: DisplayProfileService.nightLightActive ? Theme.accent : Theme.muted
     iconSize: Constants.sizeXl
     onClicked: {
-        HyprlandService.nightLightActive = !HyprlandService.nightLightActive;
+        DisplayProfileService.nightLightActive = !DisplayProfileService.nightLightActive;
     }
 }

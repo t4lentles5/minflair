@@ -20,6 +20,7 @@ QuickSettingsTile {
 
         return connectedSsid;
     }
+    property bool isVisible: true
 
     function toggle() {
         wifiSetProc.command = ["nmcli", "radio", "wifi", root.isActive ? "off" : "on"];
@@ -45,7 +46,7 @@ QuickSettingsTile {
 
     Timer {
         interval: 2000
-        running: true
+        running: root.isVisible
         repeat: true
         triggeredOnStart: true
         onTriggered: {

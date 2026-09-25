@@ -8,10 +8,10 @@ import qs.Core.Services
 SvgIconButton {
     id: root
 
-    icon: !HyprlandService.caffeineActive ? "coffee" : "coffee-filled"
-    iconColor: !HyprlandService.caffeineActive ? Theme.muted : Theme.accent
+    icon: !DisplayProfileService.caffeineActive ? "coffee" : "coffee-filled"
+    iconColor: !DisplayProfileService.caffeineActive ? Theme.muted : Theme.accent
     iconSize: Constants.sizeXl
     onClicked: {
-        HyprlandService.caffeineActive = !HyprlandService.caffeineActive;
+        DisplayProfileService.caffeineActive = !DisplayProfileService.caffeineActive;
     }
 }

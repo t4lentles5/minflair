@@ -4,33 +4,23 @@ import qs.Core.Components
 import qs.Core.Services
 import qs.Modules.Settings.Components
 
-SettingContainer {
+AppContainer {
     id: root
 
-    property string osName: SystemInfoService.osName
+    property string osName: SystemStats.osName
+    property string hostModel: SystemStats.hostModel
     property string kernel: SystemStats.kernel
     property string hostname: SystemStats.hostname
-    property string cpuModel: SystemStats.cpuModel
-    property string shell: SystemStats.shell
-    property string packages: SystemStats.packages
-    property string packagesAur: SystemStats.packagesAur
-    property string uptimeText: SystemStats.uptime
-    property double cpuUsage: SystemStats.cpuUsage
-    property double memUsage: SystemStats.memUsage
-    property string memTotal: SystemStats.memTotal.toFixed(1) + " GB"
-    property string memUsed: SystemStats.memUsed.toFixed(1) + " GB"
-    property string cpuTemp: SystemStats.cpuTemp
-    property string cpuFreq: SystemStats.cpuFreq
-    property string cpuCores: SystemStats.cpuCores
-    property string diskSizeText: SystemStats.diskSizeText
-    property int diskUsage: SystemStats.diskUsage
-    property string loadAvg: SystemStats.loadAvg
-    property int tasks: SystemStats.tasks
-    property string gpuName: SystemStats.gpuName
-    property string gpuUsage: SystemStats.hasGpu ? (SystemStats.gpuUsage + "%") : "--"
-    property string gpuTemp: SystemStats.gpuTemp
-    property string gpuVram: SystemStats.gpuVram
     property string username: SystemStats.username
+    property string shell: SystemStats.shell
+    property string wm: SystemStats.wm
+    property string packages: SystemStats.packages
+    property string display: SystemStats.display
+    property string cpuModel: SystemStats.cpuModel
+    property string cpuCores: SystemStats.cpuCores
+    property string memTotal: SystemStats.memTotal
+    property string diskTotal: SystemStats.diskTotal
+    property string gpuName: SystemStats.gpuName
 
     ColumnLayout {
         spacing: Constants.sizeSm
@@ -47,122 +37,129 @@ SettingContainer {
         ThemedText {
             text: root.username + "@" + root.hostname
             font.bold: true
-            font.pixelSize: Constants.sizeLg
+            customSize: Constants.sizeLg
             Layout.alignment: Qt.AlignHCenter
         }
 
         ThemedText {
             text: root.osName
-            font.pixelSize: Constants.sizeMd
+            customSize: Constants.sizeMd
             color: Theme.muted
             Layout.alignment: Qt.AlignHCenter
         }
 
     }
 
-    SettingGroup {
+    AppGroup {
         title: "System Information"
         icon: "info"
 
-        ColumnLayout {
-            Layout.fillWidth: true
-            spacing: Constants.sizeSm
+        InfoRow {
+            label: "Host Model"
+            value: root.hostModel
+            visible: root.hostModel !== ""
+        }
 
-            InfoRow {
-                label: "Kernel"
-                value: root.kernel
-            }
+        InfoRow {
+            label: "OS"
+            value: root.osName
+        }
 
-            InfoRow {
-                label: "Uptime"
-                value: root.uptimeText
-            }
+        InfoRow {
+            label: "Kernel"
+            value: root.kernel
+        }
 
-            InfoRow {
-                label: "Shell"
-                value: root.shell
-            }
+        InfoRow {
+            label: "Desktop / WM"
+            value: root.wm
+        }
 
-            InfoRow {
-                label: "Pacman Packages"
-                value: root.packages
-            }
+        InfoRow {
+            label: "Shell"
+            value: root.shell
+        }
 
-            InfoRow {
-                label: "AUR Packages"
-                value: root.packagesAur
-            }
+        InfoRow {
+            label: "Packages"
+            value: root.packages
+        }
 
-            InfoRow {
-                label: "WM / DE"
-                value: "Hyprland"
-            }
-
+        InfoRow {
+            label: "Display"
+            value: root.display
         }
 
     }
 
-    SettingGroup {
-        title: "Hardware Status"
+    AppGroup {
+        title: "Hardware Specifications"
         icon: "cpu"
 
-        ColumnLayout {
-            Layout.fillWidth: true
-            spacing: Constants.sizeSm
+        InfoRow {
+            label: "Processor"
+            value: root.cpuModel
+        }
 
-            InfoRow {
-                label: "CPU Model"
-                value: root.cpuModel
+        InfoRow {
+            label: "Cores & Threads"
+            value: root.cpuCores
+        }
+
+        InfoRow {
+            label: "Installed Memory"
+            value: root.memTotal
+        }
+
+        InfoRow {
+            label: "Storage (/)"
+            value: root.diskTotal
+        }
+
+        InfoRow {
+            label: "Graphics"
+            value: root.gpuName
+            visible: root.gpuName !== "" && root.gpuName !== "None"
+        }
+
+    }
+
+    AppGroup {
+        title: "System Updates"
+        icon: "update"
+
+        SettingToggle {
+            label: "Auto-check System Updates"
+            checked: UpdateService.packageManagerChecksEnabled
+            onCheckedChanged: UpdateService.packageManagerChecksEnabled = checked
+        }
+
+        ThemedSelect {
+            enabled: UpdateService.packageManagerChecksEnabled
+            opacity: enabled ? 1 : 0.5
+            label: "Check Interval"
+            description: "Frequency of update checks"
+            model: ["1 hour", "6 hours", "12 hours", "24 hours"]
+            currentIndex: {
+                let val = UpdateService.packageManagerCheckInterval;
+                if (val === 3.6e+06)
+                    return 0;
+
+                if (val === 2.16e+07)
+                    return 1;
+
+                if (val === 4.32e+07)
+                    return 2;
+
+                if (val === 8.64e+07)
+                    return 3;
+
+                return 3;
             }
-
-            InfoRow {
-                label: "CPU Config"
-                value: root.cpuCores + " @ " + root.cpuFreq
+            onActivated: (index) => {
+                let intervals = [3.6e+06, 2.16e+07, 4.32e+07, 8.64e+07];
+                UpdateService.packageManagerCheckInterval = intervals[index];
             }
-
-            InfoRow {
-                label: "CPU Usage"
-                value: root.cpuUsage.toFixed(0) + "% (" + root.cpuTemp + ")"
-            }
-
-            InfoRow {
-                label: "Memory"
-                value: root.memUsed + " / " + root.memTotal + " (" + root.memUsage.toFixed(0) + "%)"
-            }
-
-            InfoRow {
-                label: "Storage /"
-                value: root.diskSizeText + " (" + root.diskUsage + "%)"
-            }
-
-            InfoRow {
-                label: "Load Average"
-                value: root.loadAvg
-            }
-
-            InfoRow {
-                label: "Active Tasks"
-                value: root.tasks.toString()
-            }
-
-            InfoRow {
-                label: "GPU Model"
-                value: root.gpuName
-                visible: root.gpuName !== "None"
-            }
-
-            InfoRow {
-                label: "GPU VRAM"
-                value: root.gpuVram
-                visible: root.gpuName !== "None" && root.gpuVram !== "" && root.gpuVram !== "None"
-            }
-
-            InfoRow {
-                label: "GPU Usage"
-                value: root.gpuUsage + " (" + root.gpuTemp + ")"
-                visible: root.gpuName !== "None"
-            }
-
         }
 
     }

@@ -10,17 +10,20 @@ Item {
     id: itemRoot
 
     property var trayItem: null
+    property int iconSize: Constants.sizeSm
 
     signal clicked(var mouse)
 
-    implicitWidth: iconImage.width
-    implicitHeight: iconImage.height
+    implicitWidth: iconImage.implicitWidth
+    implicitHeight: iconImage.implicitHeight
 
     SvgIcon {
         id: iconImage
 
         anchors.centerIn: parent
-        iconSize: Constants.sizeMd
+        iconSize: itemRoot.iconSize
+        width: implicitWidth
+        height: implicitHeight
         useOriginalColors: {
             if (!itemRoot.trayItem)
                 return true;

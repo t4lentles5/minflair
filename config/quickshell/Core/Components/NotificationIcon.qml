@@ -2,12 +2,13 @@ import Qt5Compat.GraphicalEffects
 import QtQuick
 import QtQuick.Layouts
 import qs.Core
+import qs.Core.Components
 
 Item {
     id: root
 
     property var notifData
-    property int iconSize: Constants.size4Xl
+    property int iconSize: Constants.size3Xl
     property color iconColor: Theme.accent
     property color bgColor: Theme.bgSecondary
     property bool hasAppIcon: (notifData && notifData.appIcon && notifData.appIcon !== "") || (notifData && notifData.image)
@@ -43,7 +44,7 @@ Item {
         anchors.fill: parent
         visible: root.hasAppIcon
         color: "transparent"
-        radius: Constants.sizeLg
+        radius: Constants.sizeXs
 
         Image {
             id: appImage
@@ -68,16 +69,15 @@ Item {
                 }
                 return "";
             }
-            sourceSize.width: root.iconSize
-            sourceSize.height: root.iconSize
+            sourceSize: Qt.size(root.width > 0 ? root.width : root.iconSize, root.height > 0 ? root.height : root.iconSize)
             layer.enabled: true
 
             layer.effect: OpacityMask {
 
                 maskSource: Rectangle {
-                    width: appImage.width
-                    height: appImage.height
-                    radius: Constants.sizeSm
+                    width: root.width > 0 ? root.width : root.iconSize
+                    height: root.height > 0 ? root.height : root.iconSize
+                    radius: Constants.sizeXs
                 }
 
             }

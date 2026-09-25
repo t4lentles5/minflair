@@ -9,6 +9,7 @@ ThemedSlider {
     id: root
 
     property int brightness: 0
+    property bool isVisible: true
 
     function setBrightness(val) {
         let finalVal = Math.max(5, val);
@@ -25,7 +26,7 @@ ThemedSlider {
 
     Timer {
         interval: 250
-        running: true
+        running: root.isVisible
         repeat: true
         triggeredOnStart: true
         onTriggered: brightGetProc.running = true

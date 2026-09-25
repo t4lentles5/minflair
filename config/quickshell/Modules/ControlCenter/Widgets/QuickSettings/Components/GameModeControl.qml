@@ -7,10 +7,10 @@ import qs.Core.Services
 SvgIconButton {
     id: root
 
-    icon: HyprlandService.gameModeActive ? "gamepad-filled" : "gamepad"
-    iconColor: HyprlandService.gameModeActive ? Theme.accent : Theme.muted
+    icon: DisplayProfileService.gameModeActive ? "gamepad-filled" : "gamepad"
+    iconColor: DisplayProfileService.gameModeActive ? Theme.accent : Theme.muted
     iconSize: Constants.sizeXl
     onClicked: {
-        HyprlandService.gameModeActive = !HyprlandService.gameModeActive;
+        DisplayProfileService.gameModeActive = !DisplayProfileService.gameModeActive;
     }
 }

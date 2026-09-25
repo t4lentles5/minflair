@@ -8,30 +8,132 @@ Rectangle {
     id: root
 
     color: "transparent"
-    radius: Constants.sizeLg
-    implicitWidth: mainLayout.implicitWidth + (Constants.sizeLg * 2)
-    implicitHeight: 32
+    implicitWidth: mainLayout.implicitWidth
+    implicitHeight: mainLayout.implicitHeight
+    width: implicitWidth
+    height: implicitHeight
 
     RowLayout {
         id: mainLayout
 
         anchors.centerIn: parent
-        spacing: Constants.sizeXs
+        spacing: 0
 
         ThemedText {
-            text: Qt.formatDateTime(SystemInfoService.currentTime, "HH:mm")
+            id: baseTimeText
+
+            text: SettingsService.clock24h ? Qt.formatDateTime(SystemInfoService.currentTime, "HH:mm") : Qt.formatDateTime(SystemInfoService.currentTime, "h:mm AP").replace(" AM", "").replace(" PM", "")
             font.bold: true
-            font.pixelSize: Constants.sizeSm
-        }
-
-        Divider {
-            vertical: true
         }
 
         ThemedText {
+            id: secondsText
+
+            text: Qt.formatDateTime(SystemInfoService.currentTime, ":ss")
+            font.bold: true
+            opacity: SettingsService.clockSeconds ? 1 : 0
+            Layout.preferredWidth: SettingsService.clockSeconds ? implicitWidth : 0
+            clip: true
+
+            Behavior on Layout.preferredWidth {
+                NumberAnimation {
+                    duration: Constants.animNormal
+                    easing.type: Easing.OutQuint
+                }
+
+            }
+
+            Behavior on opacity {
+                NumberAnimation {
+                    duration: Constants.animNormal
+                }
+
+            }
+
+        }
+
+        ThemedText {
+            id: apText
+
+            text: Qt.formatDateTime(SystemInfoService.currentTime, " AP")
+            font.bold: true
+            visible: !SettingsService.clock24h
+        }
+
+        Item {
+            Layout.preferredWidth: SettingsService.clockShowDate ? Constants.sizeXs : 0
+
+            Behavior on Layout.preferredWidth {
+                NumberAnimation {
+                    duration: Constants.animNormal
+                    easing.type: Easing.OutQuint
+                }
+
+            }
+
+        }
+
+        ThemedText {
+            text: ""
+            opacity: SettingsService.clockShowDate ? 1 : 0
+            Layout.preferredWidth: SettingsService.clockShowDate ? implicitWidth : 0
+            clip: true
+            customSize: Constants.sizeXs - 2
+
+            Behavior on Layout.preferredWidth {
+                NumberAnimation {
+                    duration: Constants.animNormal
+                    easing.type: Easing.OutQuint
+                }
+
+            }
+
+            Behavior on opacity {
+                NumberAnimation {
+                    duration: Constants.animNormal
+                }
+
+            }
+
+        }
+
+        Item {
+            Layout.preferredWidth: SettingsService.clockShowDate ? Constants.sizeXs : 0
+
+            Behavior on Layout.preferredWidth {
+                NumberAnimation {
+                    duration: Constants.animNormal
+                    easing.type: Easing.OutQuint
+                }
+
+            }
+
+        }
+
+        ThemedText {
+            id: dateText
+
             text: Qt.formatDateTime(SystemInfoService.currentTime, "ddd, d MMM")
             color: Theme.muted
-            font.pixelSize: Constants.sizeSm
+            opacity: SettingsService.clockShowDate ? 1 : 0
+            Layout.preferredWidth: SettingsService.clockShowDate ? implicitWidth : 0
+            clip: true
+
+            Behavior on Layout.preferredWidth {
+                NumberAnimation {
+                    duration: Constants.animNormal
+                    easing.type: Easing.OutQuint
+                }
+
+            }
+
+            Behavior on opacity {
+                NumberAnimation {
+                    duration: Constants.animNormal
+                }
+
+            }
+
         }
 
     }

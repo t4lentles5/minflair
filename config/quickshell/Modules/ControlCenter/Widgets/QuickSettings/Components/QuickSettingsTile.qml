@@ -85,7 +85,6 @@ Rectangle {
 
             ThemedText {
                 text: root.label
-                font.pixelSize: Constants.sizeSm
                 font.bold: true
                 color: root.isActive ? Theme.fg : Theme.muted
                 elide: Text.ElideRight
@@ -94,7 +93,6 @@ Rectangle {
 
             ThemedText {
                 text: root.subtitle
-                font.pixelSize: Constants.sizeSm
                 color: Theme.muted
                 elide: Text.ElideRight
                 Layout.fillWidth: true

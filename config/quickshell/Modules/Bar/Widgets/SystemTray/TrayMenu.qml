@@ -13,6 +13,9 @@ ColumnLayout {
     property var menuStack: []
     property string title: "Menu"
     property var activeChildren: menuRoot.menuStack.length > 1 ? subOpener.children : rootOpener.children
+    property int prevStackLength: 1
+    property real contentSlideX: 0
+    property real contentOpacity: 1
 
     signal backRequested()
     signal closeRequested()
@@ -65,6 +68,38 @@ ColumnLayout {
         else
             menuRoot.menuStack = [];
     }
+    onMenuStackChanged: {
+        let newLen = menuStack.length;
+        let goingDeeper = newLen > prevStackLength;
+        prevStackLength = newLen;
+        if (scrollView && scrollView.contentItem)
+            scrollView.contentItem.contentY = 0;
+
+        contentSlideX = goingDeeper ? 14 : -14;
+        contentOpacity = 0.2;
+        slideInAnim.restart();
+    }
+
+    ParallelAnimation {
+        id: slideInAnim
+
+        NumberAnimation {
+            target: menuRoot
+            property: "contentSlideX"
+            to: 0
+            duration: Constants.animNormal
+            easing.type: Easing.OutCubic
+        }
+
+        NumberAnimation {
+            target: menuRoot
+            property: "contentOpacity"
+            to: 1
+            duration: Constants.animNormal
+            easing.type: Easing.OutCubic
+        }
+
+    }
 
     QsMenuOpener {
         id: rootOpener
@@ -79,15 +114,24 @@ ColumnLayout {
     }
 
     RowLayout {
+        id: headerRow
+
         Layout.fillWidth: true
         spacing: Constants.sizeSm
 
         SvgIcon {
+            id: backIcon
+
             icon: "chevron-left"
-            iconColor: Theme.muted
+            iconColor: backHover.hovered ? Theme.accent : Theme.muted
             iconSize: Constants.sizeLg
             flat: true
             visible: menuRoot.menuStack.length > 1
+            scale: backHover.hovered ? 1.15 : 1
+
+            HoverHandler {
+                id: backHover
+            }
 
             MouseArea {
                 anchors.fill: parent
@@ -99,11 +143,26 @@ ColumnLayout {
                 }
             }
 
+            Behavior on scale {
+                NumberAnimation {
+                    duration: Constants.animFast
+                    easing.type: Easing.OutQuad
+                }
+
+            }
+
+            Behavior on iconColor {
+                ColorAnimation {
+                    duration: Constants.animFast
+                }
+
+            }
+
         }
 
         ThemedText {
             text: menuRoot.menuStack.length > 1 ? (menuRoot.menuStack[menuRoot.menuStack.length - 1].text || "Back") : menuRoot.title
-            font.pixelSize: Constants.sizeLg
+            customSize: Constants.sizeLg
             font.bold: true
             Layout.fillWidth: true
             elide: Text.ElideRight
@@ -115,14 +174,23 @@ ColumnLayout {
     }
 
     ScrollView {
+        id: scrollView
+
         Layout.fillWidth: true
         Layout.fillHeight: true
+        implicitWidth: itemsColumn.implicitWidth
+        implicitHeight: itemsColumn.implicitHeight
         clip: true
         contentWidth: availableWidth
+        contentHeight: itemsColumn.implicitHeight
+        ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
 
         ColumnLayout {
+            id: itemsColumn
+
             width: parent.width
             spacing: Constants.sizeXs
+            opacity: menuRoot.contentOpacity
 
             Repeater {
                 model: menuRoot.activeChildren
@@ -130,13 +198,19 @@ ColumnLayout {
                 delegate: Rectangle {
                     id: itemRoot
 
-                    property real animOffsetX: 15
+                    property bool isHovered: itemMouseArea.containsMouse
+                    property bool isPressed: itemMouseArea.pressed
+                    property real animOffsetY: 6
+                    property real itemOpacity: 0
 
                     Layout.fillWidth: true
                     Layout.preferredHeight: (modelData && modelData.isSeparator) ? 1 : 32
                     implicitWidth: (modelData && modelData.isSeparator) ? 0 : (itemRow.implicitWidth + (Constants.sizeSm * 2))
-                    color: itemMouseArea.containsMouse ? Theme.bgSecondary : "transparent"
-                    radius: Constants.sizeLg
+                    implicitHeight: (modelData && modelData.isSeparator) ? 1 : 32
+                    color: isPressed ? Qt.alpha(Theme.accent, 0.15) : (isHovered ? Theme.bgSecondary : "transparent")
+                    radius: Constants.sizeMd
+                    scale: isPressed ? 0.98 : (isHovered ? 1.01 : 1)
+                    transformOrigin: Item.Center
                     visible: {
                         if (!modelData)
                             return false;
@@ -146,10 +220,20 @@ ColumnLayout {
 
                         return modelData.text !== "";
                     }
-                    opacity: 0
+                    opacity: itemOpacity
                     Component.onCompleted: {
-                        itemRoot.opacity = 1;
-                        itemRoot.animOffsetX = 0;
+                        staggerTimer.start();
+                    }
+
+                    Timer {
+                        id: staggerTimer
+
+                        interval: Math.min(index * 12, 120)
+                        repeat: false
+                        onTriggered: {
+                            itemRoot.itemOpacity = 1;
+                            itemRoot.animOffsetY = 0;
+                        }
                     }
 
                     RowLayout {
@@ -173,7 +257,7 @@ ColumnLayout {
                                 anchors.centerIn: parent
                                 iconSize: Constants.sizeLg
                                 flat: true
-                                iconColor: Theme.fg
+                                iconColor: itemRoot.isHovered ? Theme.accent : Theme.fg
                                 icon: {
                                     if (!modelData || !modelData.icon)
                                         return "";
@@ -192,6 +276,14 @@ ColumnLayout {
                                         return "";
                                     }
                                 }
+
+                                Behavior on iconColor {
+                                    ColorAnimation {
+                                        duration: Constants.animFast
+                                    }
+
+                                }
+
                             }
 
                         }
@@ -199,8 +291,7 @@ ColumnLayout {
                         ThemedText {
                             Layout.fillWidth: true
                             text: modelData ? modelData.text : ""
-                            color: (modelData && modelData.enabled) ? Theme.fg : Theme.muted
-                            font.pixelSize: Constants.sizeSm
+                            color: (modelData && modelData.enabled) ? (itemRoot.isHovered ? Theme.fg : Theme.fg) : Theme.muted
                             elide: Text.ElideRight
                         }
 
@@ -213,11 +304,34 @@ ColumnLayout {
                         }
 
                         SvgIcon {
+                            id: subChevron
+
                             icon: "chevron-right"
                             visible: modelData && modelData.hasChildren
-                            iconColor: Theme.muted
+                            iconColor: itemRoot.isHovered ? Theme.fg : Theme.muted
                             iconSize: Constants.sizeXs
                             flat: true
+
+                            transform: Translate {
+                                x: itemRoot.isHovered ? 2.5 : 0
+
+                                Behavior on x {
+                                    NumberAnimation {
+                                        duration: Constants.animFast
+                                        easing.type: Easing.OutQuad
+                                    }
+
+                                }
+
+                            }
+
+                            Behavior on iconColor {
+                                ColorAnimation {
+                                    duration: Constants.animFast
+                                }
+
+                            }
+
                         }
 
                     }
@@ -250,21 +364,21 @@ ColumnLayout {
                     }
 
                     transform: Translate {
-                        x: itemRoot.animOffsetX
+                        y: itemRoot.animOffsetY
                     }
 
-                    Behavior on opacity {
+                    Behavior on itemOpacity {
                         NumberAnimation {
-                            duration: Constants.animFast
-                            easing.type: Easing.OutExpo
+                            duration: Constants.animNormal
+                            easing.type: Easing.OutCubic
                         }
 
                     }
 
-                    Behavior on animOffsetX {
+                    Behavior on animOffsetY {
                         NumberAnimation {
-                            duration: Constants.animFast
-                            easing.type: Easing.OutExpo
+                            duration: Constants.animNormal
+                            easing.type: Easing.OutCubic
                         }
 
                     }
@@ -274,6 +388,42 @@ ColumnLayout {
                             duration: Constants.animFast
                         }
 
+                    }
+
+                    Behavior on scale {
+                        NumberAnimation {
+                            duration: Constants.animFast
+                            easing.type: Easing.OutQuad
+                        }
+
+                    }
+
+                }
+
+            }
+
+            transform: Translate {
+                x: menuRoot.contentSlideX
+            }
+
+        }
+
+        ScrollBar.vertical: ScrollBar {
+            id: vbar
+
+            active: true
+            policy: ScrollBar.AsNeeded
+            width: 4
+
+            contentItem: Rectangle {
+                implicitWidth: 4
+                radius: 2
+                color: Theme.accent
+                opacity: vbar.active ? 0.6 : 0
+
+                Behavior on opacity {
+                    NumberAnimation {
+                        duration: Constants.animFast
                     }
 
                 }

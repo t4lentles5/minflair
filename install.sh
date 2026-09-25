@@ -62,6 +62,8 @@ dependencies=(
   fastfetch neovim curl unrar socat qt6-imageformats mpv fnm polkit-gnome ntfs-3g libnotify
   gnome-keyring libsecret awww playerctl ffmpeg exfatprogs dosfstools gvfs-afc power-profiles-daemon
   sof-firmware gamemode python-pam less qt5ct qt6ct papirus-icon-theme wf-recorder
+  tesseract tesseract-data-eng tesseract-data-spa tree-sitter-cli
+  noto-fonts ttf-liberation ttf-roboto
 )
 
 sudo pacman -S --needed --noconfirm "${dependencies[@]}" ||
@@ -77,14 +79,44 @@ aur_dependencies=(
   sddm-theme-tokyo-night-git
   tela-circle-icon-theme-dracula-git
   xxhash
-  aw-awatcher
-  activitywatch-bin
   otf-geist
 )
 
 yay -S --needed --noconfirm "${aur_dependencies[@]}" ||
   warn "Some AUR packages could not be installed (check the messages above)."
 ok "AUR dependencies processed."
+
+# ── 3.1. Laptop & Vendor specific dependencies (Battery charge limit) ────────
+VENDOR="$(cat /sys/class/dmi/id/sys_vendor 2>/dev/null || true)"
+CHASSIS="$(cat /sys/class/dmi/id/chassis_type 2>/dev/null || true)"
+IS_LAPTOP=false
+
+if [[ "$CHASSIS" =~ ^(8|9|10|14|30|31|32)$ ]] || [ -d /sys/class/power_supply/BAT0 ] || [ -d /sys/class/power_supply/BAT1 ] || [ -d /sys/class/power_supply/BAT ]; then
+  IS_LAPTOP=true
+fi
+
+if [ "$IS_LAPTOP" = true ]; then
+  log "Laptop hardware detected (${VENDOR:-Generic}). Configuring battery management..."
+
+  # Acer laptops
+  if echo "$VENDOR" | grep -qi "acer"; then
+    log "Acer laptop detected. Installing linux-headers and acer-wmi-battery-dkms..."
+    sudo pacman -S --needed --noconfirm linux-headers || warn "Could not install linux-headers."
+    yay -S --needed --noconfirm acer-wmi-battery-dkms || warn "Could not install acer-wmi-battery-dkms."
+  fi
+
+  # Dell laptops
+  if echo "$VENDOR" | grep -qi "dell"; then
+    log "Dell laptop detected. Installing libsmbios for battery management support..."
+    sudo pacman -S --needed --noconfirm libsmbios || warn "Could not install libsmbios."
+  fi
+
+  # Configure sudoers rule so Quickshell can toggle battery limits without password prompts
+  log "Configuring sudoers for battery charge limit script..."
+  echo "$USER ALL=(ALL) NOPASSWD: $HOME/.config/quickshell/Scripts/toggle_battery_limit.sh" | sudo tee /etc/sudoers.d/quickshell-battery >/dev/null
+  sudo chmod 0440 /etc/sudoers.d/quickshell-battery
+  ok "Battery charge limit support and sudoers configured."
+fi
 
 # ── 4. backup & copy dotfiles ─────────────────────────────────────────────────
 log "Backing up existing dotfiles to $BACKUP_DIR ..."
@@ -155,7 +187,7 @@ fi
 log "Installing Material-Gnome theme..."
 if [ ! -d "$HOME/.themes/Material-Gnome" ]; then
   mkdir -p "$HOME/.themes"
-  git clone https://github.com/SakibShahariar/material-gnome-theme.git "$HOME/.themes/Material-Gnome"
+  git clone https://github.com/t4lentles5/material-gnome-theme.git "$HOME/.themes/Material-Gnome"
   ok "Material-Gnome theme installed."
 else
   ok "Material-Gnome theme already installed."

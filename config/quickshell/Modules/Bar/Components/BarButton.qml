@@ -14,8 +14,10 @@ Rectangle {
     property int fontSize: Constants.sizeSm
     property color iconColor: Theme.fg
 
+    color: "transparent"
     radius: Constants.sizeLg
     implicitWidth: svgIcon.implicitWidth
+    implicitHeight: svgIcon.implicitHeight
 
     SvgIcon {
         id: svgIcon

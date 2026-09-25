@@ -21,8 +21,7 @@ Item {
     Item {
         id: stackContainer
 
-        width: parent.width
-        implicitHeight: root.implicitHeight
+        anchors.fill: parent
         clip: true
 
         ColumnLayout {
@@ -31,7 +30,7 @@ Item {
             width: parent.width
             spacing: Constants.sizeLg
             x: root.activePageIndex === 0 ? 0 : -parent.width
-            visible: x > -parent.width
+            visible: root.activePageIndex === 0
 
             Card {
                 Layout.fillWidth: true
@@ -50,6 +49,7 @@ Item {
                             id: wifiControl
 
                             Layout.fillWidth: true
+                            isVisible: root.quickSettingsOpen
                             expanded: root.activePageIndex === 1
                             onMenuClicked: {
                                 if (isActive)
@@ -67,6 +67,7 @@ Item {
                             id: btControl
 
                             Layout.fillWidth: true
+                            isVisible: root.quickSettingsOpen
                             expanded: root.activePageIndex === 2
                             onMenuClicked: {
                                 if (isActive)
@@ -90,32 +91,74 @@ Item {
 
                         VolumeControl {
                             id: volControl
+
+                            ThemedTooltip {
+                                visible: volControl.hovered
+                                text: "Sound"
+                            }
+
                         }
 
                         MicControl {
                             id: micBtn
+
+                            ThemedTooltip {
+                                visible: micBtn.hovered
+                                text: "Microphone"
+                            }
+
                         }
 
                         CaffeineControl {
                             id: caffeineBtn
+
+                            ThemedTooltip {
+                                visible: caffeineBtn.hovered
+                                text: "Caffeine"
+                            }
+
                         }
 
                         NightLightControl {
                             id: nightLightBtn
+
+                            ThemedTooltip {
+                                visible: nightLightBtn.hovered
+                                text: "Night Light"
+                            }
+
                         }
 
                         GameModeControl {
                             id: gamepadBtn
+
+                            ThemedTooltip {
+                                visible: gamepadBtn.hovered
+                                text: "Game Mode"
+                            }
+
                         }
 
-                        RecordControl {
+                        CaptureControl {
                             id: recordBtn
+
+                            ThemedTooltip {
+                                visible: recordBtn.hovered
+                                text: "Screen Capture"
+                            }
+
                         }
 
-                        DndControl {
-                            id: dndBtn
+                        BatteryLimitControl {
+                            id: batteryLimitBtn
 
-                            notificationService: root.notificationService
+                            isVisible: root.quickSettingsOpen
+
+                            ThemedTooltip {
+                                visible: batteryLimitBtn.hovered
+                                text: batteryLimitBtn.disabled ? "Battery Limit (Unsupported)" : (batteryLimitBtn.isLimitActive ? "Battery Limit (80% Active)" : "Battery Limit (100%)")
+                            }
+
                         }
 
                     }
@@ -148,6 +191,7 @@ Item {
                         }
 
                         BrightnessSlider {
+                            isVisible: root.quickSettingsOpen
                         }
 
                     }
@@ -157,6 +201,8 @@ Item {
             }
 
             Behavior on x {
+                enabled: root.quickSettingsOpen
+
                 NumberAnimation {
                     duration: Constants.animNormal
                     easing.type: Easing.OutCubic
@@ -171,7 +217,7 @@ Item {
 
             width: parent.width
             x: root.activePageIndex === 1 ? 0 : parent.width
-            visible: x < parent.width
+            visible: root.activePageIndex === 1
 
             ColumnLayout {
                 anchors.fill: parent
@@ -190,7 +236,7 @@ Item {
 
                     ThemedText {
                         text: "Wi-Fi Networks"
-                        font.pixelSize: Constants.sizeLg
+                        customSize: Constants.sizeLg
                         font.bold: true
                         Layout.fillWidth: true
                     }
@@ -203,6 +249,7 @@ Item {
 
                 WifiList {
                     Layout.fillWidth: true
+                    isVisible: root.quickSettingsOpen
                     expanded: root.activePageIndex === 1
                     isActive: wifiControl.isActive
                     wifiList: wifiControl.wifiList
@@ -214,6 +261,8 @@ Item {
             }
 
             Behavior on x {
+                enabled: root.quickSettingsOpen && root.activePageIndex === 1
+
                 NumberAnimation {
                     duration: Constants.animNormal
                     easing.type: Easing.OutCubic
@@ -228,7 +277,7 @@ Item {
 
             width: parent.width
             x: root.activePageIndex === 2 ? 0 : parent.width
-            visible: x < parent.width
+            visible: root.activePageIndex === 2
             backgroundColor: Theme.bgSecondary
 
             ColumnLayout {
@@ -248,7 +297,7 @@ Item {
 
                     ThemedText {
                         text: "Bluetooth Devices"
-                        font.pixelSize: Constants.sizeLg
+                        customSize: Constants.sizeLg
                         font.bold: true
                         Layout.fillWidth: true
                     }
@@ -261,6 +310,7 @@ Item {
 
                 BluetoothList {
                     Layout.fillWidth: true
+                    isVisible: root.quickSettingsOpen
                     expanded: root.activePageIndex === 2
                     isActive: btControl.isActive
                     btList: btControl.btList
@@ -272,6 +322,8 @@ Item {
             }
 
             Behavior on x {
+                enabled: root.quickSettingsOpen && root.activePageIndex === 2
+
                 NumberAnimation {
                     duration: Constants.animNormal
                     easing.type: Easing.OutCubic

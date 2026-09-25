@@ -12,11 +12,13 @@ Rectangle {
     property bool isActive: false
     property var btList: []
     property bool timedOut: false
+    property bool isVisible: true
 
     signal connect(string mac)
 
     Layout.fillWidth: true
     Layout.preferredHeight: expanded ? Math.max(btListCol.implicitHeight, 80) : 0
+    implicitHeight: Layout.preferredHeight
     opacity: expanded ? 1 : 0
     visible: opacity > 0
     clip: true
@@ -28,7 +30,7 @@ Rectangle {
         id: scanTimeout
 
         interval: 10000
-        running: root.expanded && root.btList.length === 0
+        running: root.expanded && root.isVisible && root.btList.length === 0
         onTriggered: root.timedOut = true
         onRunningChanged: {
             if (!running && !root.expanded)
@@ -70,7 +72,6 @@ Rectangle {
             Layout.alignment: Qt.AlignHCenter
             text: root.timedOut ? "No devices found" : "Scanning..."
             color: Theme.muted
-            font.pixelSize: Constants.sizeSm
         }
 
     }
@@ -85,7 +86,6 @@ Rectangle {
 
         ThemedText {
             text: "Devices"
-            font.pixelSize: Constants.sizeSm
             font.letterSpacing: 1
             color: Theme.muted
             visible: false
@@ -144,7 +144,6 @@ Rectangle {
                             ThemedText {
                                 text: modelData.name
                                 color: modelData.connected ? Theme.accent : Theme.fg
-                                font.pixelSize: Constants.sizeSm
                                 font.bold: modelData.connected
                                 Layout.fillWidth: true
                                 elide: Text.ElideRight
@@ -162,7 +161,7 @@ Rectangle {
 
                                     anchors.centerIn: parent
                                     text: "Connected"
-                                    font.pixelSize: Constants.sizeXs - 1
+                                    customSize: Constants.sizeXs - 1
                                     font.bold: true
                                     color: Theme.accent
                                 }

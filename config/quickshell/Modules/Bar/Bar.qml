@@ -1,124 +1,187 @@
-import "Components"
 import QtQuick
-import QtQuick.Layouts
-import Quickshell.Services.SystemTray
+import "Styles/Convex"
+import "Styles/Framed"
+import "Styles/Island"
+import "Styles/Minflair"
+import "Styles/Notch"
 import qs.Core
-import qs.Core.Components
 import qs.Core.Services
-import qs.Modules.Bar.Widgets.SystemTray as STray
 
 Item {
     id: mainBar
 
     required property var notificationService
-    required property var mainPanelWidget
+    property var mainPanelWidget: null
+    property string activeBarStyle: ""
+    // Backwards compatibility properties (deprecated, point to style loader)
+    readonly property bool isFramed: activeBarStyle === "framed"
+    readonly property bool isIsland: activeBarStyle === "island"
+    readonly property bool isNotch: activeBarStyle === "notch"
+    readonly property bool isConvex: activeBarStyle === "convex"
+    readonly property bool isCenteredBar: isIsland || isNotch
+    property bool loadMinflair: activeBarStyle === "minflair" || (activeBarStyle === "" && SettingsService.barStyle === "minflair")
+    property bool loadIsland: activeBarStyle === "island"
+    property bool loadNotch: activeBarStyle === "notch"
+    property bool loadConvex: activeBarStyle === "convex"
+    property bool loadFramed: activeBarStyle === "framed"
+    // Use unified interface exposed by IBarStyle implementation
+    readonly property QtObject currentStyleItem: {
+        switch (mainBar.activeBarStyle) {
+        case "framed":
+            return framedLoader.item;
+        case "island":
+            return islandLoader.item;
+        case "notch":
+            return notchLoader.item;
+        case "convex":
+            return convexLoader.item;
+        default:
+            return minflairLoader.item;
+        }
+    }
+    readonly property real leftWidth: currentStyleItem ? (currentStyleItem.leftWidth || 0) : 0
+    readonly property real rightWidth: currentStyleItem ? (currentStyleItem.rightWidth || 0) : 0
+    readonly property real centerX: currentStyleItem ? (currentStyleItem.centerX || 0) : 0
+    readonly property real centerWidth: currentStyleItem ? (currentStyleItem.centerWidth || 0) : 0
+    readonly property bool isOccupied: currentStyleItem ? (currentStyleItem.isOccupied || false) : false
+    readonly property bool isExpanded: currentStyleItem ? (currentStyleItem.isExpanded || false) : false
+    readonly property real currentHeight: (currentStyleItem && currentStyleItem.currentHeight > 0) ? currentStyleItem.currentHeight : 0
+    readonly property bool isOverlayActive: currentStyleItem ? (currentStyleItem.isOverlayActive || false) : false
+    readonly property bool isOpen: currentStyleItem ? (currentStyleItem.isOpen || false) : false
+    readonly property bool needsFocus: currentStyleItem ? (currentStyleItem.needsFocus || false) : false
+    // Geometry exposed for popupSurface mask
+    readonly property real blockX: currentStyleItem ? (currentStyleItem.blockX || 0) : 0
+    readonly property real blockY: currentStyleItem ? (currentStyleItem.blockY || 0) : 0
+    readonly property real blockWidth: currentStyleItem ? (currentStyleItem.blockWidth || 0) : 0
+    readonly property real blockHeight: currentStyleItem ? (currentStyleItem.blockHeight || 0) : 0
+    // Maintain backwards compatibility aliases for shell.qml
+    readonly property real leftIslandWidth: leftWidth
+    readonly property real rightIslandWidth: rightWidth
+    readonly property real centerIslandX: isIsland ? centerX : (width - centerWidth) / 2
+    readonly property real centerIslandWidth: isIsland ? centerWidth : width
+    readonly property real centerConvexX: isConvex ? centerX : 0
+    readonly property real centerConvexWidth: isConvex ? centerWidth : 0
+    readonly property real centerNotchX: isNotch ? centerX : 0
+    readonly property real centerNotchWidth: isNotch ? centerWidth : 0
+    readonly property bool hasNotchActiveOverlay: isNotch && (AppState.activePopup === "dashboard" || AppState.activePopup === "controlCenter" || AppState.activePopup === "music")
+    readonly property bool isNotchOccupied: isOccupied
 
-    Rectangle {
-        id: barContent
+    function close() {
+        if (currentStyleItem && typeof currentStyleItem.close === "function")
+            currentStyleItem.close();
+
+    }
+
+    onActiveBarStyleChanged: {
+        if (activeBarStyle === "minflair")
+            loadMinflair = true;
+        else if (activeBarStyle === "island")
+            loadIsland = true;
+        else if (activeBarStyle === "notch")
+            loadNotch = true;
+        else if (activeBarStyle === "convex")
+            loadConvex = true;
+        else if (activeBarStyle === "framed")
+            loadFramed = true;
+    }
+    implicitWidth: currentStyleItem && currentStyleItem.implicitWidth > 0 ? currentStyleItem.implicitWidth : ((isIsland || isNotch) ? 180 : 0)
+
+    Loader {
+        id: minflairLoader
 
         anchors.fill: parent
-        color: Theme.bg
-        radius: Constants.size2Xl
+        active: mainBar.loadMinflair
+        visible: mainBar.activeBarStyle === "minflair" || (mainBar.activeBarStyle === "" && SettingsService.barStyle === "minflair")
+        sourceComponent: minflairComp
+        enabled: visible
+    }
 
-        RowLayout {
-            id: hLeftGroup
+    Loader {
+        id: framedLoader
 
-            anchors.left: parent.left
-            anchors.top: parent.top
-            anchors.bottom: parent.bottom
-            spacing: Constants.sizeLg
-            anchors.leftMargin: 16
+        anchors.fill: parent
+        active: mainBar.loadFramed
+        visible: mainBar.activeBarStyle === "framed"
+        sourceComponent: framedComp
+        enabled: visible
+    }
 
-            MinflairButton {
-                widget: mainBar.mainPanelWidget
-            }
+    Loader {
+        id: islandLoader
 
-            Workspaces {
-            }
+        anchors.fill: parent
+        active: mainBar.loadIsland
+        visible: mainBar.activeBarStyle === "island"
+        sourceComponent: islandComp
+        enabled: visible
+    }
 
+    Loader {
+        id: notchLoader
+
+        anchors.fill: parent
+        active: mainBar.loadNotch
+        visible: mainBar.activeBarStyle === "notch"
+        sourceComponent: notchComp
+        enabled: visible
+    }
+
+    Loader {
+        id: convexLoader
+
+        anchors.fill: parent
+        active: mainBar.loadConvex
+        visible: mainBar.activeBarStyle === "convex"
+        sourceComponent: convexComp
+        enabled: visible
+    }
+
+    Component {
+        id: minflairComp
+
+        MinflairBar {
+            notificationService: mainBar.notificationService
+            mainPanelWidget: mainBar.mainPanelWidget
         }
 
-        ClockButton {
-            id: centerClock
+    }
 
-            anchors.centerIn: parent
+    Component {
+        id: framedComp
+
+        FramedBar {
+            notificationService: mainBar.notificationService
+            mainPanelWidget: mainBar.mainPanelWidget
         }
 
-        RowLayout {
-            id: hRightGroup
+    }
 
-            anchors.right: parent.right
-            anchors.top: parent.top
-            anchors.bottom: parent.bottom
-            spacing: Constants.sizeLg
-            anchors.rightMargin: 16
+    Component {
+        id: islandComp
 
-            ControlCenterButton {
-                notificationService: mainBar.notificationService
-            }
+        IslandBar {
+            notificationService: mainBar.notificationService
+            mainPanelWidget: mainBar.mainPanelWidget
+        }
 
-            Rectangle {
-                Layout.preferredHeight: 32
-                Layout.alignment: Qt.AlignVCenter
-                Layout.maximumWidth: 150 + Constants.sizeSm * 2
-                Layout.preferredWidth: trayRow.implicitWidth > 0 ? Math.min(trayRow.implicitWidth + Constants.sizeSm * 2, Layout.maximumWidth) : 0
-                color: Theme.bgSecondary
-                radius: height / 2
-                visible: trayRow.implicitWidth > 0
+    }
 
-                Flickable {
-                    id: trayFlick
+    Component {
+        id: notchComp
 
-                    anchors.fill: parent
-                    anchors.leftMargin: Constants.sizeSm
-                    anchors.rightMargin: Constants.sizeSm
-                    contentWidth: trayRow.implicitWidth
-                    contentHeight: height
-                    boundsBehavior: Flickable.StopAtBounds
-                    flickableDirection: Flickable.HorizontalFlick
-                    clip: true
+        NotchBar {
+            notificationService: mainBar.notificationService
+            mainPanelWidget: mainBar.mainPanelWidget
+        }
 
-                    MouseArea {
-                        anchors.fill: parent
-                        acceptedButtons: Qt.NoButton
-                        onWheel: (wheel) => {
-                            trayFlick.contentX = Math.max(0, Math.min(trayFlick.contentX - (wheel.angleDelta.y / 2), trayFlick.contentWidth - trayFlick.width));
-                        }
-                    }
+    }
 
-                    RowLayout {
-                        id: trayRow
+    Component {
+        id: convexComp
 
-                        height: parent.height
-                        spacing: Constants.sizeSm
-
-                        Repeater {
-                            model: SystemTray.items
-
-                            delegate: STray.TrayItem {
-                                trayItem: modelData
-                                onClicked: (mouse) => {
-                                    if (mouse.button === Qt.RightButton) {
-                                        if (modelData.menu)
-                                            AppState.togglePopup("systemTray_" + index);
-                                        else if (modelData.secondaryActivate)
-                                            modelData.secondaryActivate();
-                                    }
-                                }
-                            }
-
-                        }
-
-                    }
-
-                }
-
-            }
-
-            PowerButton {
-                popupId: "powerMenu"
-            }
-
+        ConvexBar {
+            notificationService: mainBar.notificationService
+            mainPanelWidget: mainBar.mainPanelWidget
         }
 
     }

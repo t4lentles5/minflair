@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import configparser
 import json
 import os
@@ -7,18 +8,29 @@ from pathlib import Path
 def get_apps():
     apps = []
     seen_execs = set()
-    paths = [
-        Path("/usr/share/applications"),
-        Path(os.path.expanduser("~/.local/share/applications")),
-    ]
+
+    # Search standard XDG application directories
+    xdg_dirs = os.environ.get("XDG_DATA_DIRS", "/usr/local/share:/usr/share").split(":")
+    paths = [Path(p) / "applications" for p in xdg_dirs]
+    paths.append(Path.home() / ".local" / "share" / "applications")
+    paths.append(
+        Path.home()
+        / ".local"
+        / "share"
+        / "flatpak"
+        / "exports"
+        / "share"
+        / "applications"
+    )
+    paths.append(Path("/var/lib/flatpak/exports/share/applications"))
 
     for d in paths:
-        if not d.exists():
+        if not d.is_dir():
             continue
         for f in d.glob("*.desktop"):
             try:
                 config = configparser.ConfigParser(interpolation=None)
-                config.read(f)
+                config.read(f, encoding="utf-8")
                 if "Desktop Entry" in config:
                     entry = config["Desktop Entry"]
 
@@ -28,19 +40,15 @@ def get_apps():
                     ):
                         continue
 
-                    name = entry.get("Name", "")
-                    raw_exec = entry.get("Exec", "")
-                    executable = raw_exec.split(" %")[0].replace('"', "")
+                    name = entry.get("Name", "").strip()
+                    raw_exec = entry.get("Exec", "").strip()
+                    executable = raw_exec.split(" %")[0].replace('"', "").strip()
 
                     if executable.startswith("/usr/bin/"):
                         executable = executable[9:]
 
-                    icon = entry.get("Icon", "").replace('"', "")
+                    icon = entry.get("Icon", "").replace('"', "").strip()
                     terminal = entry.get("Terminal", "false").lower() == "true"
-                    categories_str = entry.get("Categories", "")
-                    categories = [
-                        c.strip() for c in categories_str.split(";") if c.strip()
-                    ]
 
                     actions = []
                     if "Actions" in entry:
@@ -52,15 +60,15 @@ def get_apps():
                             action_group = f"Desktop Action {ak}"
                             if action_group in config:
                                 a_entry = config[action_group]
-                                a_name = a_entry.get("Name", "")
-                                a_exec = a_entry.get("Exec", "")
+                                a_name = a_entry.get("Name", "").strip()
+                                a_exec = a_entry.get("Exec", "").strip()
                                 if a_name and a_exec:
                                     actions.append(
                                         {
                                             "name": a_name,
-                                            "exec": a_exec.split(" %")[0].replace(
-                                                '"', ""
-                                            ),
+                                            "exec": a_exec.split(" %")[0]
+                                            .replace('"', "")
+                                            .strip(),
                                         }
                                     )
 
@@ -68,16 +76,15 @@ def get_apps():
                         apps.append(
                             {
                                 "name": name,
-                                "exec": raw_exec.split(" %")[0],
+                                "exec": raw_exec.split(" %")[0].strip(),
                                 "icon": icon,
                                 "terminal": terminal,
-                                "categories": categories,
                                 "actions": actions,
                             }
                         )
                         seen_execs.add(executable)
             except Exception:
-                pass
+                continue
 
     return sorted(apps, key=lambda x: x["name"].lower())
 

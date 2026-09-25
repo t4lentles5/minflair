@@ -8,25 +8,25 @@ Rectangle {
     id: ccRoot
 
     required property var notificationService
-    property bool isHovered: ccHoverHandler.hovered
-    property bool isPressed: ccTapHandler.pressed
+    property bool isHovered: mouseArea.containsMouse
+    property bool isPressed: mouseArea.pressed
+    property int horizontalPadding: SettingsService.isBarCompact ? Constants.sizeXs : Constants.sizeLg
 
-    Layout.preferredHeight: 32
-    color: isHovered || isPressed ? Theme.bgTertiary : Theme.bgSecondary
-    radius: height / 2
-    implicitWidth: ccLayout.implicitWidth + Constants.sizeLg * 2
+    implicitHeight: SettingsService.barWidgetHeight
+    Layout.preferredHeight: SettingsService.barWidgetHeight
+    height: parent && parent.height > 0 ? parent.height : implicitHeight
+    color: SettingsService.isBarCompact ? ((isHovered || isPressed) ? Theme.bgSecondary : "transparent") : ((isHovered || isPressed) ? Theme.bgTertiary : Theme.bgSecondary)
+    radius: SettingsService.isBarCompact ? Constants.sizeMd : (height / 2)
+    implicitWidth: ccLayout.implicitWidth + horizontalPadding * 2
     scale: isPressed ? 0.95 : (isHovered ? 1.02 : 1)
 
-    TapHandler {
-        id: ccTapHandler
+    MouseArea {
+        id: mouseArea
 
-        onTapped: AppState.togglePopup("controlCenter")
-    }
-
-    HoverHandler {
-        id: ccHoverHandler
-
+        anchors.fill: parent
+        hoverEnabled: true
         cursorShape: Qt.PointingHandCursor
+        onClicked: AppState.togglePopup("controlCenter")
     }
 
     RowLayout {

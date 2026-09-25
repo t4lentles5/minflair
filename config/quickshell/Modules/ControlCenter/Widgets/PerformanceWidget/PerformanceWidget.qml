@@ -1,6 +1,5 @@
 import QtQuick
 import QtQuick.Layouts
-import QtQuick.Shapes
 import Quickshell
 import Quickshell.Io
 import qs.Core
@@ -8,175 +7,66 @@ import qs.Core.Components
 import qs.Core.Services
 import qs.Core.Windows
 
-Item {
+Card {
     id: root
 
     property string powerProfile: SystemInfoService.powerProfile
+    property var profilesList: {
+        let m = ["power-saver", "balanced"];
+        if (SystemInfoService.hasPerformanceProfile)
+            m.push("performance");
 
-    implicitWidth: cardContainer.implicitWidth
-    implicitHeight: cardContainer.implicitHeight
+        return m;
+    }
 
-    Card {
-        id: cardContainer
+    ColumnLayout {
+        anchors.fill: parent
+        spacing: Constants.sizeLg
 
-        width: parent.width
+        ThemedSelect {
+            id: profileSelect
 
-        ColumnLayout {
-            id: mainCol
+            label: "Performance Mode"
+            comboWidth: 140
+            description: {
+                let p = root.powerProfile;
+                if (p === "power-saver")
+                    return "Limits CPU and saves battery";
 
-            anchors.fill: parent
-            spacing: Constants.sizeLg
+                if (p === "balanced")
+                    return "Standard balanced profile";
 
-            ColumnLayout {
-                Layout.fillWidth: true
-                spacing: 2
+                if (p === "performance")
+                    return "Max performance \u0026 brightness";
 
-                ThemedText {
-                    text: "Performance Mode"
-                    font.pixelSize: Constants.sizeLg
-                    font.bold: true
-                    color: Theme.fg
+                return "";
+            }
+            model: root.profilesList
+            Component.onCompleted: {
+                for (let i = 0; i < root.profilesList.length; i++) {
+                    if (root.profilesList[i] === SystemInfoService.powerProfile) {
+                        profileSelect.currentIndex = i;
+                        return ;
+                    }
                 }
-
-                ThemedText {
-                    text: "Select a power profile"
-                    font.pixelSize: Constants.sizeXs + 2
-                    color: Theme.muted
-                }
-
+                profileSelect.currentIndex = 0;
+            }
+            onActivated: (index) => {
+                SystemInfoService.applyProfile(root.profilesList[index]);
             }
 
-            ColumnLayout {
-                Layout.fillWidth: true
-                spacing: Constants.sizeLg
-
-                Repeater {
-                    model: {
-                        let profiles = [{
-                            "id": "power-saver",
-                            "name": "Saver",
-                            "desc": "CPU power-saver profile. Brightness set to 15%. Disables animations, blur, shadows, and Caffeine. Widget updates every 5s.",
-                            "icon": "energy-saver"
-                        }, {
-                            "id": "balanced",
-                            "name": "Balanced",
-                            "desc": "CPU balanced profile. Brightness set to 75%. Restores Hyprland configuration. Widget updates every 2s.",
-                            "icon": "balance"
-                        }];
-                        if (SystemInfoService.hasPerformanceProfile)
-                            profiles.push({
-                            "id": "performance",
-                            "name": "Performance",
-                            "desc": "CPU performance profile. Brightness set to 100%. Restores Hyprland configuration. Widget updates every 1s.",
-                            "icon": "rocket"
-                        });
-
-                        return profiles;
+            Connections {
+                function onPowerProfileChanged() {
+                    for (let i = 0; i < root.profilesList.length; i++) {
+                        if (root.profilesList[i] === SystemInfoService.powerProfile) {
+                            profileSelect.currentIndex = i;
+                            return ;
+                        }
                     }
-
-                    delegate: Rectangle {
-                        id: profileCard
-
-                        required property var modelData
-                        property bool isActive: root.powerProfile === modelData.id
-                        property bool isHovered: hoverHandler.hovered
-                        property bool isPressed: tapHandler.pressed
-
-                        Layout.fillWidth: true
-                        Layout.preferredHeight: delegateLayout.implicitHeight + Constants.sizeLg * 2
-                        radius: Constants.sizeLg
-                        color: profileCard.isHovered ? Theme.bgTertiary : Theme.bgSecondary
-                        border.width: profileCard.isActive ? 1 : 0
-                        border.color: profileCard.isActive ? Theme.accent : Theme.border
-                        scale: isPressed ? 0.95 : (isHovered ? 1.02 : 1)
-
-                        RowLayout {
-                            id: delegateLayout
-
-                            anchors.fill: parent
-                            anchors.margins: Constants.sizeLg
-                            spacing: Constants.sizeLg
-
-                            SvgIcon {
-                                icon: profileCard.modelData.icon
-                                iconSize: Constants.size2Xl
-                                iconColor: profileCard.isActive ? Theme.accent : (profileCard.isHovered ? Theme.accent : Theme.fg)
-                                Layout.alignment: Qt.AlignVCenter
-                                isCircle: true
-
-                                Behavior on iconColor {
-                                    ColorAnimation {
-                                        duration: Constants.animFast
-                                    }
-
-                                }
-
-                            }
-
-                            ColumnLayout {
-                                Layout.fillWidth: true
-                                Layout.alignment: Qt.AlignVCenter
-                                spacing: 2
-
-                                ThemedText {
-                                    text: profileCard.modelData.name
-                                    font.pixelSize: Constants.sizeSm
-                                    font.bold: true
-                                    color: profileCard.isActive ? Theme.accent : Theme.fg
-                                    Layout.fillWidth: true
-                                }
-
-                                ThemedText {
-                                    text: profileCard.modelData.desc
-                                    font.pixelSize: Constants.sizeXs + 2
-                                    color: profileCard.isActive ? Theme.fg : Theme.muted
-                                    wrapMode: Text.Wrap
-                                    lineHeight: 1.2
-                                    Layout.fillWidth: true
-                                }
-
-                            }
-
-                        }
-
-                        TapHandler {
-                            id: tapHandler
-
-                            onTapped: SystemInfoService.applyProfile(profileCard.modelData.id)
-                        }
-
-                        HoverHandler {
-                            id: hoverHandler
-
-                            cursorShape: Qt.PointingHandCursor
-                        }
-
-                        Behavior on color {
-                            ColorAnimation {
-                                duration: Constants.animFast
-                            }
-
-                        }
-
-                        Behavior on border.color {
-                            ColorAnimation {
-                                duration: Constants.animFast
-                            }
-
-                        }
-
-                        Behavior on scale {
-                            NumberAnimation {
-                                duration: Constants.animFast
-                                easing.type: Easing.OutBack
-                            }
-
-                        }
-
-                    }
-
+                    profileSelect.currentIndex = 0;
                 }
 
+                target: SystemInfoService
             }
 
         }

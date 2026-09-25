@@ -119,7 +119,7 @@ Item {
                 horizontalAlignment: Text.AlignHCenter
                 verticalAlignment: Text.AlignVCenter
                 text: root.batteryLevel.toString()
-                font.pixelSize: 9
+                customSize: Constants.sizeXs + 1
                 font.bold: true
                 color: Theme.fg
                 renderType: Text.QtRendering
