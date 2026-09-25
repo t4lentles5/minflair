@@ -202,11 +202,10 @@ Rectangle {
 
                 }
 
-                Text {
+                ThemedText {
                     anchors.centerIn: parent
                     text: SystemStats.username.charAt(0).toUpperCase()
-                    font.family: Constants.fontFamily
-                    font.pixelSize: Constants.sizeLg
+                    customSize: Constants.sizeLg
                     font.bold: true
                     color: Theme.accent
                     visible: !faceImage.visible
@@ -217,18 +216,15 @@ Rectangle {
             ColumnLayout {
                 spacing: Constants.size3Xs
 
-                Text {
+                ThemedText {
                     text: SystemStats.username
-                    font.family: Constants.fontFamily
-                    font.pixelSize: Constants.sizeLg
+                    customSize: Constants.sizeLg
                     font.bold: true
-                    color: Theme.fg
                 }
 
-                Text {
+                ThemedText {
                     text: "@" + SystemStats.hostname
-                    font.family: Constants.fontFamily
-                    font.pixelSize: Constants.sizeSm
+                    customSize: Constants.sizeSm
                     color: Theme.muted
                 }
 
@@ -239,10 +235,9 @@ Rectangle {
         ColumnLayout {
             spacing: Constants.sizeXs
 
-            Text {
+            ThemedText {
                 text: "PASSWORD"
-                font.family: Constants.fontFamily
-                font.pixelSize: Constants.sizeSm
+                customSize: Constants.sizeSm
                 color: Theme.muted
                 font.letterSpacing: 2
                 font.bold: true
@@ -303,10 +298,8 @@ Rectangle {
 
         }
 
-        Text {
+        ThemedText {
             text: rootBox.authFailed ? "incorrect password" : (rootBox.authenticating ? "verifying..." : "enter to unlock - esc to clear")
-            font.family: Constants.fontFamily
-            font.pixelSize: Constants.sizeSm
             color: rootBox.authFailed ? Theme.accent : Theme.muted
         }
 

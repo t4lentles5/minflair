@@ -14,92 +14,28 @@ Item {
     id: root
 
     property string typedPassword: ""
-    property bool authFailed: false
-    property bool authenticating: false
-    property bool unlocking: false
 
-    function toggleLock() {
-        if (!lockManager.locked) {
-            root.typedPassword = "";
-            root.authFailed = false;
-            root.unlocking = false;
-            lockManager.locked = true;
-        } else {
-            lockManager.locked = false;
-        }
-    }
+    LockScreenIpcController {
+        id: ipcController
 
-    function submitPassword(pwd) {
-        if (root.authenticating)
-            return ;
-
-        authProc.running = false;
-        root.authenticating = true;
-        root.authFailed = false;
-        authProc.command = ["python3", Quickshell.env("HOME") + "/.config/quickshell/Scripts/auth.py", pwd];
-        authProc.running = true;
-    }
-
-    Component.onCompleted: {
-        socketCleanup.running = true;
-    }
-
-    SocketServer {
-        id: server
-
-        path: "/tmp/quickshell_lockScreen"
-        active: false
-
-        handler: Component {
-            Socket {
-                onConnectedChanged: {
-                    if (connected) {
-                        root.toggleLock();
-                        connected = false;
-                    }
-                }
-            }
-
-        }
-
-    }
-
-    Process {
-        id: socketCleanup
-
-        command: ["rm", "-f", "/tmp/quickshell_lockScreen"]
-        onExited: function(exitCode) {
-            server.active = true;
-        }
-    }
-
-    Process {
-        id: authProc
-
-        onExited: function(exitCode) {
-            if (!root.authenticating)
-                return ;
-
-            root.authenticating = false;
-            if (exitCode === 0) {
-                root.unlocking = true;
+        onToggleLockRequested: {
+            if (!lockManager.locked) {
+                ipcController.reset();
+                lockManager.locked = true;
             } else {
-                root.authFailed = true;
-                root.typedPassword = "";
+                lockManager.locked = false;
             }
         }
+        onUnlockRequested: lockManager.locked = false
     }
 
     WlSessionLock {
         id: lockManager
 
         onLockedChanged: {
-            if (locked) {
+            if (locked)
                 root.typedPassword = "";
-                root.authFailed = false;
-                root.authenticating = false;
-                root.unlocking = false;
-            }
+
         }
 
         WlSessionLockSurface {
@@ -114,7 +50,7 @@ Item {
                 anchors.fill: parent
                 color: Theme.bg
                 opacity: 1
-                state: root.unlocking ? "unlocking" : (ready ? "locked" : "hidden")
+                state: ipcController.unlocking ? "unlocking" : (ready ? "locked" : "hidden")
                 states: [
                     State {
                         name: "hidden"
@@ -314,7 +250,6 @@ Item {
                 ]
                 transitions: [
                     Transition {
-                        from: "hidden"
                         to: "locked"
 
                         SequentialAnimation {
@@ -476,21 +411,21 @@ Item {
                         anchors.margins: Constants.size5Xl * 1.2
                         backgroundItem: bgRect
                         typedPassword: root.typedPassword
-                        authFailed: root.authFailed
-                        authenticating: root.authenticating
+                        authFailed: ipcController.authFailed
+                        authenticating: ipcController.authenticating
                         locked: lockManager.locked
                         onPasswordChanged: (text) => {
                             root.typedPassword = text;
                             if (text.length > 0)
-                                root.authFailed = false;
+                                ipcController.authFailed = false;
 
                         }
                         onSubmitPassword: (pwd) => {
-                            root.submitPassword(pwd);
+                            ipcController.submitPassword(pwd);
                         }
                         onClearRequested: () => {
                             root.typedPassword = "";
-                            root.authFailed = false;
+                            ipcController.authFailed = false;
                         }
                         transform: [
                             Translate {
@@ -517,7 +452,7 @@ Item {
                         z: -1
                         onClicked: {
                             root.typedPassword = "";
-                            root.authFailed = false;
+                            ipcController.authFailed = false;
                             authBox.forceFocus();
                         }
                     }

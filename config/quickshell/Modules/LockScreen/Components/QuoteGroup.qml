@@ -1,15 +1,15 @@
 import QtQuick
 import QtQuick.Layouts
 import qs.Core
+import qs.Core.Components
 import qs.Core.Services
 
 ColumnLayout {
     spacing: Constants.sizeMd
 
-    Text {
+    ThemedText {
         text: "“" + QuoteService.currentQuote.text + "”"
-        font.family: Constants.fontFamily
-        font.pixelSize: Constants.sizeMd
+        customSize: Constants.sizeMd
         font.italic: true
         color: Theme.muted
         horizontalAlignment: Text.AlignRight
@@ -18,10 +18,9 @@ ColumnLayout {
         Layout.maximumWidth: 400
     }
 
-    Text {
+    ThemedText {
         text: "— " + QuoteService.currentQuote.author.toUpperCase()
-        font.family: Constants.fontFamily
-        font.pixelSize: Constants.sizeXs + 2
+        customSize: Constants.sizeXs + 2
         color: Theme.muted
         font.letterSpacing: 2
         Layout.alignment: Qt.AlignRight

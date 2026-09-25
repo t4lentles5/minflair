@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Layouts
 import qs.Core
+import qs.Core.Components
 
 RowLayout {
     spacing: Constants.sizeLg
@@ -12,10 +13,8 @@ RowLayout {
         Layout.alignment: Qt.AlignVCenter
     }
 
-    Text {
+    ThemedText {
         text: "LOCKED"
-        font.family: Constants.fontFamily
-        font.pixelSize: Constants.sizeSm
         font.letterSpacing: 2
         color: Theme.muted
     }

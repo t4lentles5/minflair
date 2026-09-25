@@ -1,15 +1,14 @@
 import QtQuick
 import QtQuick.Layouts
 import qs.Core
+import qs.Core.Components
 import qs.Core.Services
 
 RowLayout {
     spacing: Constants.sizeMd
 
-    Text {
+    ThemedText {
         text: "CPU " + Math.round(SystemStats.cpuUsage) + "%"
-        font.family: Constants.fontFamily
-        font.pixelSize: Constants.sizeSm
         color: Theme.muted
         font.letterSpacing: 1
     }
@@ -21,10 +20,8 @@ RowLayout {
         Layout.alignment: Qt.AlignVCenter
     }
 
-    Text {
+    ThemedText {
         text: "RAM " + SystemStats.memUsed.toFixed(1) + "G"
-        font.family: Constants.fontFamily
-        font.pixelSize: Constants.sizeSm
         color: Theme.muted
         font.letterSpacing: 1
     }
@@ -36,10 +33,8 @@ RowLayout {
         Layout.alignment: Qt.AlignVCenter
     }
 
-    Text {
+    ThemedText {
         text: "UP " + SystemStats.uptime
-        font.family: Constants.fontFamily
-        font.pixelSize: Constants.sizeSm
         color: Theme.muted
         font.letterSpacing: 1
     }
