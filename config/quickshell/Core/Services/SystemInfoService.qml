@@ -134,7 +134,7 @@ Item {
     Process {
         id: batteryProc
 
-        command: ["sh", "-c", 'if [ -d /sys/class/power_supply/BAT1 ]; then echo "$(cat /sys/class/power_supply/BAT1/capacity) $(cat /sys/class/power_supply/BAT1/status)"; else echo "0 No battery"; fi']
+        command: ["sh", "-c", 'for b in /sys/class/power_supply/BAT* /sys/class/power_supply/*; do if [ -d "$b" ] && [ -f "$b/capacity" ]; then if [ -f "$b/type" ] && [ "$(cat "$b/type" 2>/dev/null)" != "Battery" ]; then continue; fi; if [ -f "$b/present" ] && [ "$(cat "$b/present" 2>/dev/null)" = "0" ]; then continue; fi; c=$(cat "$b/capacity" 2>/dev/null); s=$(cat "$b/status" 2>/dev/null); [ -z "$s" ] && s="Unknown"; if [ -n "$c" ]; then echo "$c $s"; exit 0; fi; fi; done; echo "0 No battery"']
 
         stdout: SplitParser {
             onRead: (data) => {
@@ -142,9 +142,9 @@ Item {
                 if (parts.length >= 2) {
                     let capacity = parseInt(parts[0]);
                     let status = parts.slice(1).join(" ");
-                    systemInfoService.batteryLevel = isNaN(capacity) ? 0 : capacity;
+                    systemInfoService.batteryLevel = isNaN(capacity) ? 0 : Math.min(100, Math.max(0, capacity));
                     systemInfoService.batteryStatus = status;
-                    systemInfoService.hasBattery = (status !== "No battery" && status !== "Unknown");
+                    systemInfoService.hasBattery = (status !== "No battery");
                 }
             }
         }
