@@ -10,62 +10,220 @@ Item {
     id: root
 
     property var managedPlayers: []
+    property var availablePlayers: []
+    property var availablePlayerIds: []
+    property var playerDisplayNames: ({
+    })
     property var activePlayer: null
     readonly property bool isPlaying: root.activePlayer !== null && (root.activePlayer.playbackState === 1 || root.activePlayer.playbackState === Mpris.Playing || String(root.activePlayer.playbackState).toLowerCase().includes("playing"))
     readonly property string activePlayerName: {
         if (!root.activePlayer)
-            return "Offline";
+            return "";
 
         let id = (root.activePlayer.identity || "").toLowerCase();
-        if (id.includes("spotify"))
+        let bus = (root.activePlayer.dbusName || "").toLowerCase();
+        if (id.includes("spotify") || bus.includes("spotify"))
             return "Spotify";
 
-        if (id.includes("youtube"))
+        if (id.includes("youtube") || bus.includes("youtube"))
             return "YouTube Music";
 
-        if (id.includes("kew"))
+        if (id.includes("kew") || bus.includes("kew"))
             return "Kew";
 
-        return root.activePlayer.identity || "";
+        if (id.includes("vlc") || bus.includes("vlc"))
+            return "VLC";
+
+        if (id.includes("mpv") || bus.includes("mpv"))
+            return "mpv";
+
+        return root.activePlayer.identity || root.getDisplayName(SettingsService.musicPlayer);
     }
 
-    function isPlayerRunning(name) {
-        for (let i = 0; i < root.managedPlayers.length; i++) {
-            let p = root.managedPlayers[i];
-            if (!p)
-                continue;
+    function toggleShuffle() {
+        if (!root.activePlayer)
+            return ;
 
-            let id = (p.identity || "").toLowerCase();
-            if (id.includes(name))
+        if (root.activePlayer.shuffleSupported) {
+            root.activePlayer.shuffle = !root.activePlayer.shuffle;
+        } else {
+            let bus = root.activePlayer.dbusName || "";
+            let pName = bus.replace("org.mpris.MediaPlayer2.", "");
+            if (pName)
+                mprisControlProc.command = ["playerctl", "-p", pName, "shuffle", "toggle"];
+            else
+                mprisControlProc.command = ["playerctl", "shuffle", "toggle"];
+            mprisControlProc.running = false;
+            mprisControlProc.running = true;
+        }
+    }
+
+    function cycleLoop() {
+        if (!root.activePlayer)
+            return ;
+
+        if (root.activePlayer.loopSupported) {
+            let curr = root.activePlayer.loopState;
+            let nextState = 0;
+            // Cycle: None (0) -> Playlist (2) -> Track (1) -> None (0)
+            if (curr === 0)
+                nextState = 2;
+            else if (curr === 2)
+                nextState = 1;
+            else
+                nextState = 0;
+            root.activePlayer.loopState = nextState;
+        } else {
+            let bus = root.activePlayer.dbusName || "";
+            let pName = bus.replace("org.mpris.MediaPlayer2.", "");
+            let nextArg = "toggle";
+            if (pName)
+                mprisControlProc.command = ["playerctl", "-p", pName, "loop", nextArg];
+            else
+                mprisControlProc.command = ["playerctl", "loop", nextArg];
+            mprisControlProc.running = false;
+            mprisControlProc.running = true;
+        }
+    }
+
+    function getDisplayName(id) {
+        if (!id)
+            return "";
+
+        if (id === "custom")
+            return "Custom Command";
+
+        if (root.playerDisplayNames && root.playerDisplayNames[id])
+            return root.playerDisplayNames[id];
+
+        for (let i = 0; i < root.availablePlayers.length; i++) {
+            if (root.availablePlayers[i].id === id)
+                return root.availablePlayers[i].name;
+
+        }
+        return id.split('-').map((word) => {
+            return word.charAt(0).toUpperCase() + word.slice(1);
+        }).join(' ');
+    }
+
+    function getPlayerById(id) {
+        for (let i = 0; i < root.availablePlayers.length; i++) {
+            if (root.availablePlayers[i].id === id)
+                return root.availablePlayers[i];
+
+        }
+        return null;
+    }
+
+    function matchesConfiguredPlayer(p) {
+        if (!p)
+            return false;
+
+        let pref = (SettingsService.musicPlayer || "").toLowerCase().trim();
+        if (!pref)
+            return false;
+
+        let id = (p.identity || "").toLowerCase();
+        let desktop = (p.desktopEntry || "").toLowerCase();
+        let bus = (p.dbusName || "").toLowerCase();
+        if (pref === "custom") {
+            let cmd = (SettingsService.musicPlayerCommand || "").toLowerCase().trim();
+            if (!cmd)
+                return false;
+
+            let bin = cmd.split(" ")[0].replace(/^.*\//, '');
+            if (!bin || bin === "kitty" || bin === "sh" || bin === "bash") {
+                let parts = cmd.split(" ");
+                for (let k = 1; k < parts.length; k++) {
+                    if (!parts[k].startsWith("-")) {
+                        bin = parts[k].replace(/^.*\//, '');
+                        break;
+                    }
+                }
+            }
+            return bin !== "" && (id.includes(bin) || desktop.includes(bin) || bus.includes(bin));
+        }
+        if (pref === "youtube-music" || pref === "youtube")
+            return id.includes("youtube") || desktop.includes("youtube") || bus.includes("youtube");
+
+        if (pref === "spotify")
+            return id.includes("spotify") || desktop.includes("spotify") || bus.includes("spotify");
+
+        if (pref === "kew")
+            return id.includes("kew") || desktop.includes("kew") || bus.includes("kew");
+
+        if (pref === "vlc")
+            return id.includes("vlc") || desktop.includes("vlc") || bus.includes("vlc");
+
+        if (pref === "mpv")
+            return id.includes("mpv") || desktop.includes("mpv") || bus.includes("mpv");
+
+        let playerObj = getPlayerById(pref);
+        if (playerObj) {
+            let targetDesktop = (playerObj.desktopEntry || "").toLowerCase();
+            let targetName = (playerObj.name || "").toLowerCase();
+            let targetId = (playerObj.id || "").toLowerCase();
+            let targetBin = (playerObj.exec || "").toLowerCase().split(" ")[0].replace(/^.*\//, '');
+            if (targetDesktop && desktop !== "" && (desktop === targetDesktop || desktop.includes(targetDesktop) || targetDesktop.includes(desktop)))
+                return true;
+
+            if (targetId && (id.includes(targetId) || (desktop !== "" && desktop.includes(targetId)) || bus.includes(targetId)))
+                return true;
+
+            if (targetName && (id.includes(targetName) || (id !== "" && targetName.includes(id))))
+                return true;
+
+            if (targetBin && (id.includes(targetBin) || (desktop !== "" && desktop.includes(targetBin)) || bus.includes(targetBin)))
                 return true;
 
         }
-        return false;
+        return (pref !== "" && id.includes(pref)) || (pref !== "" && desktop !== "" && desktop.includes(pref)) || (pref !== "" && bus.includes(pref));
+    }
+
+    function getPlayerScore(p) {
+        if (!p)
+            return -100;
+
+        let score = 0;
+        let bus = (p.dbusName || "").toLowerCase();
+        // Strongly prefer dedicated app MPRIS services over generic browser wrappers
+        if (bus.includes("chromium") || bus.includes("chrome") || bus.includes("brave"))
+            score -= 10;
+
+        if (p.shuffleSupported)
+            score += 5;
+
+        if (p.loopSupported)
+            score += 5;
+
+        return score;
     }
 
     function updatePlayer() {
         let players = managedPlayers;
-        let selected = null, playing = null;
+        let matchingPlaying = null;
+        let matchingPaused = null;
         for (let i = 0; i < players.length; i++) {
             let p = players[i];
             if (!p)
                 continue;
 
-            let id = (p.identity || "").toLowerCase();
-            if (!id.includes("brave") && (id.includes("spotify") || id.includes("youtube") || id.includes("kew"))) {
+            if (matchesConfiguredPlayer(p)) {
                 let active = p.playbackState === 1 || p.playbackState === Mpris.Playing || String(p.playbackState).toLowerCase().includes("playing");
                 if (active) {
-                    playing = p;
-                    break;
-                }
-                if (!selected)
-                    selected = p;
+                    if (!matchingPlaying || getPlayerScore(p) > getPlayerScore(matchingPlaying))
+                        matchingPlaying = p;
 
+                } else {
+                    if (!matchingPaused || getPlayerScore(p) > getPlayerScore(matchingPaused))
+                        matchingPaused = p;
+
+                }
             }
         }
-        let n = playing || selected || null;
-        if (root.activePlayer !== n)
-            root.activePlayer = n;
+        let chosen = matchingPlaying || matchingPaused || null;
+        if (root.activePlayer !== chosen)
+            root.activePlayer = chosen;
 
     }
 
@@ -95,18 +253,120 @@ Item {
         return m + ":" + (sec < 10 ? "0" : "") + sec;
     }
 
-    function killConfiguredPlayer() {
-        let cmd = SettingsService.musicPlayerCommand;
-        if (!cmd)
+    function launchPlayer() {
+        let playerObj = getPlayerById(SettingsService.musicPlayer);
+        let cmd = "";
+        let isTerminal = false;
+        if (SettingsService.musicPlayer === "custom") {
+            cmd = SettingsService.musicPlayerCommand;
+        } else if (playerObj) {
+            cmd = playerObj.exec;
+            isTerminal = playerObj.terminal;
+        } else {
+            cmd = SettingsService.musicPlayerCommand || SettingsService.musicPlayer;
+        }
+        if (!cmd || cmd.trim() === "")
             return ;
 
-        let name = cmd.includes("kew") ? "kew" : cmd.includes("spotify") ? "spotify" : cmd.includes("youtube-music") ? "youtube-music" : cmd.trim().split(" ")[0];
-        killProc.command = ["killall", "-9", name];
-        killProc.running = true;
+        let parts = cmd.trim().split(" ").filter((x) => {
+            return x !== "";
+        });
+        if (isTerminal && parts[0] !== "kitty" && parts[0] !== "alacritty" && parts[0] !== "foot")
+            parts = ["kitty", "-e"].concat(parts);
+
+        launcherProc.command = parts;
+        launcherProc.running = false;
+        launcherProc.startDetached();
+    }
+
+    function killConfiguredPlayer() {
+        let cmd = SettingsService.musicPlayerCommand;
+        if (!cmd || cmd.trim() === "")
+            cmd = SettingsService.musicPlayer;
+
+        if (!cmd || cmd.trim() === "")
+            return ;
+
+        let parts = cmd.trim().split(" ");
+        let binary = parts[0];
+        if (binary === "kitty" || binary === "sh" || binary === "bash") {
+            for (let i = 1; i < parts.length; i++) {
+                if (!parts[i].startsWith("-")) {
+                    binary = parts[i];
+                    break;
+                }
+            }
+        }
+        binary = binary.replace(/^.*\//, '');
+        if (binary) {
+            killProc.command = ["killall", "-9", binary];
+            killProc.running = false;
+            killProc.running = true;
+        }
+    }
+
+    Process {
+        id: playerScannerProc
+
+        command: ["python3", Quickshell.shellDir + "/Scripts/get_music_players.py"]
+        Component.onCompleted: running = true
+        onExited: (exitCode) => {
+            if (exitCode === 0) {
+                try {
+                    let parsed = JSON.parse(playerScannerOutput.text.trim());
+                    if (Array.isArray(parsed)) {
+                        root.availablePlayers = parsed;
+                        let ids = [];
+                        let names = {
+                        };
+                        for (let i = 0; i < parsed.length; i++) {
+                            let p = parsed[i];
+                            ids.push(p.id);
+                            names[p.id] = p.name;
+                        }
+                        root.availablePlayerIds = ids;
+                        root.playerDisplayNames = names;
+                        if (SettingsService.musicPlayer === "spotify" && ids.indexOf("spotify") === -1 && ids.length > 0) {
+                            SettingsService.musicPlayer = ids[0];
+                            let firstObj = parsed[0];
+                            SettingsService.musicPlayerCommand = firstObj.exec || ids[0];
+                        }
+                        root.updatePlayer();
+                    }
+                } catch (e) {
+                    console.error("Error parsing music players: " + e);
+                }
+            }
+        }
+
+        stdout: StdioCollector {
+            id: playerScannerOutput
+        }
+
+    }
+
+    Process {
+        id: launcherProc
     }
 
     Process {
         id: killProc
+    }
+
+    Process {
+        id: mprisControlProc
+    }
+
+    Connections {
+        function onMusicPlayerChanged() {
+            root.updatePlayer();
+        }
+
+        function onMusicPlayerCommandChanged() {
+            root.updatePlayer();
+        }
+
+        target: SettingsService
     }
 
     Timer {

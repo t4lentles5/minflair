@@ -10,40 +10,24 @@ import qs.Core.Services
 Card {
     id: root
 
-    property string username: GithubService.username
-    property string avatarUrl: GithubService.avatarUrl
-    property string fullName: GithubService.fullName
-    property string bio: GithubService.bio
-    property string location: GithubService.location
-    property int publicRepos: GithubService.publicRepos
-    property int privateRepos: GithubService.privateRepos
-    property int followers: GithubService.followers
-    property int totalStars: GithubService.totalStars
-    property int totalForks: GithubService.totalForks
-    property string topRepoName: GithubService.topRepoName
-    property string topRepoDesc: GithubService.topRepoDesc
-    property int topRepoStars: GithubService.topRepoStars
-    property int topRepoForks: GithubService.topRepoForks
-    property string topRepoLang: GithubService.topRepoLang
-    property string joinedDate: GithubService.joinedDate
-    property int totalCommits: GithubService.totalCommits
-    property string topLanguage: GithubService.topLanguage
-
     clip: true
+    contentPadding: Constants.sizeMd
+    implicitWidth: 280
+    implicitHeight: (GithubService.username !== "" ? profileLayout.implicitHeight : errorLayout.implicitHeight) + root.contentPadding * 2
 
     ColumnLayout {
         id: profileLayout
 
         anchors.fill: parent
-        spacing: Constants.sizeXs
-        visible: root.username !== ""
+        spacing: Constants.sizeSm
+        visible: GithubService.username !== ""
 
         RowLayout {
             Layout.fillWidth: true
             spacing: Constants.sizeMd
 
             TapHandler {
-                onTapped: Qt.openUrlExternally("https://github.com/" + root.username)
+                onTapped: Qt.openUrlExternally("https://github.com/" + GithubService.username)
             }
 
             HoverHandler {
@@ -119,7 +103,7 @@ Card {
                         id: userImage
 
                         anchors.fill: parent
-                        source: (root.avatarUrl || root.username) ? (root.avatarUrl || "https://github.com/identicons/" + root.username + ".png") : ""
+                        source: (GithubService.avatarUrl || GithubService.username) ? (GithubService.avatarUrl || "https://github.com/identicons/" + GithubService.username + ".png") : ""
                         fillMode: Image.PreserveAspectCrop
                         sourceSize: Qt.size(88, 88)
                         mipmap: true
@@ -157,8 +141,8 @@ Card {
                 Layout.alignment: Qt.AlignVCenter
 
                 ThemedText {
-                    text: root.fullName || root.username
-                    font.pixelSize: Constants.sizeMd
+                    text: GithubService.fullName || GithubService.username
+                    customSize: Constants.sizeMd
                     font.bold: true
                     color: Theme.fg
                     elide: Text.ElideRight
@@ -166,8 +150,7 @@ Card {
                 }
 
                 ThemedText {
-                    text: "@" + root.username
-                    font.pixelSize: Constants.sizeSm
+                    text: "@" + GithubService.username
                     color: Theme.muted
                     elide: Text.ElideRight
                     Layout.fillWidth: true
@@ -178,8 +161,8 @@ Card {
         }
 
         ThemedText {
-            visible: root.bio !== ""
-            text: root.bio
+            visible: GithubService.bio !== ""
+            text: GithubService.bio
             color: Theme.fg
             wrapMode: Text.WordWrap
             Layout.fillWidth: true
@@ -188,7 +171,6 @@ Card {
 
             font {
                 italic: true
-                pixelSize: Constants.sizeSm
             }
 
         }
@@ -200,31 +182,31 @@ Card {
             id: statsLayout
 
             Layout.fillWidth: true
-            spacing: Constants.sizeXs
+            spacing: 4
 
             InfoRow {
                 visible: GithubService.hasToken
                 icon: "commit"
                 label: "Total Commits"
-                value: String(root.totalCommits)
+                value: String(GithubService.totalCommits)
             }
 
             InfoRow {
                 icon: "star"
                 label: "Total Stars"
-                value: String(root.totalStars)
+                value: String(GithubService.totalStars)
             }
 
             InfoRow {
                 icon: "code"
                 label: "Repositories"
-                value: String(root.publicRepos + (GithubService.hasToken ? root.privateRepos : 0))
+                value: String(GithubService.publicRepos + (GithubService.hasToken ? GithubService.privateRepos : 0))
             }
 
             InfoRow {
                 icon: "fork"
                 label: "Total Forks"
-                value: String(root.totalForks)
+                value: String(GithubService.totalForks)
             }
 
         }
@@ -232,14 +214,14 @@ Card {
         Card {
             Layout.fillWidth: true
             backgroundColor: Theme.bgSecondary
-            contentPadding: Constants.sizeMd
-            visible: root.topRepoName !== "..." && root.topRepoName !== "None"
+            contentPadding: Constants.sizeSm
+            visible: GithubService.topRepoName !== "..." && GithubService.topRepoName !== "None"
             scale: repoHover.hovered ? 1.02 : 1
             radius: Constants.sizeSm
             useBorder: false
 
             TapHandler {
-                onTapped: Qt.openUrlExternally("https://github.com/" + root.username + "/" + root.topRepoName)
+                onTapped: Qt.openUrlExternally("https://github.com/" + GithubService.username + "/" + GithubService.topRepoName)
             }
 
             HoverHandler {
@@ -264,8 +246,7 @@ Card {
                     }
 
                     ThemedText {
-                        text: root.topRepoName.replace(/^.*\//, "")
-                        font.pixelSize: Constants.sizeSm
+                        text: GithubService.topRepoName.replace(/^.*\//, "")
                         font.bold: true
                         color: Theme.fg
                         Layout.fillWidth: true
@@ -275,9 +256,9 @@ Card {
                 }
 
                 ThemedText {
-                    visible: root.topRepoDesc !== ""
-                    text: root.topRepoDesc
-                    font.pixelSize: Constants.sizeXs + 2
+                    visible: GithubService.topRepoDesc !== ""
+                    text: GithubService.topRepoDesc
+                    customSize: Constants.sizeXs + 2
                     color: Theme.muted
                     wrapMode: Text.WordWrap
                     Layout.fillWidth: true
@@ -292,7 +273,7 @@ Card {
 
                     RowLayout {
                         spacing: 4
-                        visible: root.topRepoLang !== ""
+                        visible: GithubService.topRepoLang !== ""
 
                         Rectangle {
                             width: 6
@@ -302,8 +283,8 @@ Card {
                         }
 
                         ThemedText {
-                            text: root.topRepoLang
-                            font.pixelSize: Constants.sizeXs + 2
+                            text: GithubService.topRepoLang
+                            customSize: Constants.sizeXs + 2
                             color: Theme.muted
                         }
 
@@ -311,7 +292,7 @@ Card {
 
                     RowLayout {
                         spacing: 4
-                        visible: root.topRepoStars > 0
+                        visible: GithubService.topRepoStars > 0
 
                         SvgIcon {
                             icon: "star"
@@ -321,8 +302,8 @@ Card {
                         }
 
                         ThemedText {
-                            text: String(root.topRepoStars)
-                            font.pixelSize: Constants.sizeXs + 2
+                            text: String(GithubService.topRepoStars)
+                            customSize: Constants.sizeXs + 2
                             color: Theme.muted
                         }
 
@@ -330,7 +311,7 @@ Card {
 
                     RowLayout {
                         spacing: 4
-                        visible: root.topRepoForks > 0
+                        visible: GithubService.topRepoForks > 0
 
                         SvgIcon {
                             icon: "fork"
@@ -340,8 +321,8 @@ Card {
                         }
 
                         ThemedText {
-                            text: String(root.topRepoForks)
-                            font.pixelSize: Constants.sizeXs + 2
+                            text: String(GithubService.topRepoForks)
+                            customSize: Constants.sizeXs + 2
                             color: Theme.muted
                         }
 
@@ -368,7 +349,7 @@ Card {
 
         anchors.fill: parent
         anchors.margins: Constants.sizeLg
-        visible: root.username === ""
+        visible: GithubService.username === ""
         spacing: Constants.sizeSm
 
         Item {
@@ -399,7 +380,7 @@ Card {
         ThemedText {
             text: "Username Required"
             color: Theme.fg
-            font.pixelSize: Constants.sizeMd
+            customSize: Constants.sizeMd
             font.bold: true
             Layout.alignment: Qt.AlignHCenter
         }
@@ -407,7 +388,6 @@ Card {
         ThemedText {
             text: "Configure your GitHub username in settings to view your statistics."
             color: Theme.muted
-            font.pixelSize: Constants.sizeSm
             horizontalAlignment: Text.AlignHCenter
             wrapMode: Text.WordWrap
             Layout.fillWidth: true

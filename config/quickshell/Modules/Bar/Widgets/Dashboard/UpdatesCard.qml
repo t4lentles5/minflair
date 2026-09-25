@@ -19,9 +19,14 @@ Card {
         AppState.openPopup("packagemanager");
     }
 
+    contentPadding: Constants.sizeMd
+    implicitHeight: contentCol.implicitHeight + root.contentPadding * 2
+
     ColumnLayout {
+        id: contentCol
+
         anchors.fill: parent
-        spacing: Constants.sizeSm
+        spacing: Constants.sizeXs
 
         RowLayout {
             Layout.fillWidth: true
@@ -29,7 +34,7 @@ Card {
 
             ThemedText {
                 text: "System Updates"
-                font.pixelSize: Constants.sizeMd
+                customSize: Constants.sizeMd
                 font.bold: true
                 color: Theme.fg
             }
@@ -53,7 +58,7 @@ Card {
                         let total = (parseInt(root.pacmanUpdates) || 0) + (parseInt(root.aurUpdates) || 0);
                         return total + " NEW";
                     }
-                    font.pixelSize: Constants.sizeXs
+                    customSize: Constants.sizeXs + 1
                     font.bold: true
                     color: Theme.accent
                 }
@@ -126,7 +131,6 @@ Card {
                             let total = (parseInt(root.pacmanUpdates) || 0) + (parseInt(root.aurUpdates) || 0);
                             return total > 0 ? total + " packages pending" : "System up to date";
                         }
-                        font.pixelSize: Constants.sizeSm
                         font.bold: true
                         color: Theme.fg
                     }
@@ -142,7 +146,7 @@ Card {
 
                             return "All packages are currently up to date";
                         }
-                        font.pixelSize: Constants.sizeXs
+                        customSize: Constants.sizeXs + 1
                         color: Theme.muted
                     }
 

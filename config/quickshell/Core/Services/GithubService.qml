@@ -1,4 +1,6 @@
 import QtQuick
+import Quickshell
+import Quickshell.Io
 import qs.Core.Services
 pragma Singleton
 
@@ -7,7 +9,7 @@ Item {
 
     property string username: SettingsService.githubUsername
     property string token: SettingsService.githubToken
-    property bool hasToken: token !== undefined && token !== ""
+    property bool hasToken: false
     property string avatarUrl: ""
     property string fullName: ""
     property string bio: ""
@@ -26,13 +28,23 @@ Item {
     property int totalCommits: 0
     property string topLanguage: "None"
     property bool isFetching: false
+    property var contributionData: []
 
     function fetchData() {
         debounceTimer.restart();
     }
 
+    function getCleanToken() {
+        if (!githubService.token)
+            return "";
+
+        return ("" + githubService.token).replace(/[\r\n\t\x00-\x1f\x7f-\xff\s]/g, "").trim();
+    }
+
     function executeFetch() {
-        if (githubService.username === "") {
+        let user = ("" + githubService.username).replace(/[\r\n\t\x00-\x1f\x7f-\xff\s]/g, "").trim();
+        if (user === "") {
+            githubService.hasToken = false;
             githubService.avatarUrl = "";
             githubService.fullName = "";
             githubService.bio = "";
@@ -50,147 +62,85 @@ Item {
             githubService.topRepoLang = "";
             githubService.topLanguage = "None";
             githubService.totalCommits = 0;
+            githubService.contributionData = [];
             return ;
         }
         githubService.isFetching = true;
-        fetchProfile();
-        fetchRepos();
-        if (githubService.hasToken)
-            fetchCommits();
-        else
-            githubService.totalCommits = 0;
+        fetchInfoProc.running = false;
+        fetchInfoProc.running = true;
+        fetchContributions(user);
     }
 
-    function fetchProfile() {
-        let req = new XMLHttpRequest();
-        req.onreadystatechange = function() {
-            if (req.readyState === XMLHttpRequest.DONE) {
-                if (req.status === 200) {
-                    try {
-                        let profile = JSON.parse(req.responseText);
-                        if (profile.message && profile.message.includes("API rate limit"))
-                            return ;
+    function applyProfileData(profile) {
+        if (!profile || !profile.login)
+            return ;
 
-                        if (profile.login) {
-                            githubService.avatarUrl = profile.avatar_url || "";
-                            githubService.fullName = profile.name || "";
-                            githubService.bio = profile.bio || "";
-                            githubService.location = profile.location || "";
-                            githubService.publicRepos = profile.public_repos || 0;
-                            if (githubService.hasToken)
-                                githubService.privateRepos = profile.total_private_repos || profile.owned_private_repos || 0;
-
-                            githubService.followers = profile.followers || 0;
-                            if (profile.created_at) {
-                                let date = new Date(profile.created_at);
-                                let months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-                                githubService.joinedDate = months[date.getMonth()] + " " + date.getFullYear();
-                            }
-                        }
-                    } catch (e) {
-                        console.error("Github profile parse error: " + e);
-                    }
-                }
-                checkFetchingComplete();
-            }
-        };
-        let url = githubService.hasToken ? "https://api.github.com/user" : ("https://api.github.com/users/" + githubService.username);
-        req.open("GET", url);
-        if (githubService.hasToken)
-            req.setRequestHeader("Authorization", "token " + githubService.token);
-
-        req.send();
+        githubService.avatarUrl = profile.avatar_url || "";
+        githubService.fullName = profile.name || "";
+        githubService.bio = profile.bio || "";
+        githubService.location = profile.location || "";
+        githubService.publicRepos = profile.public_repos || 0;
+        githubService.followers = profile.followers || 0;
+        if (profile.created_at) {
+            let date = new Date(profile.created_at);
+            let months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+            githubService.joinedDate = months[date.getMonth()] + " " + date.getFullYear();
+        }
     }
 
-    function fetchRepos() {
-        let req = new XMLHttpRequest();
-        req.onreadystatechange = function() {
-            if (req.readyState === XMLHttpRequest.DONE) {
-                if (req.status === 200) {
-                    try {
-                        let repos = JSON.parse(req.responseText);
-                        if (Array.isArray(repos)) {
-                            let starsSum = 0;
-                            let forksSum = 0;
-                            let maxStars = -1;
-                            let bestRepoName = "";
-                            let bestRepoDesc = "";
-                            let bestRepoStars = 0;
-                            let bestRepoForks = 0;
-                            let bestRepoLang = "";
-                            let langCounts = {
-                            };
-                            for (let i = 0; i < repos.length; i++) {
-                                let r = repos[i];
-                                if (!r)
-                                    continue;
+    function applyReposData(repos) {
+        if (Array.isArray(repos)) {
+            let starsSum = 0;
+            let forksSum = 0;
+            let maxStars = -1;
+            let bestRepoName = "";
+            let bestRepoDesc = "";
+            let bestRepoStars = 0;
+            let bestRepoForks = 0;
+            let bestRepoLang = "";
+            let langCounts = {
+            };
+            for (let i = 0; i < repos.length; i++) {
+                let r = repos[i];
+                if (!r)
+                    continue;
 
-                                starsSum += r.stargazers_count || 0;
-                                forksSum += r.forks_count || 0;
-                                if (r.stargazers_count > maxStars) {
-                                    maxStars = r.stargazers_count;
-                                    bestRepoName = r.name;
-                                    bestRepoDesc = r.description || "";
-                                    bestRepoStars = r.stargazers_count || 0;
-                                    bestRepoForks = r.forks_count || 0;
-                                    bestRepoLang = r.language || "";
-                                }
-                                if (r.language)
-                                    langCounts[r.language] = (langCounts[r.language] || 0) + 1;
-
-                            }
-                            githubService.totalStars = starsSum;
-                            githubService.totalForks = forksSum;
-                            githubService.topRepoName = bestRepoName || "None";
-                            githubService.topRepoDesc = bestRepoDesc;
-                            githubService.topRepoStars = bestRepoStars;
-                            githubService.topRepoForks = bestRepoForks;
-                            githubService.topRepoLang = bestRepoLang;
-                            let mostLang = "None";
-                            let maxLangCount = 0;
-                            for (let lang in langCounts) {
-                                if (langCounts[lang] > maxLangCount) {
-                                    maxLangCount = langCounts[lang];
-                                    mostLang = lang;
-                                }
-                            }
-                            githubService.topLanguage = mostLang;
-                        }
-                    } catch (e) {
-                        console.error("Github repos parse error: " + e);
-                    }
+                starsSum += r.stargazers_count || 0;
+                forksSum += r.forks_count || 0;
+                if (r.stargazers_count > maxStars) {
+                    maxStars = r.stargazers_count;
+                    bestRepoName = r.name;
+                    bestRepoDesc = r.description || "";
+                    bestRepoStars = r.stargazers_count || 0;
+                    bestRepoForks = r.forks_count || 0;
+                    bestRepoLang = r.language || "";
                 }
-                checkFetchingComplete();
-            }
-        };
-        let url = githubService.hasToken ? "https://api.github.com/user/repos?per_page=100&type=owner" : ("https://api.github.com/users/" + githubService.username + "/repos?per_page=100");
-        req.open("GET", url);
-        if (githubService.hasToken)
-            req.setRequestHeader("Authorization", "token " + githubService.token);
+                if (r.language)
+                    langCounts[r.language] = (langCounts[r.language] || 0) + 1;
 
-        req.send();
+            }
+            githubService.totalStars = starsSum;
+            githubService.totalForks = forksSum;
+            githubService.topRepoName = bestRepoName || "None";
+            githubService.topRepoDesc = bestRepoDesc;
+            githubService.topRepoStars = bestRepoStars;
+            githubService.topRepoForks = bestRepoForks;
+            githubService.topRepoLang = bestRepoLang;
+            let mostLang = "None";
+            let maxLangCount = 0;
+            for (let lang in langCounts) {
+                if (langCounts[lang] > maxLangCount) {
+                    maxLangCount = langCounts[lang];
+                    mostLang = lang;
+                }
+            }
+            githubService.topLanguage = mostLang;
+        }
     }
 
-    function fetchCommits() {
-        let req = new XMLHttpRequest();
-        req.onreadystatechange = function() {
-            if (req.readyState === XMLHttpRequest.DONE) {
-                if (req.status === 200) {
-                    try {
-                        let search = JSON.parse(req.responseText);
-                        if (search && search.total_count !== undefined)
-                            githubService.totalCommits = search.total_count;
-
-                    } catch (e) {
-                        console.error("Github commits parse error: " + e);
-                    }
-                }
-                checkFetchingComplete();
-            }
-        };
-        req.open("GET", "https://api.github.com/search/commits?q=author:" + githubService.username);
-        req.setRequestHeader("Authorization", "token " + githubService.token);
-        req.send();
+    function fetchContributions(user) {
+        contribProc.running = false;
+        contribProc.running = true;
     }
 
     function checkFetchingComplete() {
@@ -199,6 +149,80 @@ Item {
 
     onUsernameChanged: fetchData()
     onTokenChanged: fetchData()
+
+    Process {
+        id: fetchInfoProc
+
+        command: {
+            let user = ("" + githubService.username).trim();
+            let tok = ("" + githubService.token).replace(/[\r\n\t\x00-\x1f\x7f-\xff\s]/g, "").trim();
+            if (tok !== "")
+                return ["python3", Quickshell.shellDir + "/Scripts/fetch_github_info.py", user, tok];
+
+            return ["python3", Quickshell.shellDir + "/Scripts/fetch_github_info.py", user];
+        }
+        onExited: (exitCode) => {
+            if (exitCode === 0) {
+                try {
+                    let parsed = JSON.parse(fetchInfoOutput.text);
+                    if (parsed.profile) {
+                        githubService.hasToken = parsed.hasToken === true;
+                        applyProfileData(parsed.profile);
+                        if (githubService.hasToken)
+                            githubService.privateRepos = parsed.profile.total_private_repos || parsed.profile.owned_private_repos || 0;
+                        else
+                            githubService.privateRepos = 0;
+                    }
+                    if (parsed.repos)
+                        applyReposData(parsed.repos);
+
+                    if (parsed.commits && parsed.commits.total_count !== undefined)
+                        githubService.totalCommits = parsed.commits.total_count;
+                    else
+                        githubService.totalCommits = 0;
+                } catch (e) {
+                    console.error("Github fetch error: " + e);
+                }
+            }
+            checkFetchingComplete();
+        }
+
+        stdout: StdioCollector {
+            id: fetchInfoOutput
+        }
+
+    }
+
+    Process {
+        id: contribProc
+
+        command: {
+            let user = ("" + githubService.username).trim();
+            let tok = ("" + githubService.token).replace(/[\r\n\t\x00-\x1f\x7f-\xff\s]/g, "").trim();
+            if (tok !== "")
+                return ["python3", Quickshell.shellDir + "/Scripts/fetch_github_contributions.py", user, tok];
+
+            return ["python3", Quickshell.shellDir + "/Scripts/fetch_github_contributions.py", user];
+        }
+        onExited: (exitCode) => {
+            if (exitCode === 0) {
+                try {
+                    let parsed = JSON.parse(contribOutput.text);
+                    if (Array.isArray(parsed) && parsed.length > 0)
+                        githubService.contributionData = parsed;
+
+                } catch (e) {
+                    console.error("Contributions parse error: " + e);
+                }
+            }
+            checkFetchingComplete();
+        }
+
+        stdout: StdioCollector {
+            id: contribOutput
+        }
+
+    }
 
     Timer {
         id: debounceTimer

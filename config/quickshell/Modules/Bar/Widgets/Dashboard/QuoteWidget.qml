@@ -9,6 +9,7 @@ Item {
     id: root
 
     implicitHeight: mainLayout.implicitHeight
+    implicitWidth: 350
     Layout.fillWidth: true
     state: "visible"
     states: [
@@ -16,7 +17,7 @@ Item {
             name: "visible"
 
             PropertyChanges {
-                target: quoteContainer
+                target: mainLayout
                 opacity: 1
             }
 
@@ -25,7 +26,7 @@ Item {
             name: "hidden"
 
             PropertyChanges {
-                target: quoteContainer
+                target: mainLayout
                 opacity: 0
             }
 
@@ -71,7 +72,7 @@ Item {
         anchors.top: parent.top
         anchors.margins: -Constants.sizeXs
         text: "“"
-        font.pixelSize: 80
+        customSize: Constants.size4Xl * 1.5
         font.family: Constants.fontFamily
         font.bold: true
         color: Theme.bgSecondary
@@ -95,65 +96,53 @@ Item {
         id: mainLayout
 
         anchors.fill: parent
-        spacing: 4
+        spacing: Constants.sizeXs
 
-        ColumnLayout {
-            id: quoteContainer
-
+        TypewriterText {
+            text: "“" + QuoteService.currentQuote.text + "”"
+            customSize: Constants.sizeSm + 1
+            font.family: Constants.fontFamily
+            font.italic: true
+            color: Theme.fg
+            opacity: clickArea.containsMouse ? 1 : 0.85
+            wrapMode: Text.WordWrap
             Layout.fillWidth: true
-            Layout.fillHeight: true
-            spacing: 0
+            horizontalAlignment: Text.AlignLeft
+            lineHeight: 1.2
+            typeInterval: 20
+
+            Behavior on opacity {
+                NumberAnimation {
+                    duration: Constants.animFast
+                }
+
+            }
+
+        }
+
+        RowLayout {
+            Layout.fillWidth: true
+            spacing: Constants.sizeXs
+
+            Item {
+                Layout.fillWidth: true
+            }
+
+            Divider {
+                implicitWidth: 12
+                Layout.fillWidth: false
+            }
 
             TypewriterText {
-                text: "“" + QuoteService.currentQuote.text + "”"
-                font.pixelSize: Constants.sizeSm + 1
-                font.family: Constants.fontFamily
-                font.italic: true
-                color: Theme.fg
-                opacity: clickArea.containsMouse ? 1 : 0.8
-                wrapMode: Text.WordWrap
-                Layout.fillWidth: true
-                horizontalAlignment: Text.AlignLeft
-                lineHeight: 1.2
-                typeInterval: 20
+                text: QuoteService.currentQuote.author
+                customSize: Constants.sizeXs + 2
+                color: Theme.muted
+                Layout.alignment: Qt.AlignVCenter
+                typeInterval: 40
 
                 Behavior on opacity {
                     NumberAnimation {
                         duration: Constants.animFast
-                    }
-
-                }
-
-            }
-
-            Item {
-                Layout.fillHeight: true
-            }
-
-            RowLayout {
-                Layout.fillWidth: true
-
-                Item {
-                    Layout.fillWidth: true
-                }
-
-                Divider {
-                    implicitWidth: 12
-                    Layout.fillWidth: false
-                }
-
-                TypewriterText {
-                    text: QuoteService.currentQuote.author
-                    font.pixelSize: Constants.sizeXs + 2
-                    color: Theme.muted
-                    Layout.alignment: Qt.AlignVCenter
-                    typeInterval: 40
-
-                    Behavior on opacity {
-                        NumberAnimation {
-                            duration: Constants.animFast
-                        }
-
                     }
 
                 }
