@@ -2,9 +2,9 @@
 
 # Minflair
 
-**A custom Hyprland environment for Arch Linux, built around dynamic theming and Quickshell.**
+**A modular, aesthetic Hyprland desktop environment for Arch Linux, powered by Quickshell and dynamic system-wide theming.**
 
-<img src="https://res.cloudinary.com/diu2godjy/image/upload/v1786064817/output_sthtxe.webp" alt="Preview" />
+<img src="https://res.cloudinary.com/diu2godjy/image/upload/v1790370056/output_qn24n5.webp" alt="Preview" />
 
 </div>
 
@@ -12,12 +12,15 @@
 
 ## ✨ Features
 
-- 🎨 **Dynamic Theming** — Generate custom color schemes dynamically directly from your current wallpaper, alongside 2 default static themes.
-- 🖥️ **Quickshell Integration** — GTK, Neovim, Starship, Kitty, and Hyprland have their colors generated dynamically from Quickshell, ensuring a fully unified system theme.
-- 🖼️ **Wallpaper Selector** — Browse and apply wallpapers directly from a built-in widget.
-- 🔒 **Lock Screen** — Custom Lock Screen built entirely in Quickshell, fully integrated with your dynamic theme.
-- ⚡ **Zsh** — Configured with Starship prompt, fzf-tab, autosuggestions, syntax highlighting, and history substring search.
-- 📝 **Neovim** — Full Lua config with lazy.nvim, auto-synced color scheme.
+- 🎨 **Multi-Style Shell Architecture** — Seamlessly switch between 5 distinct visual styles: **Convex**, **Framed**, **Island**, **Notch**, and **Minflair**.
+- 🌈 **Modular Dynamic Theming** — Generate and auto-apply harmonious color schemes from your current wallpaper across GTK, Qt, Neovim, Starship, Kitty, Hyprland, LazyGit, and Btop.
+- 🔤 **Font & Cursor Management** — Easily customize and apply global system fonts, font sizes, and cursor themes directly from the Settings UI.
+- 🎵 **Dedicated Music & Visualizer** — Standalone music popup featuring a live Cava audio visualizer, synchronized lyrics, and media playback controls.
+- 📦 **Rich Package Manager** — Native graphical package manager with deep package inspection (dependencies, relations, specs, resources) and AUR support.
+- 🖼️ **Wallpaper Selector** — Browse, search, and apply wallpapers directly from an interactive grid widget.
+- 🔒 **Lock Screen** — Custom Lock Screen built in Quickshell with IPC controller support and robust PAM authentication.
+- ⚡ **Zsh & Neovim** — Fully configured developer environment with Starship, fzf-tab, LazyGit, and Neovim (lazy.nvim) auto-synced with your theme.
+- 🔋 **Battery Life Optimization** — Integrated 80% charge limit toggle supporting major laptop vendors (ASUS, Lenovo, Dell, Acer, Apple Silicon, etc.).
 
 ---
 
@@ -83,47 +86,68 @@ If anything goes wrong, the installer creates a timestamped backup of your previ
 ~/.dotfiles_backup/<timestamp>/
 ```
 
+### 6. OCR Language Support
+
+The built-in Optical Character Recognition (OCR) feature comes with English (`tesseract-data-eng`) and Spanish (`tesseract-data-spa`) support installed by default. If you need support for other languages, you must install the respective `tesseract-data-*` package via pacman. For example, for French:
+
+```bash
+sudo pacman -S tesseract-data-fra
+```
+
+### 7. Battery Charge Limit (Laptops)
+
+The Sidebar Control Center includes a quick toggle to cap your battery charge (typically at 80%) to prolong battery lifespan. The installer automatically configures hardware detection and passwordless toggle permissions for supported laptop vendors:
+
+- **Acer**: Automatically installs `acer-wmi-battery-dkms`.
+- **ASUS** (ROG, TUF, ZenBook): Handled natively via the `asus-wmi` kernel driver.
+- **Lenovo** (ThinkPad, IdeaPad, Legion): Handled natively via `thinkpad_acpi` / `ideapad_laptop` conservation mode.
+- **Dell**: Supported with `libsmbios` / kernel sysfs.
+- **Framework, LG Gram, Samsung, Sony Vaio, Huawei, Apple Silicon, System76**: Supported natively through Linux kernel battery drivers.
+
 ---
 
 ## 🖥️ Quickshell Widgets
 
 This rice features a collection of custom widgets built with Quickshell, designed to be fast, interactive, and completely integrated with the system's dynamic styling:
 
-- **Main Panel**: A comprehensive hub featuring 3 tabs:
-  - **Dashboard**: GitHub stats (including top repo), media player, package updates, and a random quote.
-  - **Performance**: Real-time monitoring for CPU, RAM, VRAM, and Disk usage.
-  - **Activity**: Daily screen time tracking and your top 5 most used applications.
-    <img src="https://res.cloudinary.com/diu2godjy/image/upload/v1786064956/output_rzqhid.webp" alt="Main Panel Widget" />
+- **Dashboard**: An integrated dashboard featuring your GitHub contributions graph, system statistics, package updates, and daily quotes.
+  <img src="https://res.cloudinary.com/diu2godjy/image/upload/v1790370208/Shot-2026-09-25-160258_jxwpzx.png" alt="Dashboard Widget" />
 
-- **Settings App**: A dedicated graphical interface to configure your rice, credentials, and preferences effortlessly without manually editing files.
-  <img src="https://res.cloudinary.com/diu2godjy/image/upload/v1786065403/Shot-2026-08-06-201609_biioiv.png" alt="Settings App" />
+- **Music & Lyrics Popup**: A standalone media interface with a real-time Cava audio visualizer, synchronized lyrics via `LyricsService`, progress wave, and full playback controls.
+  <img src="https://res.cloudinary.com/diu2godjy/image/upload/v1790370379/Shot-2026-09-25-160553_tjqvhh.png" alt="Music and Lyrics Popup Widget" />
 
-- **Lock Screen**: A fully functional custom lock screen built entirely in Quickshell, fully integrated with your dynamic theme.
-  <img src="https://res.cloudinary.com/diu2godjy/image/upload/v1786065276/Shot-2026-08-06-201413_s6pdnd.png" alt="Lock Screen Widget" />
+- **Settings App**: A modular graphical interface built on `SidebarAppWindow` to configure your rice, bar styles, credentials, and preferences effortlessly without manually editing files.
+  <img src="https://res.cloudinary.com/diu2godjy/image/upload/v1790370463/Shot-2026-09-25-160728_s57pwz.png" alt="Settings App Widget" />
 
-- **Keybinds Cheat Sheet**: A built-in, searchable overlay that displays all your configured shortcuts directly on your desktop.
-  <img src="https://res.cloudinary.com/diu2godjy/image/upload/v1786065694/Shot-2026-08-06-202115_thcy6l.png" alt="Keybinds Cheat Sheet Widget" />
+- **Lock Screen**: A fully functional custom lock screen with external IPC controller and PAM authentication, fully integrated with your dynamic theme.
+  <img src="https://res.cloudinary.com/diu2godjy/image/upload/v1790371434/Shot-2026-09-25-162333_vn5jwk.png" alt="Lock Screen Widget" />
+
+- **Keybinds Cheat Sheet**: A built-in, searchable overlay built on `SearchAppWindow` that displays all your configured shortcuts directly on your desktop.
+  <img src="https://res.cloudinary.com/diu2godjy/image/upload/v1790370703/Shot-2026-09-25-161127_z3d2da.png" alt="Keybinds Cheat Sheet Widget" />
 
 - **Wallpaper Selector**: An interactive grid browser that lets you preview and apply wallpapers from `~/Pictures/Wallpapers/` on the fly.
-  <img src="https://res.cloudinary.com/diu2godjy/image/upload/v1786065056/Shot-2026-08-06-201025_snexor.png" alt="Wallpaper Selector Widget" />
+  <img src="https://res.cloudinary.com/diu2godjy/image/upload/v1790370867/Shot-2026-09-25-161410_huws7s.png" alt="Wallpaper Selector Widget" />
 
-- **Sidebar**: A unified control center featuring quick settings, performance modes and desktop notifications.
-  <img src="https://res.cloudinary.com/diu2godjy/image/upload/v1786065349/Shot-2026-08-06-201526_s0kvt6.png" alt="Sidebar Widget" />
+- **Sidebar (Control Center)**: A unified control center featuring quick toggles (Wifi, Bluetooth, Night Light, Game Mode, Caffeine, Battery Limit), brightness sliders, and desktop notifications.
+  <img src="https://res.cloudinary.com/diu2godjy/image/upload/v1790371044/Shot-2026-09-25-161627_wmeb7g.png" alt="Sidebar Control Center Widget" />
+
+- **System Tray**: A minimalist system tray popup to manage active background applications and status indicators with styled context menus.
+  <img src="https://res.cloudinary.com/diu2godjy/image/upload/v1790371570/Shot-2026-09-25-162550_khyllq.png" alt="System Tray Widget" />
 
 - **Application Launcher**: A clean, keyboard-navigable menu to search and run applications.
-  <img src="https://res.cloudinary.com/diu2godjy/image/upload/v1786065112/Shot-2026-08-06-201135_taednb.png" alt="Application Launcher Widget" />
+  <img src="https://res.cloudinary.com/diu2godjy/image/upload/v1790371113/Shot-2026-09-25-161814_planwy.png" alt="Application Launcher Widget" />
 
-- **Package Manager**: A graphical utility to search, install, update, and remove official Arch Linux and AUR packages easily.
-  <img src="https://res.cloudinary.com/diu2godjy/image/upload/v1786065503/Shot-2026-08-06-201806_urpbrj.png" alt="Package Manager Widget" />
+- **Package Manager**: A rich graphical utility to search, view package details, dependencies, relations, install, update, and remove official Arch Linux and AUR packages.
+  <img src="https://res.cloudinary.com/diu2godjy/image/upload/v1790371179/Shot-2026-09-25-161925_xky3ci.png" alt="Package Manager Widget" />
 
 - **Clipboard History**: A handy widget to browse and paste from your clipboard history.
-  <img src="https://res.cloudinary.com/diu2godjy/image/upload/v1786065192/Shot-2026-08-06-201251_dch65w.png" alt="Clipboard History Widget" />
+  <img src="https://res.cloudinary.com/diu2godjy/image/upload/v1790371276/Shot-2026-09-25-162101_m9c1ej.png" alt="Clipboard History Widget" />
 
-- **Screen Capture**: A dedicated tool for taking screenshots and recording your screen.
-  <img src="https://res.cloudinary.com/diu2godjy/image/upload/v1786065442/Shot-2026-08-06-201705_shhppn.png" alt="Screen Capture Widget" />
+- **Screen Capture**: A dedicated tool for taking screenshots (full, area, window, delay, OCR text extraction) and recording your screen.
+  <img src="https://res.cloudinary.com/diu2godjy/image/upload/v1790371339/Shot-2026-09-25-162202_ciawww.png" alt="Screen Capture Widget" />
 
 - **Power Menu**: A sleek menu for session management (shutdown, reboot, suspend, lock, logout).
-  <img src="https://res.cloudinary.com/diu2godjy/image/upload/v1786065544/Shot-2026-08-06-201847_mu6ewf.png" alt="Power Menu Widget" />
+  <img src="https://res.cloudinary.com/diu2godjy/image/upload/v1790371393/Shot-2026-09-25-162259_fktls0.png" alt="Power Menu Widget" />
 
 ## ⌨️ Keybinds
 
@@ -131,6 +155,26 @@ This rice features a collection of custom widgets built with Quickshell, designe
 > You don't need to memorize these! Press `SUPER + K` at any time to open the built-in **Keybinds Cheat Sheet** directly on your desktop!
 
 ## ❓ Troubleshooting
+
+<details>
+<summary><b>Inspect Quickshell logs or debug UI issues</b></summary>
+
+If any widget is not showing up or an error occurs in the UI, you can view live Quickshell logs in your terminal:
+
+```bash
+qs log
+```
+
+This will output real-time QML errors, warnings, missing components, or script failures.
+
+</details>
+
+<details>
+<summary><b>Battery charge limit toggle not working</b></summary>
+
+Ensure your laptop vendor supports charging thresholds via the Linux kernel. Check if your vendor's kernel module is loaded (e.g. `asus_wmi`, `ideapad_laptop`, `thinkpad_acpi`). For Acer laptops, the installer automatically configures `acer-wmi-battery-dkms`.
+
+</details>
 
 <details>
 <summary><b>Quickshell dashboard shows a generic avatar</b></summary>
@@ -185,9 +229,10 @@ If packages failed to install, ensure your mirrors are up to date (`sudo pacman 
 
 This project is licensed under the [GNU General Public License v3.0](LICENSE).
 
-### Third-Party Assets
+### Third-Party Assets & Projects
 
 - **Tabler Icons**: Licensed under the [MIT License](https://github.com/tabler/tabler-icons/blob/master/LICENSE).
 - **Material Symbols (Google Fonts)**: Licensed under the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0).
-- **Material GNOME Theme**: Licensed under the [GNU General Public License v3.0](https://github.com/SakibShahariar/material-gnome-theme/blob/main/LICENSE).
+- **Material GNOME Theme**: Custom fork at [t4lentles5/material-gnome-theme](https://github.com/t4lentles5/material-gnome-theme) (upstream: [SakibShahariar/material-gnome-theme](https://github.com/SakibShahariar/material-gnome-theme)), licensed under the [GNU General Public License v3.0](https://github.com/SakibShahariar/material-gnome-theme/blob/main/LICENSE).
+- **luna.nvim**: Custom fork at [t4lentles5/luna.nvim](https://github.com/t4lentles5/luna.nvim) (upstream: [WTFox/luna.nvim](https://github.com/WTFox/luna.nvim)), licensed under the [MIT License](https://github.com/WTFox/luna.nvim/blob/main/LICENSE).
 - **Simple Icons**: Licensed under the [CC0 1.0 Universal License](https://creativecommons.org/publicdomain/zero/1.0/).
