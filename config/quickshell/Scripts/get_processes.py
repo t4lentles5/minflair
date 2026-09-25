@@ -365,10 +365,10 @@ def get_gpu_info():
         if os.path.exists(drm_base):
             cards = [c for c in os.listdir(drm_base) if c.startswith("card") and "-" not in c]
             for card in cards:
-            busy_file = f"/sys/class/drm/{card}/device/gpu_busy_percent"
-            if os.path.exists(busy_file):
-                with open(busy_file, "r") as f:
-                    usage = int(f.read().strip())
+                busy_file = f"/sys/class/drm/{card}/device/gpu_busy_percent"
+                if os.path.exists(busy_file):
+                    with open(busy_file, "r") as f:
+                        usage = int(f.read().strip())
 
                 dev_hwmon_dir = f"/sys/class/drm/{card}/device/hwmon"
                 if os.path.exists(dev_hwmon_dir):

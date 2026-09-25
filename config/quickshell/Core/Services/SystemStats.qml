@@ -27,14 +27,31 @@ Item {
     property string uptime: ""
 
     Component.onCompleted: {
-        staticInfoProc.running = true;
-        statsProc.running = true;
+        if (!staticInfoProc.running)
+            staticInfoProc.running = true;
+
+        if (!statsProc.running)
+            statsProc.running = true;
+
+    }
+
+    Timer {
+        id: restartTimer
+
+        interval: 3000
+        repeat: false
+        onTriggered: {
+            if (!statsProc.running)
+                statsProc.running = true;
+
+        }
     }
 
     Process {
         id: staticInfoProc
 
         command: ["python3", Quickshell.shellDir + "/Scripts/get_system_info.py"]
+        running: true
         onExited: (exitCode) => {
             if (exitCode === 0) {
                 try {
@@ -70,6 +87,10 @@ Item {
         id: statsProc
 
         command: ["python3", Quickshell.shellDir + "/Scripts/get_processes.py", "4000", "cpu", "--daemon", "--no-processes"]
+        running: true
+        onExited: (exitCode) => {
+            restartTimer.start();
+        }
 
         stdout: SplitParser {
             onRead: (data) => {
@@ -80,8 +101,8 @@ Item {
                     let parsedData = JSON.parse(data.trim());
                     if (parsedData.system) {
                         let sys = parsedData.system;
-                        root.cpuUsage = sys.cpu_usage || 0;
-                        root.memUsed = sys.mem_used_gb || 0;
+                        root.cpuUsage = (sys.cpu_usage !== undefined) ? sys.cpu_usage : 0;
+                        root.memUsed = (sys.mem_used_gb !== undefined) ? sys.mem_used_gb : 0;
                         root.uptime = sys.uptime || "";
                     }
                 } catch (e) {
