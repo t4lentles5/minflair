@@ -78,7 +78,7 @@ Item {
     Timer {
         id: lockCheckTimer
 
-        interval: 3000
+        interval: updateService.isSystemUpdating || AppState.activePopup === "packageManager" ? 1500 : 10000
         running: true
         repeat: true
         triggeredOnStart: true

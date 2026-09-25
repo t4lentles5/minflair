@@ -6,9 +6,9 @@ Item {
     id: rootItem
 
     property string text: ""
+    property int customSize: Constants.sizeSm
     property font font: Qt.font({
-        "family": Constants.fontFamily,
-        "pixelSize": Constants.sizeSm
+        "family": Constants.fontFamily
     })
     property color color: Theme.fg
     property int elide: Text.ElideRight
@@ -46,7 +46,11 @@ Item {
 
         width: rootItem.width
         text: rootItem.text
-        font: rootItem.font
+        customSize: rootItem.customSize
+        font.weight: rootItem.font.weight
+        font.bold: rootItem.font.bold
+        font.italic: rootItem.font.italic
+        font.family: rootItem.font.family
         wrapMode: rootItem.wrapMode
         horizontalAlignment: rootItem.horizontalAlignment
         lineHeight: rootItem.lineHeight
@@ -58,7 +62,11 @@ Item {
 
         anchors.fill: parent
         text: rootItem.text.substring(0, rootItem._charCount)
-        font: rootItem.font
+        customSize: rootItem.customSize
+        font.weight: rootItem.font.weight
+        font.bold: rootItem.font.bold
+        font.italic: rootItem.font.italic
+        font.family: rootItem.font.family
         color: rootItem.color
         elide: rootItem.elide
         wrapMode: rootItem.wrapMode

@@ -5,10 +5,10 @@ import qs.Core.Components
 import qs.Core.Services
 import qs.Modules.Settings.Components
 
-SettingContainer {
+AppContainer {
     id: root
 
-    SettingGroup {
+    AppGroup {
         title: "Animations"
         icon: "sparkles"
 
@@ -37,129 +37,28 @@ SettingContainer {
 
     }
 
-    SettingGroup {
-        title: "Wallpaper Transitions"
-        icon: "picture-spark"
-
-        SettingSelect {
-            label: "Transition Type"
-            model: ["none", "grow", "fade", "wipe", "wave", "random"]
-            currentIndex: {
-                if (!HyprlandService.wpEnableTransitions)
-                    return 0;
-
-                let idx = model.indexOf(HyprlandService.wpTransitionType);
-                return idx !== -1 ? idx : 1;
-            }
-            onActivated: (index) => {
-                let val = model[index];
-                if (val === "none") {
-                    HyprlandService.wpEnableTransitions = false;
-                } else {
-                    HyprlandService.wpEnableTransitions = true;
-                    HyprlandService.wpTransitionType = val;
-                }
-            }
-        }
-
-        SettingSelect {
-            label: "Transition Position"
-            model: ["top-left", "top", "top-right", "left", "center", "right", "bottom-left", "bottom", "bottom-right"]
-            currentIndex: {
-                let idx = model.indexOf(HyprlandService.wpTransitionPos);
-                return idx !== -1 ? idx : 4;
-            }
-            onActivated: (index) => {
-                HyprlandService.wpTransitionPos = model[index];
-            }
-            enabled: HyprlandService.wpEnableTransitions && HyprlandService.wpTransitionType !== "random"
-            opacity: enabled ? 1 : 0.4
-
-            Behavior on opacity {
-                NumberAnimation {
-                    duration: Constants.animFast
-                }
-
-            }
-
-        }
-
-        ColumnLayout {
-            spacing: Constants.sizeLg
-            Layout.fillWidth: true
-            enabled: HyprlandService.wpEnableTransitions
-            opacity: enabled ? 1 : 0.4
-
-            SettingSegmented {
-                label: "Transition Speed"
-                model: [{
-                    "text": "Slow",
-                    "value": 60
-                }, {
-                    "text": "Normal",
-                    "value": 120
-                }, {
-                    "text": "Fast",
-                    "value": 180
-                }, {
-                    "text": "Ultra",
-                    "value": 240
-                }]
-                currentValue: HyprlandService.wpTransitionStep
-                onActivated: (val) => {
-                    HyprlandService.wpTransitionStep = val;
-                }
-            }
-
-            SettingSegmented {
-                label: "Transition Frame Rate"
-                model: [{
-                    "text": "30",
-                    "value": 30
-                }, {
-                    "text": "60",
-                    "value": 60
-                }, {
-                    "text": "120",
-                    "value": 120
-                }, {
-                    "text": "144",
-                    "value": 144
-                }]
-                currentValue: HyprlandService.wpTransitionFps
-                onActivated: (val) => {
-                    HyprlandService.wpTransitionFps = val;
-                }
-            }
-
-            ThemedSlider {
-                label: "Transition Angle"
-                from: 0
-                to: 360
-                stepSize: 10
-                value: HyprlandService.wpTransitionAngle
-                suffix: "°"
-                decimals: 0
-                visible: HyprlandService.wpTransitionType === "wipe" || HyprlandService.wpTransitionType === "wave"
-                onMoved: (val) => {
-                    HyprlandService.wpTransitionAngle = Math.round(val);
-                }
-            }
-
-            Behavior on opacity {
-                NumberAnimation {
-                    duration: Constants.animFast
-                }
-
-            }
-
-        }
-
-    }
-
-    SettingGroup {
+    AppGroup {
         title: "Compositor Effects"
         icon: "hyprland"
+
+        SettingSpinBox {
+            label: "Global Opacity"
+            description: "Transparency of windows and shell"
+            from: 50
+            to: 100
+            stepSize: 5
+            value: HyprlandService.hyprActiveOpacity
+            defaultValue: 100
+            suffix: "%"
+            onMoved: (val) => {
+                let intVal = Math.round(val);
+                HyprlandService.hyprActiveOpacity = intVal;
+                HyprlandService.hyprInactiveOpacity = intVal;
+                HyprlandService.applyHyprlandSettings();
+                Theme.bgOpacity = intVal / 100;
+                Theme.saveScheme();
+            }
+        }
 
         SettingToggle {
             id: blurToggle
@@ -209,13 +108,10 @@ SettingContainer {
 
         }
 
-        Divider {
-        }
-
         SettingToggle {
             id: shadowToggle
 
-            label: "Enable Window Shadows"
+            label: "Enable Window & Shell Shadows"
             onCheckedChanged: {
                 if (checked !== HyprlandService.hyprShadow)
                     HyprlandService.hyprShadow = checked;
@@ -237,10 +133,10 @@ SettingContainer {
             SettingSpinBox {
                 label: "Shadow Range"
                 from: 1
-                to: 40
+                to: 60
                 stepSize: 1
                 value: HyprlandService.hyprShadowRange
-                defaultValue: 4
+                defaultValue: 20
                 suffix: "px"
                 onMoved: (val) => {
                     HyprlandService.hyprShadowRange = Math.round(val);
@@ -253,7 +149,7 @@ SettingContainer {
                 to: 4
                 stepSize: 1
                 value: HyprlandService.hyprShadowRenderPower
-                defaultValue: 3
+                defaultValue: 2
                 onMoved: (val) => {
                     HyprlandService.hyprShadowRenderPower = Math.round(val);
                 }

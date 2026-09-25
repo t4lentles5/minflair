@@ -19,7 +19,7 @@ Rectangle {
         switchAnim.start();
     }
 
-    color: Theme.bgSecondary
+    color: Theme.bg
     onActiveIndexChanged: {
         if (activeIndex === lastIndex)
             return ;
@@ -38,7 +38,7 @@ Rectangle {
             property: "opacity"
             to: 0
             duration: Constants.animFast
-            easing.type: Easing.InQuad
+            easing.type: Easing.OutQuad
         }
 
         ScriptAction {
@@ -53,21 +53,15 @@ Rectangle {
         }
 
         PropertyAction {
-            target: contentContainer
-            property: "anchors.topMargin"
+            target: contentTranslate
+            property: "y"
             value: root.animOff
         }
 
         PropertyAction {
             target: contentContainer
-            property: "anchors.bottomMargin"
-            value: -root.animOff
-        }
-
-        PropertyAction {
-            target: contentContainer
             property: "scale"
-            value: 0.95
+            value: 0.97
         }
 
         ParallelAnimation {
@@ -77,15 +71,15 @@ Rectangle {
                 from: 0
                 to: 1
                 duration: Constants.animNormal
-                easing.type: Easing.OutQuint
+                easing.type: Easing.OutQuad
             }
 
             NumberAnimation {
-                target: contentContainer
-                properties: "anchors.topMargin,anchors.bottomMargin"
+                target: contentTranslate
+                property: "y"
                 to: 0
                 duration: Constants.animSlow
-                easing.type: Easing.OutBack
+                easing.type: Easing.OutQuart
             }
 
             NumberAnimation {
@@ -93,27 +87,23 @@ Rectangle {
                 property: "scale"
                 to: 1
                 duration: Constants.animSlow
-                easing.type: Easing.OutBack
+                easing.type: Easing.OutQuart
             }
 
         }
 
     }
 
-    Rectangle {
-        id: bgRect
+    Item {
+        id: contentContainer
 
         anchors.fill: parent
-        anchors.margins: Constants.sizeLg
-        anchors.leftMargin: 0
-        color: Theme.bg
-        radius: Constants.sizeLg
+        clip: true
 
-        Item {
-            id: contentContainer
+        transform: Translate {
+            id: contentTranslate
 
-            anchors.fill: parent
-            clip: true
+            y: 0
         }
 
     }

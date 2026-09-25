@@ -11,7 +11,7 @@ RowLayout {
 
     ThemedText {
         text: desc
-        font.pixelSize: Constants.sizeMd
+        customSize: Constants.sizeSm
         color: Theme.fg
         Layout.fillWidth: true
         elide: Text.ElideRight
@@ -36,7 +36,7 @@ RowLayout {
                     width: Math.max(capText.implicitWidth + 16, 32)
                     height: 28
                     radius: 6
-                    color: Theme.bgSecondary
+                    color: Theme.bgTertiary
                     border.color: Theme.border
                     border.width: 1
                     anchors.verticalCenter: parent.verticalCenter
@@ -47,7 +47,7 @@ RowLayout {
                         anchors.bottom: parent.bottom
                         height: 3
                         radius: 6
-                        color: Theme.bgSecondary
+                        color: Theme.bgTertiary
                     }
 
                     ThemedText {
@@ -57,7 +57,6 @@ RowLayout {
                         anchors.verticalCenterOffset: -1
                         text: modelData.isKey ? modelData.text : ""
                         color: Theme.fg
-                        font.pixelSize: Constants.sizeSm
                         font.bold: true
                     }
 
@@ -69,7 +68,7 @@ RowLayout {
                     visible: !modelData.isKey
                     text: !modelData.isKey ? modelData.text : ""
                     color: Theme.muted
-                    font.pixelSize: Constants.sizeMd
+                    customSize: Constants.sizeMd
                     font.bold: true
                     anchors.verticalCenter: parent.verticalCenter
                 }

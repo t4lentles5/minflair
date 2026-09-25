@@ -43,7 +43,6 @@ RowLayout {
 
     ThemedText {
         text: root.label
-        font.pixelSize: Constants.sizeSm
         font.bold: true
         color: root.enabled ? Theme.fg : Theme.muted
         visible: root.label !== ""
@@ -76,7 +75,7 @@ RowLayout {
 
             anchors.centerIn: parent
             text: root.value.toFixed(root.decimals) + root.suffix
-            font.pixelSize: Constants.sizeXs + 2
+            customSize: Constants.sizeXs + 2
             font.bold: true
             color: !root.enabled ? Theme.muted : Theme.fg
 

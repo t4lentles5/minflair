@@ -2,6 +2,7 @@
 import json
 import os
 import pwd
+import re
 import shutil
 import subprocess
 import sys
@@ -132,6 +133,45 @@ def get_system_tasks():
 
 
 def get_cpu_temp():
+    try:
+        hwmon_base = "/sys/class/hwmon"
+        if os.path.exists(hwmon_base):
+            for hwmon in os.listdir(hwmon_base):
+                hwmon_path = os.path.join(hwmon_base, hwmon)
+                name_path = os.path.join(hwmon_path, "name")
+                if os.path.exists(name_path):
+                    with open(name_path, "r") as f:
+                        name = f.read().strip()
+                    if name in ["coretemp", "k10temp", "cpu_thermal", "zenpower", "Tctl"]:
+                        for file in os.listdir(hwmon_path):
+                            if file.startswith("temp") and file.endswith("_input"):
+                                with open(os.path.join(hwmon_path, file), "r") as f:
+                                    t = int(f.read().strip())
+                                    if t > 0:
+                                        return f"{t // 1000}°C"
+    except Exception:
+        pass
+
+    try:
+        thermal_base = "/sys/class/thermal"
+        if os.path.exists(thermal_base):
+            for zone in os.listdir(thermal_base):
+                if zone.startswith("thermal_zone"):
+                    zone_path = os.path.join(thermal_base, zone)
+                    type_path = os.path.join(zone_path, "type")
+                    if os.path.exists(type_path):
+                        with open(type_path, "r") as f:
+                            ztype = f.read().strip()
+                        if ztype in ["x86_pkg_temp", "cpu_thermal", "acpitz"]:
+                            temp_path = os.path.join(zone_path, "temp")
+                            if os.path.exists(temp_path):
+                                with open(temp_path, "r") as f:
+                                    t = int(f.read().strip())
+                                    if t > 0:
+                                        return f"{t // 1000}°C"
+    except Exception:
+        pass
+
     temp_files = [
         "/sys/class/thermal/thermal_zone0/temp",
         "/sys/class/thermal/thermal_zone1/temp",
@@ -204,8 +244,6 @@ def get_gpu_info():
                 ["lspci"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
             )
             if res.returncode == 0:
-                import re
-
                 gpus = []
                 for line in res.stdout.split("\n"):
                     if any(
@@ -323,7 +361,10 @@ def get_gpu_info():
             pass
 
     try:
-        for card in ["card0", "card1"]:
+        drm_base = "/sys/class/drm"
+        if os.path.exists(drm_base):
+            cards = [c for c in os.listdir(drm_base) if c.startswith("card") and "-" not in c]
+            for card in cards:
             busy_file = f"/sys/class/drm/{card}/device/gpu_busy_percent"
             if os.path.exists(busy_file):
                 with open(busy_file, "r") as f:
@@ -402,13 +443,20 @@ def get_storage_info():
         return {"device": "/", "total_gib": 0.0, "used_gib": 0.0, "usage": 0}
 
 
+_music_players_cache = None
+
+
 def check_music_players():
+    global _music_players_cache
+    if _music_players_cache is not None:
+        return _music_players_cache
     try:
-        return {
+        _music_players_cache = {
             "has_youtube_music": shutil.which("youtube-music") is not None,
             "has_spotify": shutil.which("spotify") is not None,
             "has_kew": shutil.which("kew") is not None,
         }
+        return _music_players_cache
     except Exception:
         return {"has_youtube_music": False, "has_spotify": False, "has_kew": False}
 

@@ -31,14 +31,12 @@ Item {
 
         ThemedText {
             text: root.label
-            font.pixelSize: Constants.sizeSm
             color: root.labelColor
             Layout.fillWidth: true
         }
 
         ThemedText {
             text: root.value
-            font.pixelSize: Constants.sizeSm
             font.bold: true
             color: Theme.fg
         }

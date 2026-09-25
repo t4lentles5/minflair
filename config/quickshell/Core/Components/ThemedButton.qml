@@ -27,9 +27,8 @@ Rectangle {
 
         ThemedText {
             text: root.text
-            font.pixelSize: Constants.sizeSm
             font.bold: true
-            color: root.disabled ? Theme.muted : Theme.accent
+            color: root.disabled ? Theme.muted : root.textColor
             visible: root.text !== ""
             anchors.verticalCenter: parent.verticalCenter
         }

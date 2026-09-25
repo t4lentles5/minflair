@@ -2,7 +2,7 @@
 import json
 import subprocess
 
-options = [
+OPTIONS = [
     "decoration:blur:enabled",
     "decoration:rounding",
     "decoration:active_opacity",
@@ -18,28 +18,35 @@ options = [
     "animations:enabled",
 ]
 
-res = {}
-try:
-    for opt in options:
-        out = subprocess.check_output(["hyprctl", "getoption", opt, "-j"]).decode()
-        data = json.loads(out)
-        # the key could be "int", "float", "bool", "str"
-        if "int" in data:
-            res[opt] = data["int"]
-        elif "float" in data:
-            res[opt] = data["float"]
-        elif "bool" in data:
-            res[opt] = data["bool"]
-        elif "str" in data:
-            res[opt] = data["str"]
-        elif "custom" in data:
-            res[opt] = data["custom"]
-        elif "css" in data:
-            # Assuming gaps "4 4 4 4" or just "4"
-            parts = str(data["css"]).split()
-            if len(parts) > 0:
-                res[opt] = int(parts[0])
-except Exception as e:
-    res["error"] = str(e)
 
-print(json.dumps(res))
+def main():
+    res = {}
+    for opt in OPTIONS:
+        try:
+            out = subprocess.check_output(
+                ["hyprctl", "getoption", opt, "-j"],
+                stderr=subprocess.DEVNULL,
+            ).decode("utf-8")
+            data = json.loads(out)
+            if "int" in data:
+                res[opt] = data["int"]
+            elif "float" in data:
+                res[opt] = data["float"]
+            elif "bool" in data:
+                res[opt] = data["bool"]
+            elif "str" in data:
+                res[opt] = data["str"]
+            elif "custom" in data:
+                res[opt] = data["custom"]
+            elif "css" in data:
+                parts = str(data["css"]).split()
+                if parts:
+                    res[opt] = int(parts[0])
+        except Exception:
+            continue
+
+    print(json.dumps(res))
+
+
+if __name__ == "__main__":
+    main()

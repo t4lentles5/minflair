@@ -39,8 +39,9 @@ QtObject {
     property color border: Qt.rgba(fg.r, fg.g, fg.b, 0.15)
     property color accent: themes[0].dark.accent
     property color accentComplementary: themes[0].dark.accentComplementary
-    property color shadow: Qt.rgba(0, 0, 0, 0.45)
+    property color shadow: isDark ? Qt.rgba(0, 0, 0, 0.45) : Qt.rgba(0, 0, 0, 0.1)
     property bool generateFromWallpaper: false
+    property bool wallpaperIsDark: true
     property var wallpaperColors: null
     property Process saver
     property Process loader
@@ -60,10 +61,29 @@ QtObject {
         saveScheme();
     }
 
+    function applyWallpaperTheme(isDark) {
+        if (!wallpaperColors || !wallpaperColors.dark || !wallpaperColors.light)
+            return ;
+
+        wallpaperIsDark = isDark;
+        let activeScheme = isDark ? wallpaperColors.dark : wallpaperColors.light;
+        applyScheme({
+            "name": activeScheme.name || "Wallpaper Theme",
+            "bg": activeScheme.bg,
+            "fg": activeScheme.fg,
+            "muted": activeScheme.muted,
+            "border": activeScheme.border,
+            "accent": activeScheme.accent,
+            "accentComplementary": activeScheme.accentComplementary,
+            "shadow": activeScheme.shadow || "#000000"
+        });
+    }
+
     function saveScheme() {
         let obj = {
             "name": currentScheme,
             "generateFromWallpaper": generateFromWallpaper,
+            "wallpaperIsDark": wallpaperIsDark,
             "bgOpacity": bgOpacity,
             "bg": "" + _rawBg,
             "fg": "" + fg,
@@ -71,7 +91,7 @@ QtObject {
             "border": "" + border,
             "accent": "" + accent,
             "accentComplementary": "" + accentComplementary,
-            "shadow": "" + _rawShadow
+            "shadow": "" + shadow
         };
         let json = JSON.stringify(obj);
         let home = Quickshell.env("HOME");
@@ -81,9 +101,8 @@ QtObject {
     }
 
     function generateTheme(wallpaperPath) {
-        let home = Quickshell.env("HOME");
         generatorProc.running = false;
-        generatorProc.command = ["python3", home + "/.config/quickshell/Scripts/generate_theme.py", wallpaperPath, generateFromWallpaper ? "True" : "False"];
+        generatorProc.command = ["python3", Quickshell.shellDir + "/Scripts/generate_theme.py", wallpaperPath, generateFromWallpaper ? "True" : "False"];
         generatorProc.running = true;
     }
 
@@ -123,19 +142,12 @@ QtObject {
                 if (colorsLine) {
                     try {
                         let colors = JSON.parse(colorsLine);
-                        let scheme = {
-                            "name": colors.name || "Wallpaper Theme",
-                            "bg": colors.bg,
-                            "fg": colors.fg,
-                            "muted": colors.muted,
-                            "border": colors.border,
-                            "accent": colors.accent,
-                            "accentComplementary": colors.accentComplementary,
-                            "shadow": colors.shadow || "#000000"
-                        };
                         root.wallpaperColors = colors;
+                        if (colors.activeIsDark !== undefined)
+                            root.wallpaperIsDark = colors.activeIsDark;
+
                         if (root.generateFromWallpaper)
-                            root.applyScheme(scheme);
+                            root.applyWallpaperTheme(root.wallpaperIsDark);
 
                     } catch (e) {
                         root.loadScheme();
@@ -160,7 +172,7 @@ QtObject {
         onExited: function(exitCode) {
             if (exitCode === 0) {
                 applyThemeProc.running = false;
-                applyThemeProc.command = ["python3", Quickshell.env("HOME") + "/.config/quickshell/Scripts/apply_theme.py"];
+                applyThemeProc.command = ["python3", Quickshell.shellDir + "/Scripts/apply_theme.py"];
                 applyThemeProc.running = true;
             }
         }
@@ -174,6 +186,9 @@ QtObject {
                     let colors = JSON.parse(loaderOutput.text);
                     if (colors.generateFromWallpaper !== undefined)
                         root.generateFromWallpaper = colors.generateFromWallpaper;
+
+                    if (colors.wallpaperIsDark !== undefined)
+                        root.wallpaperIsDark = colors.wallpaperIsDark;
 
                     if (colors.name)
                         root.currentScheme = colors.name;
@@ -194,7 +209,7 @@ QtObject {
                         root.accentComplementary = colors.accentComplementary;
 
                     applyThemeProc.running = false;
-                    applyThemeProc.command = ["python3", Quickshell.env("HOME") + "/.config/quickshell/Scripts/apply_theme.py"];
+                    applyThemeProc.command = ["python3", Quickshell.shellDir + "/Scripts/apply_theme.py"];
                     applyThemeProc.running = true;
                 } catch (e) {
                     root.applyScheme(root.themes[0].dark);
@@ -211,7 +226,7 @@ QtObject {
     }
 
     wallpaperLoader: Process {
-        command: ["cat", Quickshell.env("HOME") + "/.cache/quickshell/wallpaper_colorscheme.json"]
+        command: ["bash", "-c", "echo '{ \"dark\": '`cat ~/.cache/quickshell/wallpaper_colorscheme_dark.json 2>/dev/null || echo \"null\"`', \"light\": '`cat ~/.cache/quickshell/wallpaper_colorscheme_light.json 2>/dev/null || echo \"null\"`' }'"]
         onExited: function(exitCode) {
             if (exitCode === 0) {
                 try {

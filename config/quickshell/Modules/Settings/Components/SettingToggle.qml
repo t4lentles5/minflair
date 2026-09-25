@@ -7,137 +7,82 @@ import qs.Core
 import qs.Core.Components
 import qs.Core.Services
 
-Rectangle {
+SettingRowTemplate {
     id: root
 
-    property string label: ""
-    property string description: ""
     property bool checked: false
-    property bool isSubSetting: false
 
     signal toggled(bool checked)
 
-    Layout.fillWidth: true
-    color: "transparent"
-    implicitHeight: mainLayout.implicitHeight
+    Switch {
+        id: settingSwitch
 
-    ColumnLayout {
-        id: mainLayout
+        z: 10
+        Layout.alignment: Qt.AlignVCenter
+        opacity: root.enabled ? 1 : 0.5
+        checked: root.checked
+        onToggled: root.checked = checked
+        implicitWidth: 44
+        implicitHeight: 24
 
-        anchors.left: parent.left
-        anchors.right: parent.right
-        anchors.top: parent.top
-        spacing: Constants.sizeLg
+        HoverHandler {
+            cursorShape: Qt.PointingHandCursor
+        }
 
-        Item {
-            id: headerWrapper
+        indicator: Rectangle {
+            implicitWidth: 44
+            implicitHeight: 24
+            radius: height / 2
+            color: settingSwitch.checked ? Theme.accent : Theme.muted
 
-            Layout.fillWidth: true
-            implicitHeight: headerRow.implicitHeight
+            Rectangle {
+                id: knob
 
-            RowLayout {
-                id: headerRow
+                x: settingSwitch.checked ? parent.width - width - 3 : 3
+                y: (parent.height - height) / 2
+                width: 18
+                height: 18
+                radius: width / 2
+                color: Theme.bg
+                scale: settingSwitch.pressed ? 0.85 : (settingSwitch.hovered ? 1.08 : 1)
+                layer.enabled: true
 
-                anchors.fill: parent
+                layer.effect: DropShadow {
+                    transparentBorder: true
+                    color: Qt.rgba(0, 0, 0, 0.4)
+                    radius: 4
+                    samples: 9
+                    verticalOffset: 1
+                }
 
-                ColumnLayout {
-                    spacing: Constants.size3Xs
-                    Layout.fillWidth: true
-
-                    ThemedText {
-                        text: root.label
-                        font.pixelSize: Constants.sizeMd
-                        color: root.enabled ? Theme.fg : Theme.muted
-                    }
-
-                    ThemedText {
-                        text: root.description
-                        font.pixelSize: Constants.sizeSm
-                        color: Theme.muted
-                        visible: root.description !== ""
+                Behavior on x {
+                    NumberAnimation {
+                        duration: Constants.animFast
+                        easing.type: Easing.OutBack
                     }
 
                 }
 
-                Item {
-                    Layout.fillWidth: true
+                Behavior on scale {
+                    NumberAnimation {
+                        duration: Constants.animFast
+                        easing.type: Easing.OutBack
+                    }
+
                 }
 
-                Switch {
-                    id: settingSwitch
-
-                    z: 10
-                    Layout.alignment: Qt.AlignVCenter
-                    opacity: root.enabled ? 1 : 0.5
-                    checked: root.checked
-                    onToggled: root.checked = checked
-                    implicitWidth: 44
-                    implicitHeight: 24
-
-                    HoverHandler {
-                        cursorShape: Qt.PointingHandCursor
+                Behavior on color {
+                    ColorAnimation {
+                        duration: Constants.animFast
                     }
 
-                    indicator: Rectangle {
-                        implicitWidth: 44
-                        implicitHeight: 24
-                        radius: height / 2
-                        color: settingSwitch.checked ? Theme.accent : Theme.muted
+                }
 
-                        Rectangle {
-                            id: knob
+            }
 
-                            x: settingSwitch.checked ? parent.width - width - 3 : 3
-                            y: (parent.height - height) / 2
-                            width: 18
-                            height: 18
-                            radius: width / 2
-                            color: Theme.bg
-                            scale: settingSwitch.pressed ? 0.85 : (settingSwitch.hovered ? 1.08 : 1)
-                            layer.enabled: true
-
-                            layer.effect: DropShadow {
-                                transparentBorder: true
-                                color: Qt.rgba(0, 0, 0, 0.4)
-                                radius: 4
-                                samples: 9
-                                verticalOffset: 1
-                            }
-
-                            Behavior on x {
-                                NumberAnimation {
-                                    duration: Constants.animFast
-                                    easing.type: Easing.OutBack
-                                }
-
-                            }
-
-                            Behavior on scale {
-                                NumberAnimation {
-                                    duration: Constants.animFast
-                                    easing.type: Easing.OutBack
-                                }
-
-                            }
-
-                            Behavior on color {
-                                ColorAnimation {
-                                    duration: Constants.animFast
-                                }
-
-                            }
-
-                        }
-
-                        Behavior on color {
-                            ColorAnimation {
-                                duration: Constants.animFast
-                            }
-
-                        }
-
-                    }
-
+            Behavior on color {
+                ColorAnimation {
+                    duration: Constants.animFast
                 }
 
             }

@@ -1,0 +1,103 @@
+{
+  "categories": [
+    {
+      "id": "featured",
+      "label": "Featured"
+    },
+    {
+      "id": "internet",
+      "label": "Internet"
+    },
+    {
+      "id": "development",
+      "label": "Development"
+    },
+    {
+      "id": "multimedia",
+      "label": "Multimedia"
+    },
+    {
+      "id": "gaming",
+      "label": "Gaming"
+    },
+    {
+      "id": "utilities",
+      "label": "Utilities"
+    },
+    {
+      "id": "office",
+      "label": "Office"
+    }
+  ],
+  "packages": {
+    "featured": [
+      "firefox",
+      "vlc",
+      "visual-studio-code-bin",
+      "spotify",
+      "discord",
+      "steam",
+      "kitty",
+      "btop",
+      "rofi-wayland",
+      "fastfetch"
+    ],
+    "internet": [
+      "firefox",
+      "chromium",
+      "brave-bin",
+      "discord",
+      "telegram-desktop",
+      "thunderbird",
+      "slack-desktop",
+      "qbittorrent"
+    ],
+    "development": [
+      "visual-studio-code-bin",
+      "neovim",
+      "git",
+      "docker",
+      "postman-bin",
+      "alacritty",
+      "kitty",
+      "ghostty",
+      "zed"
+    ],
+    "multimedia": [
+      "vlc",
+      "spotify",
+      "obs-studio",
+      "gimp",
+      "audacity",
+      "kdenlive",
+      "mpv",
+      "flameshot"
+    ],
+    "gaming": [
+      "steam",
+      "lutris",
+      "heroic-games-launcher-bin",
+      "mangohud",
+      "prismlauncher",
+      "wine",
+      "proton-up-qt"
+    ],
+    "utilities": [
+      "btop",
+      "fastfetch",
+      "thunar",
+      "file-roller",
+      "timeshift",
+      "gparted",
+      "htop",
+      "yazi"
+    ],
+    "office": [
+      "onlyoffice-bin",
+      "libreoffice-fresh",
+      "obsidian",
+      "notion-app-electron",
+      "zathura"
+    ]
+  }
+}

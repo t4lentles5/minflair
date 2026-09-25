@@ -3,6 +3,7 @@ import QtQuick
 import QtQuick.Layouts
 import Quickshell
 import qs.Core
+import qs.Core.Services
 
 Rectangle {
     id: root
@@ -23,7 +24,9 @@ Rectangle {
     property real borderWidth: 1
     property bool useCustomWidth: false
     property bool useOriginalColors: false
-    property int padding: iconSize / 2
+    readonly property int scaledIconSize: Math.round(iconSize * SettingsService.fontScale)
+    readonly property int scaledTextIconSize: Math.round(textIconSize * SettingsService.fontScale)
+    property int padding: scaledIconSize / 2
     property int contentAlignment: Qt.AlignHCenter
 
     signal clicked(var mouse)
@@ -38,9 +41,9 @@ Rectangle {
         return bgColor;
     }
     scale: disabled ? 1 : mouseArea.pressed ? 0.95 : 1
-    radius: iconSize + textIconSize / 2
-    implicitWidth: useCustomWidth ? container.width + Constants.sizeLg * 2 : iconSize + padding * 2
-    implicitHeight: (iconSize + textIconSize / 2) + padding * 2
+    radius: scaledIconSize + scaledTextIconSize / 2
+    implicitWidth: useCustomWidth ? container.width + Constants.sizeLg * 2 : scaledIconSize + padding * 2
+    implicitHeight: (scaledIconSize + scaledTextIconSize / 2) + padding * 2
     border.width: useBorder ? borderWidth : 0
     border.color: borderColor
 
@@ -54,8 +57,8 @@ Rectangle {
         spacing: 4
 
         Item {
-            implicitWidth: root.iconSize
-            implicitHeight: root.iconSize
+            implicitWidth: root.scaledIconSize
+            implicitHeight: root.scaledIconSize
             Layout.alignment: Qt.AlignVCenter | Qt.AlignHCenter
 
             Image {
@@ -63,8 +66,8 @@ Rectangle {
 
                 anchors.fill: parent
                 source: root.icon ? `${Quickshell.shellDir}/assets/${root.icon}.svg` : ""
-                sourceSize.width: root.iconSize
-                sourceSize.height: root.iconSize
+                sourceSize.width: root.scaledIconSize
+                sourceSize.height: root.scaledIconSize
                 visible: root.useOriginalColors
             }
 
@@ -119,7 +122,7 @@ Rectangle {
 
             visible: root.textIcon !== ""
             text: root.textIcon
-            font.pixelSize: root.textIconSize
+            customSize: root.textIconSize
             color: {
                 if (disabled)
                     return Theme.muted;

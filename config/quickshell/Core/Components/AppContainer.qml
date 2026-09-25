@@ -8,6 +8,7 @@ Item {
     id: root
 
     default property alias content: contentLayout.data
+    property int contentPadding: Constants.sizeLg
 
     Layout.fillWidth: true
     Layout.fillHeight: true
@@ -16,7 +17,7 @@ Item {
         id: flickable
 
         anchors.fill: parent
-        anchors.margins: Constants.sizeLg
+        anchors.margins: root.contentPadding
         clip: true
         interactive: true
         contentWidth: width

@@ -8,48 +8,84 @@ import Quickshell.Widgets
 import qs.Core
 import qs.Core.Components
 import qs.Core.Services
+import qs.Core.Utils
 import qs.Core.Windows
+import qs.Modules.PackageManager.Components
 
-CenterWindow {
+SearchAppWindow {
     id: root
 
     property string searchText: ""
     property var allResults: []
     property string installingPkg: ""
-    property bool isSearching: false
     property string actionMode: "install"
     property var selectedPackages: ([])
     property var selectedPackageObjects: ({
     })
     property string accumulatedSearchOutput: ""
+    property var currentDetailPkg: null
+    property string currentDetailText: ""
+    property alias resultsModel: resultsModel
+    property string searchFieldText: ""
+    property string selectedCategory: "all"
+
+    function showPackageDetails(pkgName, installed) {
+        root.currentDetailPkg = {
+            "name": pkgName,
+            "installed": !!installed
+        };
+        root.currentDetailText = "Loading details...";
+        detailsOverlay.visible = true;
+        detailsProc.command = installed ? ["env", "LANG=C", "yay", "-Qi", pkgName] : ["env", "LANG=C", "yay", "-Si", pkgName];
+        detailsProc.running = false;
+        detailsProc.running = true;
+    }
+
+    function restartDebounceTimer() {
+        debounceTimer.restart();
+    }
+
+    function isDebounceTimerRunning() {
+        return debounceTimer.running;
+    }
+
+    function startFocusTimer() {
+        focusTimer.start();
+    }
 
     function doSearch(query) {
         if (root.actionMode === "install") {
-            if (query.length < 2) {
+            if (query.length === 0) {
+                searchProc.running = false;
+                startSearchTimer.nextCommand = ["--featured", root.selectedCategory];
+                startSearchTimer.restart();
+            } else if (query.length < 2) {
                 root.allResults = [];
                 root.updateModel();
                 root.isSearching = false;
                 startSearchTimer.stop();
                 return ;
+            } else {
+                searchProc.running = false;
+                startSearchTimer.nextCommand = [query];
+                startSearchTimer.restart();
             }
-            searchProc.running = false;
-            startSearchTimer.nextCommand = query;
-            startSearchTimer.restart();
         } else if (root.actionMode === "remove") {
             searchProc.running = false;
-            startSearchTimer.nextCommand = "--list-installed";
+            startSearchTimer.nextCommand = ["--list-installed"];
             startSearchTimer.restart();
         } else if (root.actionMode === "update") {
             searchProc.running = false;
-            startSearchTimer.nextCommand = "--list-updates";
+            startSearchTimer.nextCommand = ["--list-updates"];
             startSearchTimer.restart();
         }
     }
 
     function updateModel() {
         let currentPkgName = "";
-        if (pkgView && pkgView.currentIndex >= 0 && resultsModel.count > pkgView.currentIndex)
-            currentPkgName = resultsModel.get(pkgView.currentIndex).name;
+        let listV = contentComp.getListView();
+        if (listV && listV.currentIndex >= 0 && resultsModel.count > listV.currentIndex)
+            currentPkgName = resultsModel.get(listV.currentIndex).name;
 
         resultsModel.clear();
         let data = root.allResults;
@@ -60,10 +96,11 @@ CenterWindow {
             });
         }
         let selectedNames = root.selectedPackages;
+        let newItems = [];
         for (let i = 0; i < data.length; i++) {
             let pkg = data[i];
             let isSel = selectedNames.indexOf(pkg.name) !== -1;
-            let pkgObj = {
+            newItems.push({
                 "name": pkg.name,
                 "version": pkg.version,
                 "repo": pkg.repo,
@@ -71,22 +108,27 @@ CenterWindow {
                 "description": pkg.description,
                 "installed": pkg.installed,
                 "selected": isSel
-            };
-            resultsModel.append(pkgObj);
+            });
         }
-        if (pkgView) {
+        if (newItems.length > 0)
+            resultsModel.append(newItems);
+
+        if (listV) {
             let found = false;
             if (currentPkgName !== "") {
                 for (let i = 0; i < resultsModel.count; i++) {
                     if (resultsModel.get(i).name === currentPkgName) {
-                        pkgView.currentIndex = i;
+                        listV.currentIndex = i;
                         found = true;
                         break;
                     }
                 }
             }
             if (!found)
-                pkgView.currentIndex = resultsModel.count > 0 ? 0 : -1;
+                listV.currentIndex = resultsModel.count > 0 ? 0 : -1;
+
+            if (resultsModel.count > 0 && !root.searchFieldRef.textField.activeFocus)
+                listV.forceActiveFocus();
 
         }
     }
@@ -170,120 +212,243 @@ CenterWindow {
     function installPackage(name) {
         root.installingPkg = name;
         installProc.running = false;
-        installProc.command = ["sh", "-c", "kitty --class kitty-floating --hold -e yay -S " + name + " & sleep 0.2; hyprctl dispatch focuswindow class:kitty-floating"];
+        installProc.command = ["kitty", "--class", "kitty-floating", "--hold", "-e", "yay", "-S", name];
         installProc.startDetached();
+        focusKittyTimer.start();
         root.isOpen = false;
     }
 
     function removePackage(name) {
         root.installingPkg = name;
         removeProc.running = false;
-        removeProc.command = ["sh", "-c", "kitty --class kitty-floating --hold -e yay -Rns " + name + " & sleep 0.2; hyprctl dispatch focuswindow class:kitty-floating"];
+        removeProc.command = ["kitty", "--class", "kitty-floating", "--hold", "-e", "yay", "-Rns", name];
         removeProc.startDetached();
+        focusKittyTimer.start();
         root.isOpen = false;
     }
 
     function handleKeyPress(event, fromSearch) {
+        let listV = contentComp.getListView();
+        let cols = listV.cols || 1;
         if (event.key === Qt.Key_Down) {
-            if (pkgView.count > 0 && pkgView.currentIndex < pkgView.count - 1) {
-                pkgView.currentIndex++;
+            if (fromSearch) {
+                if (listV.count > 0) {
+                    listV.forceActiveFocus();
+                    if (listV.currentIndex === -1)
+                        listV.currentIndex = 0;
+
+                    event.accepted = true;
+                }
+                return ;
+            }
+            if (listV.count > 0) {
+                if (listV.currentIndex === -1)
+                    listV.currentIndex = 0;
+                else if (listV.currentIndex + cols < listV.count)
+                    listV.currentIndex += cols;
+                else
+                    listV.currentIndex = listV.count - 1;
                 event.accepted = true;
             }
         } else if (event.key === Qt.Key_Up) {
-            if (pkgView.currentIndex <= -1 && !fromSearch) {
-                if (root.actionMode !== "update")
-                    searchField.forceActiveFocus();
+            if (fromSearch)
+                return ;
 
-                pkgView.currentIndex = -1;
+            if (listV.currentIndex < cols) {
+                root.searchFieldRef.textField.forceActiveFocus();
                 event.accepted = true;
-            } else if (pkgView.currentIndex > 0) {
-                pkgView.currentIndex--;
+            } else if (listV.currentIndex > -1) {
+                if (listV.currentIndex >= cols)
+                    listV.currentIndex -= cols;
+
                 event.accepted = true;
             }
+        } else if (event.key === Qt.Key_Right) {
+            if (fromSearch)
+                return ;
+
+            // Allow cursor navigation in text field
+            if (listV.count > 0 && listV.currentIndex < listV.count - 1) {
+                listV.currentIndex++;
+                event.accepted = true;
+            }
+        } else if (event.key === Qt.Key_Left) {
+            if (fromSearch)
+                return ;
+
+            // Allow cursor navigation in text field
+            if (listV.currentIndex > 0) {
+                listV.currentIndex--;
+                event.accepted = true;
+            }
+        } else if (event.key === Qt.Key_Slash) {
+            if (!fromSearch && !detailsOverlay.visible) {
+                root.searchFieldRef.textField.forceActiveFocus();
+                root.searchFieldRef.textField.selectAll();
+                event.accepted = true;
+                return ;
+            }
+        } else if (event.key === Qt.Key_Escape) {
+            if (!fromSearch) {
+                root.searchFieldRef.textField.forceActiveFocus();
+                event.accepted = true;
+                return ;
+            }
         } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
-            let idx = pkgView.currentIndex >= 0 ? pkgView.currentIndex : 0;
+            let idx = listV.currentIndex >= 0 ? listV.currentIndex : 0;
             if (root.selectedPackages.length === 0 && resultsModel.count > idx) {
                 let pkg = resultsModel.get(idx);
                 root.selectedPackages = [pkg.name];
             }
             root.executeBatch();
             event.accepted = true;
-        } else if (event.key === Qt.Key_Tab) {
+        } else if (event.key === Qt.Key_Tab || event.key === Qt.Key_Backtab) {
             if (event.modifiers & Qt.ControlModifier) {
-                if (root.actionMode === "install")
-                    root.actionMode = "remove";
-                else if (root.actionMode === "remove")
-                    root.actionMode = "update";
-                else
-                    root.actionMode = "install";
+                if (event.key === Qt.Key_Backtab || (event.modifiers & Qt.ShiftModifier)) {
+                    if (root.actionMode === "install")
+                        root.actionMode = "update";
+                    else if (root.actionMode === "update")
+                        root.actionMode = "remove";
+                    else
+                        root.actionMode = "install";
+                } else {
+                    if (root.actionMode === "install")
+                        root.actionMode = "remove";
+                    else if (root.actionMode === "remove")
+                        root.actionMode = "update";
+                    else
+                        root.actionMode = "install";
+                }
                 root.selectedPackages = [];
                 root.selectedPackageObjects = {
                 };
                 root.allResults = [];
                 resultsModel.clear();
-                searchField.text = "";
+                root.searchFieldRef.textField.text = "";
                 root.searchText = "";
                 root.doSearch("");
-                focusTimer.start();
+                root.triggerDelayedFocus();
             } else {
-                let idx = pkgView.currentIndex >= 0 ? pkgView.currentIndex : 0;
+                let idx = listV.currentIndex >= 0 ? listV.currentIndex : 0;
                 if (resultsModel.count > idx) {
                     let pkg = resultsModel.get(idx);
                     root.toggleSelect(pkg.name);
                 }
             }
             event.accepted = true;
+        } else if (event.key === Qt.Key_I && (event.modifiers & Qt.ControlModifier)) {
+            let idx = listV.currentIndex >= 0 ? listV.currentIndex : 0;
+            if (resultsModel.count > idx) {
+                let pkg = resultsModel.get(idx);
+                root.showPackageDetails(pkg.name, pkg.installed);
+            }
+            event.accepted = true;
         }
     }
 
-    popupId: "packagemanager"
-    preferredHeight: 520
-    preferredWidth: 650
-    onPopupOpened: {
-        searchField.text = "";
-        root.allResults = [];
-        root.installingPkg = "";
-        root.actionMode = SettingsService.packageManagerMode;
+    placeholderText: root.actionMode === "remove" ? "Search installed..." : "Search to install..."
+    tabsModel: [{
+        "label": "Discover",
+        "val": "install"
+    }, {
+        "label": "Installed",
+        "val": "remove"
+    }, {
+        "label": "Updates",
+        "val": "update"
+    }]
+    activeTabValue: root.actionMode
+    hideSearchBar: root.actionMode === "update"
+    statusText: {
+        if (root.actionMode === "update")
+            return root.allResults.length + " updates available";
+
+        if (root.searchText.length > 0)
+            return resultsModel.count + " found";
+
+        if (root.actionMode === "remove")
+            return resultsModel.count + " installed";
+
+        return "";
+    }
+    enableTabTransition: true
+    onSearchRequested: (text) => {
+        root.searchText = text;
+        root.restartDebounceTimer();
+    }
+    onTabClicked: (val, index) => {
+        if (root.actionMode === val)
+            return ;
+
+        root.actionMode = val;
         root.selectedPackages = [];
         root.selectedPackageObjects = {
         };
+        root.allResults = [];
+        resultsModel.clear();
+        root.searchFieldRef.textField.text = "";
+        root.searchText = "";
         root.doSearch("");
-        focusTimer.start();
+        root.triggerDelayedFocus();
     }
-    onPopupClosed: {
-        SettingsService.packageManagerMode = "install";
+    onSearchKeyPress: (event, fromSearch) => {
+        root.handleKeyPress(event, fromSearch);
     }
+    onEscapePressed: {
+        if (contentComp)
+            contentComp.focusListView();
+        else
+            root.searchFieldRef.textField.focus = false;
+    }
+    popupId: "packagemanager"
+    windowTitle: "Minflair Package Manager"
+    onIsOpenChanged: {
+        if (isOpen) {
+            if (root.searchFieldRef)
+                root.searchFieldRef.textField.text = "";
+
+            root.allResults = [];
+            root.installingPkg = "";
+            root.actionMode = SettingsService.packageManagerMode;
+            root.selectedPackages = [];
+            root.selectedPackageObjects = {
+            };
+            root.doSearch("");
+        } else {
+            SettingsService.packageManagerMode = "install";
+        }
+    }
+    onWindowReadyForFocus: {
+        contentComp.focusListView();
+    }
+    overlayData: [
+        PackageDetailsOverlay {
+            id: detailsOverlay
+
+            anchors.fill: parent
+            visible: false
+            managerRoot: root
+        }
+    ]
 
     Timer {
         id: startSearchTimer
 
-        property string nextCommand: ""
+        property var nextCommand: []
 
         interval: 10
         repeat: false
         onTriggered: {
             root.isSearching = true;
             root.accumulatedSearchOutput = "";
-            searchProc.command = ["python3", Quickshell.shellDir + "/Scripts/search_packages.py", nextCommand];
+            let baseCmd = ["python3", Quickshell.shellDir + "/Scripts/search_packages.py"];
+            searchProc.command = baseCmd.concat(nextCommand);
             searchProc.running = true;
         }
     }
 
     ListModel {
         id: resultsModel
-    }
-
-    Timer {
-        id: focusTimer
-
-        interval: 50
-        repeat: false
-        onTriggered: {
-            if (root.actionMode !== "update")
-                searchField.forceActiveFocus();
-            else if (pkgView.visible)
-                pkgView.forceActiveFocus();
-        }
     }
 
     Timer {
@@ -350,7 +515,7 @@ CenterWindow {
                 }
             }
             root.accumulatedSearchOutput = "";
-            focusTimer.start();
+            root.triggerDelayedFocus();
         }
 
         stdout: SplitParser {
@@ -381,507 +546,31 @@ CenterWindow {
         id: focusKittyProc
     }
 
-    ColumnLayout {
-        spacing: Constants.sizeSm
-        Layout.fillWidth: true
-        Layout.fillHeight: true
+    Process {
+        id: detailsProc
 
-        ThemedTabs {
-            id: modeTabs
-
-            Layout.fillWidth: true
-            Layout.preferredHeight: 38
-            activeValue: root.actionMode
-            onTabSelected: (value) => {
-                if (root.actionMode === value)
-                    return ;
-
-                root.actionMode = value;
-                root.selectedPackages = [];
-                root.selectedPackageObjects = {
-                };
-                root.allResults = [];
-                resultsModel.clear();
-                searchField.text = "";
-                root.searchText = "";
-                root.doSearch("");
-                focusTimer.start();
-            }
-
-            ThemedTab {
-                icon: "download"
-                text: "Install"
-                value: "install"
-            }
-
-            ThemedTab {
-                icon: "trash"
-                text: "Remove"
-                value: "remove"
-            }
-
-            ThemedTab {
-                icon: "update"
-                text: "Update"
-                value: "update"
-            }
+        onExited: (code) => {
+            if (code !== 0 && root.currentDetailText === "Loading details...")
+                root.currentDetailText = "Could not load package details.";
 
         }
 
-        RowLayout {
-            Layout.fillWidth: true
-            Layout.preferredHeight: 40
-            spacing: Constants.sizeSm
+        stdout: SplitParser {
+            onRead: (data) => {
+                if (root.currentDetailText === "Loading details...")
+                    root.currentDetailText = "";
 
-            ThemedSearchBar {
-                id: searchField
-
-                Layout.fillWidth: true
-                preferredHeight: 40
-                visible: root.actionMode !== "update"
-                placeholderText: root.actionMode === "remove" ? "Search to remove" : root.actionMode === "update" ? "Search updates" : "Search to install"
-                onSearchRequested: (text) => {
-                    root.searchText = text;
-                    debounceTimer.restart();
-                }
-                textField.Keys.onPressed: function(event) {
-                    root.handleKeyPress(event, true);
-                }
+                root.currentDetailText += data + "\n";
             }
-
-            Item {
-                Layout.fillWidth: true
-                visible: root.actionMode === "update"
-            }
-
-            ThemedText {
-                Layout.alignment: Qt.AlignVCenter
-                visible: root.selectedPackages.length > 0
-                text: root.selectedPackages.length + (root.selectedPackages.length === 1 ? " selected" : " selected")
-                font.pixelSize: Constants.sizeSm
-                font.bold: true
-                color: Theme.fg
-
-                Behavior on color {
-                    ColorAnimation {
-                        duration: Constants.animNormal
-                        easing.type: Easing.OutQuint
-                    }
-
-                }
-
-            }
-
-            Rectangle {
-                Layout.alignment: Qt.AlignVCenter
-                visible: root.selectedPackages.length > 0
-                width: execLabel.implicitWidth + Constants.size2Xl
-                height: Constants.size2Xl
-                radius: height / 2
-                color: Theme.bgSecondary
-
-                ThemedText {
-                    id: execLabel
-
-                    anchors.centerIn: parent
-                    text: root.actionMode === "install" ? "Install" : root.actionMode === "update" ? "Update" : "Remove"
-                    font.pixelSize: Constants.sizeXs + 2
-                    font.bold: true
-                    color: Theme.accent
-                }
-
-                HoverHandler {
-                    id: execHover
-
-                    cursorShape: Qt.PointingHandCursor
-                }
-
-                TapHandler {
-                    onTapped: root.executeBatch()
-                }
-
-            }
-
         }
 
-        Item {
-            Layout.fillWidth: true
-            Layout.fillHeight: true
+    }
 
-            ColumnLayout {
-                anchors.centerIn: parent
-                visible: root.actionMode === "install" && root.searchText.length < 2 && resultsModel.count === 0 && !root.isSearching
+    PackageManagerContent {
+        id: contentComp
 
-                SvgIcon {
-                    icon: "download"
-                    iconColor: Theme.muted
-                    iconSize: 72
-                    Layout.alignment: Qt.AlignHCenter
-                }
-
-                ThemedText {
-                    text: "Search packages"
-                    color: Theme.muted
-                    font.pixelSize: Constants.sizeMd
-                    Layout.alignment: Qt.AlignHCenter
-                }
-
-                ThemedText {
-                    text: "Type at least 2 characters to search"
-                    color: Theme.muted
-                    font.pixelSize: Constants.sizeSm
-                    Layout.alignment: Qt.AlignHCenter
-                }
-
-            }
-
-            GhostEmptyState {
-                anchors.centerIn: parent
-                visible: resultsModel.count === 0 && !root.isSearching && !debounceTimer.running && !(root.actionMode === "install" && root.searchText.length < 2)
-                icon: root.actionMode === "update" ? "check" : "ghost"
-                iconColor: root.actionMode === "update" ? Theme.accent : Theme.muted
-                text: root.actionMode === "update" ? "System is up to date" : "No packages found"
-                isAnimating: visible && root.actionMode !== "update"
-            }
-
-            ColumnLayout {
-                anchors.centerIn: parent
-                visible: root.isSearching
-
-                SvgIcon {
-                    icon: "reload"
-                    iconColor: Theme.accent
-                    iconSize: 36
-                    flat: true
-                    Layout.alignment: Qt.AlignHCenter
-
-                    RotationAnimation on rotation {
-                        from: 0
-                        to: 360
-                        duration: 1000
-                        loops: Animation.Infinite
-                        running: root.isSearching
-                    }
-
-                }
-
-                ThemedText {
-                    text: "Searching..."
-                    color: Theme.muted
-                    font.pixelSize: Constants.sizeMd
-                    Layout.alignment: Qt.AlignHCenter
-                }
-
-            }
-
-            ListView {
-                id: pkgView
-
-                anchors.fill: parent
-                clip: true
-                model: resultsModel
-                spacing: Constants.sizeXs
-                currentIndex: -1
-                highlightResizeDuration: 0
-                highlightMoveDuration: Constants.animNormal
-                highlightFollowsCurrentItem: true
-                visible: resultsModel.count > 0 && !root.isSearching
-                Keys.onPressed: function(event) {
-                    root.handleKeyPress(event, false);
-                }
-
-                highlight: Item {
-                    width: pkgView.width
-                    height: pkgView.currentItem ? pkgView.currentItem.height : 52
-                    z: 1
-
-                    Rectangle {
-                        anchors.fill: parent
-                        radius: Constants.sizeLg
-                        color: Theme.bgSecondary
-                        border.width: 1
-
-                        Rectangle {
-                            anchors.left: parent.left
-                            anchors.top: parent.top
-                            anchors.bottom: parent.bottom
-                            anchors.leftMargin: 2
-                            anchors.topMargin: 8
-                            anchors.bottomMargin: 8
-                            width: 3
-                            radius: width / 2
-                            color: Theme.accent
-
-                            Behavior on color {
-                                ColorAnimation {
-                                    duration: Constants.animNormal
-                                    easing.type: Easing.OutQuint
-                                }
-
-                            }
-
-                        }
-
-                        Behavior on color {
-                            ColorAnimation {
-                                duration: Constants.animNormal
-                            }
-
-                        }
-
-                        Behavior on border.color {
-                            ColorAnimation {
-                                duration: Constants.animNormal
-                            }
-
-                        }
-
-                    }
-
-                }
-
-                add: Transition {
-                    NumberAnimation {
-                        property: "opacity"
-                        from: 0
-                        to: 1
-                        duration: Constants.animNormal
-                        easing.type: Easing.OutQuint
-                    }
-
-                }
-
-                remove: Transition {
-                    NumberAnimation {
-                        property: "opacity"
-                        to: 0
-                        duration: Constants.animFast
-                    }
-
-                }
-
-                removeDisplaced: Transition {
-                    NumberAnimation {
-                        properties: "y"
-                        duration: Constants.animFast
-                        easing.type: Easing.OutExpo
-                    }
-
-                }
-
-                addDisplaced: Transition {
-                    NumberAnimation {
-                        properties: "y"
-                        duration: Constants.animNormal
-                        easing.type: Easing.OutExpo
-                    }
-
-                }
-
-                displaced: Transition {
-                    NumberAnimation {
-                        properties: "y"
-                        duration: Constants.animNormal
-                        easing.type: Easing.OutExpo
-                    }
-
-                }
-
-                populate: Transition {
-                    NumberAnimation {
-                        property: "opacity"
-                        from: 0
-                        to: 1
-                        duration: Constants.animNormal
-                        easing.type: Easing.OutQuint
-                    }
-
-                }
-
-                delegate: Item {
-                    id: delegateRoot
-
-                    readonly property bool isCurrent: pkgView.currentIndex === index
-                    readonly property bool isSelected: selected
-
-                    width: pkgView.width
-                    height: delegateContent.implicitHeight + Constants.sizeLg
-                    z: 2
-
-                    Rectangle {
-                        anchors.fill: parent
-                        radius: Constants.sizeLg
-                        color: Theme.bgSecondary
-                        visible: isSelected
-                    }
-
-                    Rectangle {
-                        anchors.fill: parent
-                        radius: Constants.sizeLg
-                        color: Theme.bgSecondary
-                        visible: delegateHover.hovered && !isCurrent
-                    }
-
-                    RowLayout {
-                        id: delegateContent
-
-                        anchors.fill: parent
-                        anchors.leftMargin: Constants.sizeLg
-                        anchors.rightMargin: Constants.sizeLg
-                        spacing: Constants.sizeSm
-
-                        SvgIconButton {
-                            id: checkIcon
-
-                            Layout.alignment: Qt.AlignVCenter
-                            icon: isSelected ? "circle-check" : "circle-dashed-check"
-                            iconSize: Constants.sizeLg
-                            iconColor: isSelected ? Theme.accent : Theme.muted
-                            flat: true
-                            padding: 0
-                            onClicked: {
-                                root.toggleSelect(name);
-                            }
-                        }
-
-                        ColumnLayout {
-                            id: detailColumn
-
-                            Layout.fillWidth: true
-                            spacing: 2
-
-                            RowLayout {
-                                spacing: Constants.sizeXs
-
-                                ThemedText {
-                                    text: name
-                                    color: isSelected ? Theme.accent : (isCurrent ? Theme.accent : Theme.fg)
-                                    font.pixelSize: Constants.sizeMd
-                                    font.bold: true
-
-                                    Behavior on color {
-                                        ColorAnimation {
-                                            duration: Constants.animNormal
-                                            easing.type: Easing.OutQuint
-                                        }
-
-                                    }
-
-                                }
-
-                                ThemedText {
-                                    text: version
-                                    color: Theme.muted
-                                    font.pixelSize: Constants.sizeXs + 2
-                                    Layout.alignment: Qt.AlignBottom
-                                    Layout.bottomMargin: 2
-                                }
-
-                            }
-
-                            ThemedText {
-                                text: description
-                                color: isCurrent ? Theme.fg : Theme.muted
-                                font.pixelSize: Constants.sizeSm
-                                Layout.fillWidth: true
-                                maximumLineCount: isCurrent ? 3 : 1
-                                elide: Text.ElideRight
-                                wrapMode: isCurrent ? Text.WordWrap : Text.NoWrap
-
-                                Behavior on color {
-                                    ColorAnimation {
-                                        duration: Constants.animNormal
-                                        easing.type: Easing.OutQuint
-                                    }
-
-                                }
-
-                            }
-
-                        }
-
-                        ColumnLayout {
-                            spacing: 8
-                            Layout.alignment: Qt.AlignRight | Qt.AlignTop
-                            Layout.topMargin: 4
-
-                            RowLayout {
-                                Layout.alignment: Qt.AlignRight
-                                spacing: 4
-
-                                Rectangle {
-                                    visible: installed
-                                    width: instText.implicitWidth + 12
-                                    height: 18
-                                    radius: height / 2
-                                    color: Theme.bgSecondary
-
-                                    ThemedText {
-                                        id: instText
-
-                                        anchors.centerIn: parent
-                                        text: "INSTALLED"
-                                        font.pixelSize: Constants.sizeXs
-                                        font.bold: true
-                                        color: Theme.accent
-                                    }
-
-                                }
-
-                                Rectangle {
-                                    width: repoText.implicitWidth + 12
-                                    height: 18
-                                    radius: height / 2
-                                    color: Theme.bgSecondary
-
-                                    ThemedText {
-                                        id: repoText
-
-                                        anchors.centerIn: parent
-                                        text: (source === "AUR" ? "AUR" : repo).toUpperCase()
-                                        font.pixelSize: Constants.sizeXs
-                                        font.bold: true
-                                        color: Theme.accent
-                                        textFormat: Text.PlainText
-                                    }
-
-                                }
-
-                            }
-
-                        }
-
-                    }
-
-                    HoverHandler {
-                        id: delegateHover
-                    }
-
-                    TapHandler {
-                        onTapped: {
-                            pkgView.currentIndex = index;
-                        }
-                    }
-
-                    Behavior on height {
-                        NumberAnimation {
-                            duration: Constants.animNormal
-                            easing.type: Easing.OutQuint
-                        }
-
-                    }
-
-                }
-
-                ScrollBar.vertical: ScrollBar {
-                    policy: ScrollBar.AlwaysOff
-                    active: true
-                }
-
-            }
-
-        }
-
+        anchors.fill: parent
+        managerRoot: root
     }
 
 }

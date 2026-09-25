@@ -11,6 +11,7 @@ FloatingWindow {
 
     property string popupId: ""
     property string windowTitle: ""
+    property string windowIcon: ""
     default property alias content: innerLayout.data
     property color backgroundColor: Theme.opaqueBg
     property int contentPadding: Constants.sizeLg
@@ -19,6 +20,11 @@ FloatingWindow {
 
     signal windowClosed()
     signal fullyClosed()
+    signal windowReadyForFocus()
+
+    function triggerDelayedFocus() {
+        focusDelayTimer.start();
+    }
 
     title: windowTitle
     color: backgroundColor
@@ -29,11 +35,20 @@ FloatingWindow {
     onIsOpenChanged: {
         if (isOpen) {
             root._windowVisible = true;
+            focusDelayTimer.start();
         } else {
             root._windowVisible = false;
             root.windowClosed();
             root.fullyClosed();
         }
+    }
+
+    Timer {
+        id: focusDelayTimer
+
+        interval: 50
+        repeat: false
+        onTriggered: root.windowReadyForFocus()
     }
 
     ColumnLayout {

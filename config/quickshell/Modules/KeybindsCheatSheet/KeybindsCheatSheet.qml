@@ -1,4 +1,3 @@
-import "Components"
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
@@ -7,27 +6,45 @@ import Quickshell.Io
 import qs.Core
 import qs.Core.Components
 import qs.Core.Windows
+import qs.Modules.KeybindsCheatSheet.Components
 
-AppWindow {
+SearchAppWindow {
     id: root
 
     property var hyprlandData: []
-    property var nvimData: []
-    property int activeTab: 0
-    property int selectedCategory: 0
-    property var currentData: activeTab === 0 ? hyprlandData : nvimData
     property string searchText: ""
+    property string selectedCategory: "All"
+    property var categories: {
+        let cats = ["All"];
+        for (let i = 0; i < hyprlandData.length; i++) {
+            if (cats.indexOf(hyprlandData[i].section) === -1)
+                cats.push(hyprlandData[i].section);
+
+        }
+        return cats;
+    }
+    property int totalKeybinds: {
+        let count = 0;
+        for (let i = 0; i < hyprlandData.length; i++) {
+            count += hyprlandData[i].bindCount || 0;
+        }
+        return count;
+    }
     property var computedBinds: {
-        if (currentData.length === 0)
+        if (hyprlandData.length === 0)
             return [];
 
-        if (searchText !== "") {
-            let matches = [];
-            let lowerSearch = searchText.toLowerCase();
-            for (let i = 0; i < currentData.length; i++) {
-                let cat = currentData[i];
-                for (let j = 0; j < cat.binds.length; j++) {
-                    let bind = cat.binds[j];
+        let matches = [];
+        let lowerSearch = searchText.toLowerCase();
+        for (let i = 0; i < hyprlandData.length; i++) {
+            let cat = hyprlandData[i];
+            if (selectedCategory !== "All" && cat.section !== selectedCategory)
+                continue;
+
+            let hasAddedHeader = false;
+            for (let j = 0; j < cat.binds.length; j++) {
+                let bind = cat.binds[j];
+                if (searchText !== "") {
                     if (bind.is_subheader)
                         continue;
 
@@ -39,27 +56,38 @@ AppWindow {
                             break;
                         }
                     }
-                    if (matchDesc || matchKey)
+                    if (matchDesc || matchKey) {
+                        if (!hasAddedHeader) {
+                            matches.push({
+                                "is_subheader": true,
+                                "name": cat.section,
+                                "uiElements": [],
+                                "desc": ""
+                            });
+                            hasAddedHeader = true;
+                        }
                         matches.push(bind);
-
+                    }
+                } else {
+                    if (bind.is_subheader)
+                        matches.push({
+                        "is_subheader": true,
+                        "name": bind.name,
+                        "uiElements": [],
+                        "desc": ""
+                    });
+                    else
+                        matches.push(bind);
                 }
             }
-            return matches;
         }
-        if (selectedCategory < 0 || selectedCategory >= currentData.length)
-            return [];
-
-        return currentData[selectedCategory].binds;
+        return matches;
     }
     property var displayedBinds: []
 
     function loadKeybinds() {
         hyprlandData = [];
-        nvimData = [];
-        activeTab = 0;
-        selectedCategory = 0;
         hyprProc.running = true;
-        nvimProc.running = true;
     }
 
     function processKeybindData(rawData) {
@@ -137,63 +165,60 @@ AppWindow {
         return processed;
     }
 
-    contentPadding: 0
     onComputedBindsChanged: {
-        if (transitionView.updateCallback === null)
-            root.displayedBinds = root.computedBinds;
-
+        root.displayedBinds = root.computedBinds;
     }
     popupId: "minflair_keybinds"
     windowTitle: "Minflair Keybinds Cheat Sheet"
+    placeholderText: "Search keybinds..."
+    tabsModel: root.categories
+    activeTabValue: root.selectedCategory
+    onSearchRequested: (text) => {
+        root.searchText = text;
+    }
+    onTabClicked: (val, index) => {
+        root.selectedCategory = val;
+    }
     onIsOpenChanged: {
         if (isOpen)
             root.loadKeybinds();
 
     }
-
-    Shortcut {
-        sequence: "Tab"
-        enabled: root.isOpen && root.currentData.length > 0
-        onActivated: {
-            let nextCat = (root.selectedCategory + 1) % root.currentData.length;
-            let dir = nextCat > root.selectedCategory ? 1 : -1;
-            if (nextCat === 0 && root.selectedCategory > 0)
-                dir = 1;
-
-            transitionView.triggerTransition(dir, function() {
-                root.displayedBinds = root.computedBinds;
-            });
-            root.selectedCategory = nextCat;
-        }
-    }
-
-    Shortcut {
-        sequence: "Shift+Tab"
-        enabled: root.isOpen && root.currentData.length > 0
-        onActivated: {
-            let prevCat = (root.selectedCategory - 1 + root.currentData.length) % root.currentData.length;
-            let dir = prevCat < root.selectedCategory ? -1 : 1;
-            if (prevCat === root.currentData.length - 1 && root.selectedCategory === 0)
-                dir = -1;
-
-            transitionView.triggerTransition(dir, function() {
-                root.displayedBinds = root.computedBinds;
-            });
-            root.selectedCategory = prevCat;
-        }
+    onWindowReadyForFocus: {
+        root.focusSearch();
     }
 
     Shortcut {
         sequence: "Ctrl+Tab"
-        enabled: root.isOpen
         onActivated: {
-            let nextTab = root.activeTab === 0 ? 1 : 0;
-            let dir = nextTab > root.activeTab ? 1 : -1;
-            transitionView.triggerTransition(dir, function() {
-                root.displayedBinds = root.computedBinds;
-            });
-            root.activeTab = nextTab;
-            root.selectedCategory = 0;
+            let cats = root.categories;
+            if (cats.length === 0)
+                return ;
+
+            let idx = cats.indexOf(root.selectedCategory);
+            if (idx === -1)
+                idx = 0;
+
+            let nextIdx = (idx + 1) % cats.length;
+            root.selectedCategory = cats[nextIdx];
+            root.activeTabIndex = nextIdx;
+        }
+    }
+
+    Shortcut {
+        sequence: "Ctrl+Shift+Tab"
+        onActivated: {
+            let cats = root.categories;
+            if (cats.length === 0)
+                return ;
+
+            let idx = cats.indexOf(root.selectedCategory);
+            if (idx === -1)
+                idx = 0;
+
+            let prevIdx = (idx - 1 + cats.length) % cats.length;
+            root.selectedCategory = cats[prevIdx];
+            root.activeTabIndex = prevIdx;
         }
     }
 
@@ -218,75 +243,11 @@ AppWindow {
 
     }
 
-    Process {
-        id: nvimProc
+    KeybindsList {
+        id: bindsList
 
-        command: ["python3", Quickshell.shellDir + "/Scripts/parse_keybinds.py", "--nvim"]
-        onExited: function(exitCode) {
-            if (exitCode === 0) {
-                try {
-                    let rawData = JSON.parse(nvimOutput.text);
-                    root.nvimData = processKeybindData(rawData);
-                } catch (e) {
-                    console.error("Error parsing Neovim keybinds: " + e);
-                }
-            }
-        }
-
-        stdout: StdioCollector {
-            id: nvimOutput
-        }
-
-    }
-
-    RowLayout {
-        Layout.fillWidth: true
-        Layout.fillHeight: true
-        spacing: 0
-
-        KeybindsSidebar {
-            activeTab: root.activeTab
-            selectedCategory: root.selectedCategory
-            currentData: root.currentData
-            searchText: root.searchText
-            onTabSelected: function(tabIndex) {
-                if (tabIndex === root.activeTab)
-                    return ;
-
-                let dir = tabIndex > root.activeTab ? 1 : -1;
-                transitionView.triggerTransition(dir, function() {
-                    root.displayedBinds = root.computedBinds;
-                });
-                root.activeTab = tabIndex;
-            }
-            onCategorySelected: function(categoryIndex) {
-                if (categoryIndex === root.selectedCategory)
-                    return ;
-
-                let dir = categoryIndex > root.selectedCategory ? 1 : -1;
-                transitionView.triggerTransition(dir, function() {
-                    root.displayedBinds = root.computedBinds;
-                });
-                root.selectedCategory = categoryIndex;
-            }
-            onSearchRequested: function(text) {
-                root.searchText = text;
-            }
-        }
-
-        PageTransitionView {
-            id: transitionView
-
-            Layout.fillWidth: true
-            Layout.fillHeight: true
-
-            KeybindsList {
-                anchors.fill: parent
-                currentBinds: root.displayedBinds
-            }
-
-        }
-
+        anchors.fill: parent
+        currentBinds: root.displayedBinds
     }
 
 }

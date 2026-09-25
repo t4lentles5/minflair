@@ -59,7 +59,7 @@ ColumnLayout {
 
         text: root.text
         color: Theme.muted
-        font.pixelSize: Constants.sizeMd
+        customSize: Constants.sizeMd
         Layout.alignment: Qt.AlignHCenter
 
         SequentialAnimation {

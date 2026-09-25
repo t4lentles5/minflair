@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 
 import json
+import os
 import re
 import subprocess
 import sys
+
+os.environ["LC_ALL"] = "C"
 
 
 def get_installed_packages() -> list[dict]:
@@ -204,8 +207,21 @@ def get_updates() -> list[dict]:
 
     if packages:
         try:
-            installed = get_installed_packages()
-            desc_map = {p["name"]: p["description"] for p in installed}
+            pkg_names = [p["name"] for p in packages]
+            info_proc = subprocess.run(
+                ["pacman", "-Qi"] + pkg_names, capture_output=True, text=True
+            )
+            desc_map = {}
+            current_name = None
+            if info_proc.stdout:
+                for line in info_proc.stdout.split("\n"):
+                    if " : " in line:
+                        k, v = line.split(" : ", 1)
+                        k, v = k.strip(), v.strip()
+                        if k == "Name":
+                            current_name = v
+                        elif k == "Description" and current_name:
+                            desc_map[current_name] = v
             for p in packages:
                 p["description"] = desc_map.get(
                     p["name"], f"Update available: {p['version']}"
@@ -217,6 +233,88 @@ def get_updates() -> list[dict]:
     return sorted(packages, key=lambda x: x["name"].lower())
 
 
+def get_featured_packages(category_id: str = "featured") -> list[dict]:
+    try:
+        import os
+
+        script_dir = os.path.dirname(os.path.realpath(__file__))
+        json_path = os.path.join(script_dir, "featured_packages.json")
+        with open(json_path, "r") as f:
+            data = json.load(f)
+
+        packages_dict = data.get("packages", {})
+        if category_id == "all":
+            popular_names = []
+            for names in packages_dict.values():
+                popular_names.extend(names)
+            # Remove duplicates while preserving order
+            popular_names = list(dict.fromkeys(popular_names))
+        else:
+            popular_names = packages_dict.get(
+                category_id, packages_dict.get("featured", [])
+            )
+
+        if not popular_names:
+            return []
+    except Exception:
+        return []
+
+    packages = []
+    try:
+        # Get installed packages quickly
+        installed_proc = subprocess.run(
+            ["pacman", "-Qq"], capture_output=True, text=True
+        )
+        installed_set = set(installed_proc.stdout.split())
+
+        # Get info for all popular packages at once using yay -Si
+        result = subprocess.run(
+            ["yay", "-Si"] + popular_names,
+            capture_output=True,
+            text=True,
+            timeout=15,
+        )
+
+        current_pkg = {}
+        for line in result.stdout.split("\n"):
+            if not line.strip():
+                if current_pkg.get("name"):
+                    repo = current_pkg.get("repo", "aur")
+                    packages.append(
+                        {
+                            "name": current_pkg["name"],
+                            "version": current_pkg.get("version", ""),
+                            "repo": repo,
+                            "source": "AUR" if repo.lower() == "aur" else "pacman",
+                            "description": current_pkg.get("description", ""),
+                            "installed": current_pkg["name"] in installed_set,
+                        }
+                    )
+                current_pkg = {}
+                continue
+
+            if " : " in line:
+                key, val = line.split(" : ", 1)
+                key = key.strip()
+                val = val.strip()
+                if key == "Name":
+                    current_pkg["name"] = val
+                elif key == "Version":
+                    current_pkg["version"] = val
+                elif key == "Description":
+                    current_pkg["description"] = val
+                elif key == "Repository":
+                    current_pkg["repo"] = val
+
+        # Sort packages in the same order as popular_names
+        order_map = {name: i for i, name in enumerate(popular_names)}
+        packages.sort(key=lambda x: order_map.get(x["name"].lower(), 999))
+
+        return packages
+    except Exception:
+        return []
+
+
 if __name__ == "__main__":
     if "--list-installed" in sys.argv:
         print(json.dumps(get_installed_packages()))
@@ -224,6 +322,12 @@ if __name__ == "__main__":
 
     if "--list-updates" in sys.argv:
         print(json.dumps(get_updates()))
+        sys.exit(0)
+
+    if "--featured" in sys.argv:
+        idx = sys.argv.index("--featured")
+        cat = sys.argv[idx + 1] if len(sys.argv) > idx + 1 else "featured"
+        print(json.dumps(get_featured_packages(cat)))
         sys.exit(0)
 
     if len(sys.argv) < 2:

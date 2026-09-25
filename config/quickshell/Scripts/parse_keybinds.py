@@ -4,6 +4,7 @@ import json
 import os
 import re
 import sys
+from pathlib import Path
 
 KEY_MAP = {
     "Return": "Enter",
@@ -37,25 +38,20 @@ MOD_MAP = {
     "ALT": "Alt",
 }
 
-NVIM_KEY_MAP = {
-    "<Esc>": "Esc",
-    "<C-h>": "Ctrl+H",
-    "<C-j>": "Ctrl+J",
-    "<C-k>": "Ctrl+K",
-    "<C-l>": "Ctrl+L",
-    "<C-Up>": "Ctrl+↑",
-    "<C-Down>": "Ctrl+↓",
-    "<C-Left>": "Ctrl+←",
-    "<C-Right>": "Ctrl+→",
-    "<S-h>": "Shift+H",
-    "<S-l>": "Shift+L",
-    "<leader>": "Space",
-    "<C-d>": "Ctrl+D",
-    "<C-u>": "Ctrl+U",
-    "<A-Left>": "Alt+←",
-    "<A-Down>": "Alt+↓",
-    "<A-Up>": "Alt+↑",
-    "<A-Right>": "Alt+→",
+
+SECTION_MERGE_HYPR = {
+    "Applications": "Applications",
+    "Tools": "System",
+    "Quickshell Widgets": "Quickshell",
+    "Quickshell Apps": "Quickshell",
+    "Volume": "System",
+    "Brightness": "System",
+    "Media Player": "System",
+    "Window Management": "Windows",
+    "Window Groups": "Windows",
+    "Navigation": "Windows",
+    "Mouse Binds": "Windows",
+    "Workspaces": "Workspaces",
 }
 
 
@@ -66,7 +62,7 @@ def parse_mods(mod_str):
         .replace('"', "")
         .replace("'", "")
     )
-    parts = re.split(r"[\s]+", mod_str.strip())
+    parts = re.split(r"\s+", mod_str.strip())
     return [MOD_MAP.get(p, p) for p in parts if p]
 
 
@@ -76,20 +72,10 @@ def parse_key(key_str):
 
 
 def parse_keybinds(filepath):
-    SECTION_MERGE_HYPR = {
-        "Applications": "Applications",
-        "Tools": "System",
-        "Quickshell Widgets": "Quickshell",
-        "Quickshell Apps": "Quickshell",
-        "Volume": "System",
-        "Brightness": "System",
-        "Media Player": "System",
-        "Window Management": "Windows",
-        "Window Groups": "Windows",
-        "Navigation": "Windows",
-        "Mouse Binds": "Windows",
-        "Workspaces": "Workspaces",
-    }
+    path = Path(filepath)
+    if not path.is_file():
+        print("[]")
+        return
 
     merged = {}
     section_order = []
@@ -97,8 +83,11 @@ def parse_keybinds(filepath):
     current_desc = None
     seen_group = {}
 
-    with open(filepath) as f:
-        lines = f.readlines()
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except Exception:
+        print("[]")
+        return
 
     i = 0
     while i < len(lines):
@@ -129,7 +118,8 @@ def parse_keybinds(filepath):
                 line += " " + lines[i].strip()
                 i += 1
 
-        m = None
+        raw_mods = ""
+        raw_key = ""
         bind_m = re.match(r"^hl\.bind[a-z]*\s*\(\s*(.*?)\s*,", line)
         if bind_m:
             arg = bind_m.group(1)
@@ -141,31 +131,25 @@ def parse_keybinds(filepath):
                 .strip()
             )
             parts = clean.split(" + ")
-
-            class MockMatch:
-                def __init__(self, p):
-                    self.p = p
-
-                def group(self, i):
-                    return self.p[i - 1]
-
             if len(parts) >= 2:
-                mods = " ".join([p.strip() for p in parts[:-1]])
-                m = MockMatch([mods, parts[-1].strip()])
+                raw_mods = " ".join([p.strip() for p in parts[:-1]])
+                raw_key = parts[-1].strip()
             elif len(parts) == 1:
-                m = MockMatch(["", parts[0].strip()])
+                raw_mods = ""
+                raw_key = parts[0].strip()
         else:
             kw_m = re.match(
                 r"^hl\.keyword\(\s*\"bind[a-z]*\"\s*,\s*\"(.*?),\s*(.+?),", line
             )
             if kw_m:
-                m = kw_m
+                raw_mods = kw_m.group(1)
+                raw_key = kw_m.group(2)
 
-        if not m or not current_target:
+        if not raw_key or not current_target:
             continue
 
-        mods = parse_mods(m.group(1))
-        key = parse_key(m.group(2))
+        mods = parse_mods(raw_mods)
+        key = parse_key(raw_key)
 
         if not current_desc:
             continue
@@ -190,164 +174,30 @@ def parse_keybinds(filepath):
         current_desc = None
 
     sections = [{"section": name, "binds": merged[name]} for name in section_order]
-    print(json.dumps(sections))
 
+    quickshell_binds = [
+        {"is_subheader": True, "name": "Package Manager", "desc": ""},
+        {"keys": ["/"], "desc": "Focus search"},
+        {"keys": ["Esc"], "desc": "Close / Blur search"},
+        {"keys": ["↕ ↔"], "desc": "Navigate list"},
+        {"keys": ["Ctrl", "I"], "desc": "Open details"},
+    ]
 
-def expand_nvim_key(raw_key):
-    keys = []
-    i = 0
-    s = raw_key.strip().strip('"').strip("'")
+    qs_found = False
+    for sec in sections:
+        if sec["section"] == "Quickshell":
+            sec["binds"].extend(quickshell_binds)
+            qs_found = True
+            break
 
-    while i < len(s):
-        if s[i] == "<":
-            end = s.find(">", i)
-            if end != -1:
-                token = s[i : end + 1]
-                mapped = str(NVIM_KEY_MAP.get(token, token.strip("<>")))
-                if "+" in mapped:
-                    parts = mapped.split("+")
-                    keys.extend(parts)
-                else:
-                    keys.append(mapped)
-                i = end + 1
-            else:
-                keys.append(s[i])
-                i += 1
-        else:
-            keys.append(s[i])
-            i += 1
+    if not qs_found:
+        sections.append({"section": "Quickshell", "binds": quickshell_binds})
 
-    return keys
-
-
-def parse_nvim_keymaps(filepath):
-    SECTION_MERGE = {
-        "General Keymaps": "General",
-        "Save File": "General",
-        "Search Centering": "General",
-        "Window Navigation": "Navigation",
-        "Resize Windows": "Navigation",
-        "Buffer Navigation": "Navigation",
-        "Plugins": "Plugins",
-        "Telescope": "Plugins",
-        "Match": "Plugins",
-        "Trouble": "Plugins",
-        "Markdown Render": "Plugins",
-        "Spelling": "Editing",
-        "Better Indenting": "Editing",
-        "Move Lines": "Editing",
-        "Paste without losing registry": "Editing",
-    }
-
-    merged = {}
-    section_order = []
-    current_section_name = None
-
-    with open(filepath) as f:
-        for line in f:
-            line = line.rstrip()
-
-            if not line:
-                continue
-
-            section_match = re.match(r"^--\s+(.+)$", line)
-            if section_match:
-                name = section_match.group(1).strip()
-                if any(kw in name.lower() for kw in ["only when", "lsp is attached"]):
-                    continue
-
-                target = SECTION_MERGE.get(name, name)
-                if target not in merged:
-                    merged[target] = []
-                    section_order.append(target)
-
-                merged[target].append({"is_subheader": True, "name": name})
-                current_section_name = target
-                continue
-
-            km_match = re.match(
-                r'keymap\.set\(\s*(?:\{[^}]*\}|"[^"]*")\s*,\s*"([^"]+)"\s*,.*desc\s*=\s*"([^"]+)"',
-                line,
-            )
-            if km_match and current_section_name:
-                raw_key = km_match.group(1)
-                desc = km_match.group(2)
-                keys = expand_nvim_key(raw_key)
-                merged[current_section_name].append({"keys": keys, "desc": desc})
-                continue
-
-    lsp_binds = []
-    in_lsp = False
-    with open(filepath) as f:
-        for line in f:
-            line = line.rstrip()
-            if "LspAttach" in line:
-                in_lsp = True
-                continue
-            if in_lsp:
-                km_match = re.match(
-                    r'\s*keymap\.set\(\s*(?:\{[^}]*\}|"[^"]*")\s*,\s*"([^"]+)"\s*,.*desc\s*=\s*"([^"]+)"',
-                    line,
-                )
-                if km_match:
-                    raw_key = km_match.group(1)
-                    desc = km_match.group(2)
-                    keys = expand_nvim_key(raw_key)
-                    lsp_binds.append({"keys": keys, "desc": desc})
-
-    if lsp_binds:
-        merged["LSP"] = [{"is_subheader": True, "name": "LSP Keymaps"}] + lsp_binds
-        section_order.append("LSP")
-
-    plugins_dir = os.path.join(os.path.dirname(os.path.dirname(filepath)), "plugins")
-    if os.path.isdir(plugins_dir):
-        plugin_target = "Plugins"
-        if plugin_target not in merged:
-            merged[plugin_target] = []
-            section_order.append(plugin_target)
-        for pfile in sorted(os.listdir(plugins_dir)):
-            if not pfile.endswith(".lua"):
-                continue
-
-            plugin_name = pfile[:-4].replace("-", " ").title()
-            added_subheader = False
-
-            ppath = os.path.join(plugins_dir, pfile)
-            with open(ppath) as pf:
-                for pline in pf:
-                    pline = pline.rstrip()
-                    pm = re.match(
-                        r'\s*\{\s*"([^"]+)"\s*,\s*"[^"]*"\s*,\s*desc\s*=\s*"([^"]+)"',
-                        pline,
-                    )
-                    if pm:
-                        raw_key = pm.group(1)
-                        desc = pm.group(2)
-                        keys = expand_nvim_key(raw_key)
-                        if not any(
-                            b.get("desc") == desc for b in merged[plugin_target]
-                        ):
-                            if not added_subheader:
-                                merged[plugin_target].append(
-                                    {"is_subheader": True, "name": plugin_name}
-                                )
-                                added_subheader = True
-                            merged[plugin_target].append({"keys": keys, "desc": desc})
-
-    sections = [{"section": name, "binds": merged[name]} for name in section_order]
     print(json.dumps(sections))
 
 
 if __name__ == "__main__":
-    if "--nvim" in sys.argv:
-        nvim_conf = os.path.expanduser("~/.config/nvim/lua/config/keymaps.lua")
-        for i, arg in enumerate(sys.argv):
-            if arg == "--nvim" and i + 1 < len(sys.argv):
-                nvim_conf = sys.argv[i + 1]
-                break
-        parse_nvim_keymaps(nvim_conf)
-    else:
-        conf = os.path.expanduser("~/.config/hypr/keybinds.lua")
-        if len(sys.argv) > 1:
-            conf = sys.argv[1]
-        parse_keybinds(conf)
+    conf = str(Path.home() / ".config" / "hypr" / "keybinds.lua")
+    if len(sys.argv) > 1 and not sys.argv[1].startswith("--"):
+        conf = sys.argv[1]
+    parse_keybinds(conf)
