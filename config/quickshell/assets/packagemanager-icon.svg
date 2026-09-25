@@ -1,0 +1,43 @@
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  height="24"
+  viewBox="0 0 24 24"
+  width="24"
+>
+  <defs>
+    <linearGradient id="minflair-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#58a2d9" />
+      <stop offset="100%" stop-color="#6e58d9" />
+    </linearGradient>
+    <mask id="package-mask">
+      <!-- Black background (transparent) -->
+      <rect width="24" height="24" fill="black" />
+
+      <!-- Pacman (pacman package manager) -->
+      <path
+        d="M 7 12 L 11.5 7.5 A 6.36 6.36 0 1 0 11.5 16.5 Z"
+        fill="white"
+        stroke="white"
+        stroke-width="1"
+        stroke-linejoin="round"
+      />
+
+      <!-- Arch Linux Official Logo (Scaled and positioned) -->
+      <path
+        d="M11.39.605C10.376 3.092 9.764 4.72 8.635 7.132c.693.734 1.543 1.589 2.923 2.554-1.484-.61-2.496-1.224-3.252-1.86C6.86 10.842 4.596 15.138 0 23.395c3.612-2.085 6.412-3.37 9.021-3.862a6.61 6.61 0 01-.171-1.547l.003-.115c.058-2.315 1.261-4.095 2.687-3.973 1.426.12 2.534 2.096 2.478 4.409a6.52 6.52 0 01-.146 1.243c2.58.505 5.352 1.787 8.914 3.844-.702-1.293-1.33-2.459-1.929-3.57-.943-.73-1.926-1.682-3.933-2.713 1.38.359 2.367.772 3.137 1.234-6.09-11.334-6.582-12.84-8.67-17.74z"
+        fill="white"
+        transform="translate(13.7, 7.2) scale(0.4)"
+      />
+    </mask>
+  </defs>
+
+  <!-- Giant rect spanning the bounding box of the shape so the gradient applies correctly -->
+  <rect
+    x="0"
+    y="0"
+    width="24"
+    height="24"
+    fill="url(#minflair-grad)"
+    mask="url(#package-mask)"
+  />
+</svg>
