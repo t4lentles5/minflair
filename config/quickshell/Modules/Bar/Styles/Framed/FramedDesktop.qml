@@ -21,7 +21,7 @@ PanelWindow {
     property int barHeight: BarStyleConfig.barHeight(activeBarStyle !== "" ? activeBarStyle : SettingsService.barStyle)
     property real animatedBarHeight: barHeight
     property int bezelSize: 8
-    property bool hasFullscreen: Hyprland.focusedWorkspace ? Hyprland.focusedWorkspace.hasFullscreen : false
+    property bool hasFullscreen: (Hyprland.focusedWorkspace && Hyprland.focusedWorkspace.hasFullscreen) ? HyprlandService.isTrueFullscreen : false
     property real fsTransitionProg: hasFullscreen ? 0 : 1
     readonly property var styleData: BarStyleConfig.styleOf(activeBarStyle !== "" ? activeBarStyle : SettingsService.barStyle)
     readonly property bool hasExpandableHost: styleData.hasExpandableHost

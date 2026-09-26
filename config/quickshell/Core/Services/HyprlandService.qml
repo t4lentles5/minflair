@@ -33,6 +33,14 @@ Item {
     property int hyprShadowRenderPower: 3
     property bool hyprPrefsLoaded: false
     property bool isSyncing: false
+    property bool isTrueFullscreen: false
+
+    function checkFullscreen() {
+        if (checkFullscreenProc.running)
+            checkFullscreenProc.running = false;
+
+        checkFullscreenProc.running = true;
+    }
 
     function applyHyprlandSettings() {
         if (!hyprPrefsLoaded || isSyncing)
@@ -202,6 +210,7 @@ Item {
     }
     Component.onCompleted: {
         readHyprPrefsProc.running = true;
+        checkFullscreen();
     }
 
     Timer {
@@ -271,11 +280,34 @@ Item {
         id: patchUserPrefsProc
     }
 
+    Process {
+        id: checkFullscreenProc
+
+        command: ["sh", "-c", "hyprctl activewindow -j 2>/dev/null | jq -r '(.fullscreen == 2) // false' 2>/dev/null"]
+
+        stdout: SplitParser {
+            onRead: (data) => {
+                if (!data)
+                    return ;
+
+                hyprlandService.isTrueFullscreen = (data.trim() === "true");
+            }
+        }
+
+    }
+
     Connections {
         function onRawEvent(event) {
-            if (event.name === "activelayout")
+            if (event.name === "activelayout") {
                 activeLayoutProc.running = true;
-
+            } else if (event.name === "fullscreen") {
+                if (event.data === "0")
+                    hyprlandService.isTrueFullscreen = false;
+                else
+                    hyprlandService.checkFullscreen();
+            } else if (event.name === "activewindow" || event.name === "activewindowv2" || event.name === "workspace" || event.name === "workspacev2") {
+                hyprlandService.checkFullscreen();
+            }
         }
 
         target: Hyprland
