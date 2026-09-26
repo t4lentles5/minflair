@@ -16,7 +16,7 @@ export XDG_CURRENT_DESKTOP=${XDG_CURRENT_DESKTOP:-Hyprland}
 DIR="${XDG_VIDEOS_DIR:-$HOME/Videos}/Recordings"
 mkdir -p "$DIR"
 
-LOG="$DIR/record.log"
+LOG="/tmp/quickshell-record.log"
 TIMESTAMP=$(date +%Y-%m-%d-%H%M%S)
 FILENAME="$DIR/Recording-${TIMESTAMP}.mkv"
 
@@ -76,3 +76,5 @@ if [ -n "$AUDIO_SOURCE" ]; then
 fi
 
 "${CMD[@]}" >>"$LOG" 2>&1
+
+notify-send -i video-x-generic "Recording finished" "Saved to: $FILENAME"
