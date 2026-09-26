@@ -25,7 +25,7 @@ ColumnLayout {
     }
 
     function resetClipboard() {
-        clipboardView.currentIndex = -1;
+        clipboardView.currentIndex = 0;
         searchField.text = "";
         ClipboardService.refresh();
         searchField.forceActiveFocus();
@@ -66,7 +66,7 @@ ColumnLayout {
             clip: true
             model: ClipboardService.filteredModel
             spacing: Constants.sizeXs
-            currentIndex: -1
+            currentIndex: 0
             highlightResizeDuration: 0
             highlightMoveDuration: Constants.animNormal
             highlightFollowsCurrentItem: true
