@@ -29,11 +29,11 @@ Item {
     property var convexHost: null
     property alias notificationOverlay: notificationOverlay
     property var activeTrayPopup: null
-    readonly property bool isFloatingPopupVisible: (usesFloatingPopups && ((dashboardLoader.item && dashboardLoader.item._visible) || (musicLoader.item && musicLoader.item._visible) || (controlCenterLoader.item && controlCenterLoader.item._visible))) || (activeTrayPopup && activeTrayPopup._visible) || (activeBarStyle === "convex" && ((dashboardLoader.item && dashboardLoader.item._visible) || (controlCenterLoader.item && controlCenterLoader.item._visible)))
+    readonly property bool isFloatingPopupVisible: (usesFloatingPopups && ((dashboardLoader.item && dashboardLoader.item.isOpen) || (musicLoader.item && musicLoader.item.isOpen) || (controlCenterLoader.item && controlCenterLoader.item.isOpen))) || (activeTrayPopup && activeTrayPopup.isOpen) || (activeBarStyle === "convex" && ((dashboardLoader.item && dashboardLoader.item.isOpen) || (controlCenterLoader.item && controlCenterLoader.item.isOpen)))
 
     MouseArea {
         anchors.fill: parent
-        enabled: (root.activeHost && root.activeHost.isOpen) || (root.usesFloatingPopups && ((dashboardLoader.item && dashboardLoader.item.isOpen) || (musicLoader.item && musicLoader.item.isOpen))) || (root.activeTrayPopup && root.activeTrayPopup.isOpen)
+        enabled: (root.activeHost && root.activeHost.isOpen) || (root.usesFloatingPopups && ((dashboardLoader.item && dashboardLoader.item.isOpen) || (musicLoader.item && musicLoader.item.isOpen) || (controlCenterLoader.item && controlCenterLoader.item.isOpen))) || (root.activeTrayPopup && root.activeTrayPopup.isOpen)
         onClicked: {
             if (root.activeHost && root.activeHost.isOpen)
                 root.activeHost.close();

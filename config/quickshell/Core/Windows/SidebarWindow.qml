@@ -49,6 +49,10 @@ Item {
     signal popupClosed()
     signal fullyClosed()
 
+    function close() {
+        AppState.closePopup(popupId);
+    }
+
     onWidthChanged: {
         if (width > 0)
             _screenWidth = width;
@@ -65,16 +69,10 @@ Item {
             return ;
 
         if (isOpen) {
-            if (!root.isConvex && AppState.activePopup !== popupId)
-                AppState.activePopup = popupId;
-
             closeDelayTimer.stop();
             _visible = true;
             root.popupOpened();
         } else {
-            if (!root.isConvex && AppState.activePopup === popupId)
-                AppState.activePopup = "";
-
             root.popupClosed();
             if (!HyprlandService.enableAnimations) {
                 root._visible = false;
@@ -88,7 +86,7 @@ Item {
     MouseArea {
         anchors.fill: parent
         enabled: root.isOpen
-        onClicked: root.isOpen = false
+        onClicked: root.close()
     }
 
     Timer {

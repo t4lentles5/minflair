@@ -34,6 +34,7 @@ Item {
     property real activeNotificationWidth: 0
     property real activeNotificationHeight: 0
     readonly property var focusPopups: ["launcher", "clipboard", "wallpaper", "screenshot", "powerMenu"]
+    readonly property var standaloneWindows: ["minflair_settings", "minflair_keybinds", "packagemanager"]
 
     signal togglePopup(string popupId)
     signal openPopup(string popupId)
@@ -42,8 +43,12 @@ Item {
         return focusPopups.indexOf(id) !== -1;
     }
 
+    function isStandaloneWindow(id) {
+        return standaloneWindows.indexOf(id) !== -1;
+    }
+
     function isPopupOpen(id) {
-        if (!id)
+        if (!id || isStandaloneWindow(id))
             return false;
 
         if (activePopup === id)
@@ -113,9 +118,7 @@ Item {
     }
 
     function openPopupInternal(popupId) {
-        // Keep focus activePopup
-
-        if (!popupId)
+        if (!popupId || isStandaloneWindow(popupId))
             return ;
 
         let slot = getSlot(popupId);
@@ -161,6 +164,9 @@ Item {
             closeAllPopups();
             return ;
         }
+        if (isStandaloneWindow(popupId))
+            return ;
+
         if (isPopupOpen(popupId))
             closePopup(popupId);
         else

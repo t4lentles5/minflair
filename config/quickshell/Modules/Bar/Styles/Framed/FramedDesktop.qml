@@ -27,7 +27,7 @@ PanelWindow {
     readonly property bool hasExpandableHost: styleData.hasExpandableHost
     readonly property bool usesFloatingPopups: styleData.usesFloatingPopups
     readonly property bool isCompact: styleData.isCompact
-    readonly property bool needsFocus: AppState.isFocusPopupOpen
+    readonly property bool needsFocus: AppState.isFocusPopupOpen && framedPanels.hasAnyDrawerOpen
     property bool loadFramedBar: root.isFramedMode
     property bool loadConvexBar: root.isFramedMode
 
@@ -384,7 +384,7 @@ PanelWindow {
 
         // Active Popups Overlay (Full Screen for Clicks/Focus)
         Region {
-            property bool isActive: barPopups.isFloatingPopupVisible || AppState.hasAnyPopupOpen
+            property bool isActive: barPopups.isFloatingPopupVisible || framedPanels.hasAnyDrawerOpen || framedPanels.isConvexMusicOpen
 
             x: 0
             y: 0

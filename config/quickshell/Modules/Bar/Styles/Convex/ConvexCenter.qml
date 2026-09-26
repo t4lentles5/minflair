@@ -106,6 +106,10 @@ Item {
         openProgress = 1;
     }
 
+    function close() {
+        closeMusic();
+    }
+
     function closeMusic() {
         if (isClosing)
             return ;

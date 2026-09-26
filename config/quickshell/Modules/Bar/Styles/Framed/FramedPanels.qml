@@ -19,13 +19,15 @@ Item {
     required property int barHeight
     required property int bezelSize
     required property var notificationService
+    readonly property bool hasAnyDrawerOpen: (topDrawerDashboard.isOpen) || (topDrawerMusic.isOpen) || (rightDrawerControlCenter.isOpen) || (bottomDrawerLauncher.isOpen) || (bottomDrawerClipboard.isOpen) || (bottomDrawerWallpaper.isOpen) || (bottomDrawerPower.isOpen) || (bottomDrawerScreenshot.isOpen)
+    readonly property bool isConvexMusicOpen: SettingsService.barConvexMode && AppState.isPopupOpen("music")
 
     anchors.fill: parent
 
     // Click outside to close any open popups
     MouseArea {
         anchors.fill: parent
-        enabled: AppState.hasAnyPopupOpen
+        enabled: root.hasAnyDrawerOpen || root.isConvexMusicOpen
         onClicked: {
             AppState.closeAllPopups();
         }
@@ -114,6 +116,7 @@ Item {
 
         sourceComponent: Component {
             LauncherContent {
+                widget: bottomDrawerLauncher
             }
 
         }
@@ -134,6 +137,7 @@ Item {
 
         sourceComponent: Component {
             ClipboardContent {
+                widget: bottomDrawerClipboard
             }
 
         }
@@ -154,6 +158,7 @@ Item {
 
         sourceComponent: Component {
             WallpaperSelectorContent {
+                widget: bottomDrawerWallpaper
             }
 
         }

@@ -132,7 +132,7 @@ Item {
         Keys.forwardTo: (loader.item && loader.item.initialFocusItem) ? [loader.item.initialFocusItem] : []
         Keys.enabled: root.isOpen
         Keys.onEscapePressed: {
-            AppState.activePopup = "";
+            root.close();
         }
         x: {
             if (root.isRight)
@@ -167,7 +167,6 @@ Item {
         Loader {
             id: loader
 
-            // Mock widget object for contents that expect one
             property var widget
 
             sourceComponent: root.sourceComponent
@@ -211,12 +210,12 @@ Item {
                 property int preferredHeight: root.contentHeight
 
                 function close() {
-                    AppState.activePopup = "";
+                    root.close();
                 }
 
                 onIsOpenChanged: {
                     if (!isOpen && root.isOpen)
-                        AppState.activePopup = "";
+                        root.close();
 
                 }
             }

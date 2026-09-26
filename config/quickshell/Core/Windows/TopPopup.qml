@@ -51,6 +51,10 @@ Item {
     signal popupClosed()
     signal fullyClosed()
 
+    function close() {
+        AppState.closePopup(popupId);
+    }
+
     implicitWidth: smoothWidth + 2 * overshootHeadroom
     implicitHeight: smoothHeight + verticalOffset + 100
     visible: _visible
@@ -59,17 +63,11 @@ Item {
             return ;
 
         if (isOpen) {
-            if (AppState.activePopup !== popupId)
-                AppState.activePopup = popupId;
-
             closeDelayTimer.stop();
             _visible = true;
             root.popupOpened();
             hasBeenHovered = containerHoverHandler.hovered;
         } else {
-            if (AppState.activePopup === popupId)
-                AppState.activePopup = "";
-
             hasBeenHovered = false;
             autoCloseTimer.stop();
             root.popupClosed();

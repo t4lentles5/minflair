@@ -16,7 +16,7 @@ Item {
     readonly property bool isNotchHandled: SettingsService.barNotchMode && (popupId === "dashboard" || popupId === "controlCenter" || popupId === "music" || popupId === "launcher" || popupId === "clipboard" || popupId === "wallpaper")
     readonly property bool isFramedHandled: (SettingsService.barFramedMode && (popupId === "dashboard" || popupId === "controlCenter" || popupId === "music" || popupId === "launcher" || popupId === "powerMenu" || popupId === "clipboard" || popupId === "wallpaper" || popupId === "screenshot")) || (SettingsService.barConvexMode && (popupId === "music" || popupId === "launcher" || popupId === "powerMenu" || popupId === "clipboard" || popupId === "wallpaper" || popupId === "screenshot"))
     readonly property bool shouldLoadWindow: enabled && !isIslandHandled && !isNotchHandled && !isConvexHandled && !isFramedHandled
-    property bool _isActive: shouldLoadWindow && (exclusive ? AppState.isPopupOpen(popupId) : _isInternalActive)
+    readonly property bool _isActive: shouldLoadWindow && (exclusive ? AppState.isPopupOpen(popupId) : _isInternalActive)
     property bool _isClosing: false
     property alias item: loader.item
 
@@ -88,8 +88,8 @@ Item {
                 root._isClosing = false;
                 if (!root.exclusive)
                     root._isInternalActive = false;
-                else
-                    AppState.closePopup(root.popupId);
+
+                AppState.closePopup(root.popupId);
             }
 
             target: loader.item

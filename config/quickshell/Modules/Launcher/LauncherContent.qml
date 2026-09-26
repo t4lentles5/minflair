@@ -108,12 +108,11 @@ ColumnLayout {
         appLauncher.running = false;
         appLauncher.command = command;
         appLauncher.startDetached();
+        AppState.closeAllPopups();
         if (root.widget && root.widget.close !== undefined)
             root.widget.close();
         else if (root.widget && root.widget.isOpen !== undefined)
             root.widget.isOpen = false;
-        else
-            AppState.activePopup = "";
     }
 
     function resetLauncher() {
