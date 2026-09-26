@@ -1,6 +1,5 @@
 local M = {
   "t4lentles5/luna.nvim",
-  dir = vim.fn.expand("~/Projects/luna.nvim"),
   lazy = false,
   priority = 1000,
   opts = {},
