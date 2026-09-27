@@ -16,7 +16,10 @@ AppContainer {
             id: playerSelect
 
             function syncIndex() {
-                let current = SettingsService.musicPlayer || "none";
+                let current = SettingsService.musicPlayer;
+                if (!current || current === "")
+                    current = "none";
+
                 let idx = model.indexOf(current);
                 playerSelect.currentIndex = idx !== -1 ? idx : 0;
             }
@@ -31,7 +34,7 @@ AppContainer {
                         players.push(p.id);
 
                 }
-                if (SettingsService.musicPlayer && players.indexOf(SettingsService.musicPlayer) === -1 && SettingsService.musicPlayer !== "custom" && SettingsService.musicPlayer !== "none")
+                if (SettingsService.musicPlayer && players.indexOf(SettingsService.musicPlayer) === -1 && SettingsService.musicPlayer !== "custom" && SettingsService.musicPlayer !== "none" && SettingsService.musicPlayer !== "")
                     players.push(SettingsService.musicPlayer);
 
                 if (players.indexOf("custom") === -1)
@@ -40,10 +43,11 @@ AppContainer {
                 return players;
             }
             Component.onCompleted: syncIndex()
+            onModelChanged: syncIndex()
             onActivated: (index) => {
                 let player = model[index];
                 if (player === "none") {
-                    SettingsService.musicPlayer = "";
+                    SettingsService.musicPlayer = "none";
                     SettingsService.musicPlayerCommand = "";
                 } else {
                     SettingsService.musicPlayer = player;

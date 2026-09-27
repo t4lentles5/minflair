@@ -60,18 +60,12 @@ Item {
         if (targetProfile === "performance") {
             systemInfoService.performanceInterval = 1000;
             HyprlandService.enableAnimations = true;
-            brightnessProc.running = false;
-            brightnessProc.command = ["brightnessctl", "s", "100%"];
-            brightnessProc.running = true;
             if (SettingsService.settingsLoaded)
                 HyprlandService.setPowerSaverMode(false);
 
         } else if (targetProfile === "power-saver") {
             systemInfoService.performanceInterval = 5000;
             HyprlandService.enableAnimations = false;
-            brightnessProc.running = false;
-            brightnessProc.command = ["brightnessctl", "s", "15%"];
-            brightnessProc.running = true;
             if (SettingsService.settingsLoaded)
                 HyprlandService.setPowerSaverMode(true);
 
@@ -79,9 +73,6 @@ Item {
         } else {
             systemInfoService.performanceInterval = 2000;
             HyprlandService.enableAnimations = true;
-            brightnessProc.running = false;
-            brightnessProc.command = ["brightnessctl", "s", "75%"];
-            brightnessProc.running = true;
             if (SettingsService.settingsLoaded)
                 HyprlandService.setPowerSaverMode(false);
 
@@ -105,10 +96,6 @@ Item {
 
     Process {
         id: setPowerProfileProc
-    }
-
-    Process {
-        id: brightnessProc
     }
 
     Process {

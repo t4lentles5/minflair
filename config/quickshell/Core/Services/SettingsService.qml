@@ -13,8 +13,8 @@ Item {
     property var enabledKbLayouts: ["us", "latam"]
     property string githubUsername: ""
     property string githubToken: ""
-    property string musicPlayer: "spotify"
-    property string musicPlayerCommand: "spotify"
+    property string musicPlayer: "none"
+    property string musicPlayerCommand: ""
     property bool isSettingsLoading: settingsLoader.running
     property string quoteCategory: "All"
     property string fontFamily: "Geist"
@@ -63,6 +63,14 @@ Item {
         applyCursorProc.running = true;
     }
 
+    function applyFont(font, size) {
+        let f = font !== undefined ? font : fontFamily;
+        let s = size !== undefined ? size : Math.round(11 * fontScale);
+        applyFontProc.command = ["python3", Quickshell.shellDir + "/Scripts/apply_font.py", f, s.toString()];
+        applyFontProc.running = false;
+        applyFontProc.running = true;
+    }
+
     Component.onCompleted: {
         load();
     }
@@ -102,14 +110,16 @@ Item {
 
     }
     onFontFamilyChanged: {
-        if (settingsLoaded)
+        if (settingsLoaded) {
             saveSettings();
-
+            applyFont(fontFamily, Math.round(11 * fontScale));
+        }
     }
     onFontScaleChanged: {
-        if (settingsLoaded)
+        if (settingsLoaded) {
             saveSettings();
-
+            applyFont(fontFamily, Math.round(11 * fontScale));
+        }
     }
     onHyprScaleChanged: {
         if (settingsLoaded)
@@ -274,6 +284,8 @@ Item {
                 settingsService.saveSettings();
                 settingsService.settingsLoaded = true;
                 HyprlandService.triggerStartupTimer();
+                settingsService.applyCursor(settingsService.cursorTheme, settingsService.cursorSize);
+                settingsService.applyFont(settingsService.fontFamily, Math.round(11 * settingsService.fontScale));
             }
         }
 
@@ -395,6 +407,7 @@ Item {
                             settingsService.cursorSize = prefs.cursorSize;
 
                         applyCursor(settingsService.cursorTheme, settingsService.cursorSize);
+                        applyFont(settingsService.fontFamily, Math.round(11 * settingsService.fontScale));
                         if (prefs.barStyle !== undefined)
                             settingsService.barStyle = prefs.barStyle === "floating" ? "minflair" : prefs.barStyle;
                         else if (prefs.barFramedMode !== undefined)
@@ -456,6 +469,10 @@ Item {
 
     Process {
         id: applyCursorProc
+    }
+
+    Process {
+        id: applyFontProc
     }
 
 }

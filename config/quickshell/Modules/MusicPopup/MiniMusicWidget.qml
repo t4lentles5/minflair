@@ -56,7 +56,7 @@ Item {
 
                 Rectangle {
                     visible: true
-                    color: (!SettingsService.musicPlayer || SettingsService.musicPlayer === "") ? Theme.accent : Theme.bgSecondary
+                    color: (!SettingsService.musicPlayer || SettingsService.musicPlayer === "" || SettingsService.musicPlayer === "none") ? Theme.accent : Theme.bgSecondary
                     radius: 12
                     Layout.preferredHeight: 24
                     Layout.preferredWidth: badgeLbl.implicitWidth + 24
@@ -65,16 +65,16 @@ Item {
                         id: badgeLbl
 
                         anchors.centerIn: parent
-                        text: (!SettingsService.musicPlayer || SettingsService.musicPlayer === "") ? "Configure Player" : (MprisService.activePlayerName !== "" ? MprisService.activePlayerName : MprisService.getDisplayName(SettingsService.musicPlayer))
+                        text: (!SettingsService.musicPlayer || SettingsService.musicPlayer === "" || SettingsService.musicPlayer === "none") ? "Configure Player" : (MprisService.activePlayerName !== "" ? MprisService.activePlayerName : MprisService.getDisplayName(SettingsService.musicPlayer))
                         customSize: Constants.sizeXs + 2
                         font.bold: true
-                        color: (!SettingsService.musicPlayer || SettingsService.musicPlayer === "") ? Theme.bg : Theme.fg
+                        color: (!SettingsService.musicPlayer || SettingsService.musicPlayer === "" || SettingsService.musicPlayer === "none") ? Theme.bg : Theme.fg
                     }
 
                     MouseArea {
                         anchors.fill: parent
                         cursorShape: Qt.PointingHandCursor
-                        enabled: (!SettingsService.musicPlayer || SettingsService.musicPlayer === "")
+                        enabled: (!SettingsService.musicPlayer || SettingsService.musicPlayer === "" || SettingsService.musicPlayer === "none")
                         onClicked: {
                             AppState.pendingSettingsTab = 4;
                             AppState.openPopup("minflair_settings");
@@ -168,7 +168,7 @@ Item {
                 }
 
                 TypewriterText {
-                    text: MprisService.activePlayer ? (MprisService.activePlayer.trackArtist || "Unknown Artist") : ((!SettingsService.musicPlayer || SettingsService.musicPlayer === "") ? "Click below to configure" : "Open a music player to get started")
+                    text: MprisService.activePlayer ? (MprisService.activePlayer.trackArtist || "Unknown Artist") : ((!SettingsService.musicPlayer || SettingsService.musicPlayer === "" || SettingsService.musicPlayer === "none") ? "Click below to configure" : "Open a music player to get started")
                     customSize: Constants.sizeSm
                     color: Theme.accentComplementary
                     elide: Text.ElideRight

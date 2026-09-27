@@ -87,8 +87,8 @@ Item {
     }
 
     function getDisplayName(id) {
-        if (!id)
-            return "";
+        if (!id || id === "none")
+            return "None";
 
         if (id === "custom")
             return "Custom Command";
@@ -120,7 +120,7 @@ Item {
             return false;
 
         let pref = (SettingsService.musicPlayer || "").toLowerCase().trim();
-        if (!pref)
+        if (!pref || pref === "none")
             return false;
 
         let id = (p.identity || "").toLowerCase();
@@ -254,6 +254,9 @@ Item {
     }
 
     function launchPlayer() {
+        if (!SettingsService.musicPlayer || SettingsService.musicPlayer === "" || SettingsService.musicPlayer === "none")
+            return ;
+
         let playerObj = getPlayerById(SettingsService.musicPlayer);
         let cmd = "";
         let isTerminal = false;
@@ -280,6 +283,9 @@ Item {
     }
 
     function killConfiguredPlayer() {
+        if (!SettingsService.musicPlayer || SettingsService.musicPlayer === "" || SettingsService.musicPlayer === "none")
+            return ;
+
         let cmd = SettingsService.musicPlayerCommand;
         if (!cmd || cmd.trim() === "")
             cmd = SettingsService.musicPlayer;
@@ -326,11 +332,6 @@ Item {
                         }
                         root.availablePlayerIds = ids;
                         root.playerDisplayNames = names;
-                        if (SettingsService.musicPlayer === "spotify" && ids.indexOf("spotify") === -1 && ids.length > 0) {
-                            SettingsService.musicPlayer = ids[0];
-                            let firstObj = parsed[0];
-                            SettingsService.musicPlayerCommand = firstObj.exec || ids[0];
-                        }
                         root.updatePlayer();
                     }
                 } catch (e) {

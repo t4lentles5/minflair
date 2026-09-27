@@ -37,7 +37,7 @@ Card {
                     return "Standard balanced profile";
 
                 if (p === "performance")
-                    return "Max performance \u0026 brightness";
+                    return "Maximum system performance";
 
                 return "";
             }

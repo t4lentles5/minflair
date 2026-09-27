@@ -12,16 +12,14 @@ AppContainer {
     id: appearanceRoot
 
     property bool showingDark: true
-    property var availableFonts: []
-    property string currentFontName: "Geist"
-    property int currentFontSize: 11
+    property var availableFonts: ["Geist"]
+    property string currentFontName: SettingsService.fontFamily || "Geist"
+    property int currentFontSize: Math.round(11 * SettingsService.fontScale) || 11
     property var availableCursors: []
 
     function applyFont() {
         SettingsService.fontFamily = appearanceRoot.currentFontName;
-        setFontProc.command = ["python3", Quickshell.shellDir + "/Scripts/apply_font.py", appearanceRoot.currentFontName, appearanceRoot.currentFontSize.toString()];
-        setFontProc.running = false;
-        setFontProc.running = true;
+        SettingsService.applyFont(appearanceRoot.currentFontName, appearanceRoot.currentFontSize);
     }
 
     onShowingDarkChanged: {
@@ -37,6 +35,11 @@ AppContainer {
     Component.onCompleted: {
         showingDark = ColorUtils.isDark(Theme.bg);
         darkModeToggle.checked = showingDark;
+        if (appearanceRoot.availableFonts.indexOf(appearanceRoot.currentFontName) === -1) {
+            let arr = appearanceRoot.availableFonts.slice();
+            arr.unshift(appearanceRoot.currentFontName);
+            appearanceRoot.availableFonts = arr;
+        }
     }
 
     Connections {
@@ -47,8 +50,18 @@ AppContainer {
         target: Theme
     }
 
-    Process {
-        id: setFontProc
+    Connections {
+        function onFontFamilyChanged() {
+            if (appearanceRoot.currentFontName !== SettingsService.fontFamily)
+                appearanceRoot.currentFontName = SettingsService.fontFamily || "Geist";
+
+        }
+
+        function onFontScaleChanged() {
+            appearanceRoot.currentFontSize = Math.round(11 * SettingsService.fontScale) || 11;
+        }
+
+        target: SettingsService
     }
 
     Process {
@@ -73,41 +86,13 @@ AppContainer {
                             changed = true;
                         }
                     });
+                    if (arr.indexOf(appearanceRoot.currentFontName) === -1) {
+                        arr.unshift(appearanceRoot.currentFontName);
+                        changed = true;
+                    }
                     if (changed)
                         appearanceRoot.availableFonts = arr;
 
-                }
-            }
-        }
-
-    }
-
-    Process {
-        id: getFontProc
-
-        command: ["sh", "-c", "gsettings get org.gnome.desktop.interface font-name | tr -d \"'\""]
-        Component.onCompleted: running = true
-
-        stdout: SplitParser {
-            onRead: (data) => {
-                if (data && data.trim() !== "") {
-                    let full = data.trim();
-                    let match = full.match(/(.*)\s+(\d+)$/);
-                    if (match) {
-                        appearanceRoot.currentFontName = match[1];
-                        appearanceRoot.currentFontSize = parseInt(match[2]);
-                    } else {
-                        appearanceRoot.currentFontName = full;
-                        appearanceRoot.currentFontSize = 11;
-                    }
-                    if (Math.round(11 * SettingsService.fontScale) !== appearanceRoot.currentFontSize)
-                        SettingsService.fontScale = appearanceRoot.currentFontSize / 11;
-
-                    if (appearanceRoot.availableFonts.indexOf(appearanceRoot.currentFontName) === -1) {
-                        let arr = appearanceRoot.availableFonts.slice();
-                        arr.unshift(appearanceRoot.currentFontName);
-                        appearanceRoot.availableFonts = arr;
-                    }
                 }
             }
         }
@@ -227,12 +212,7 @@ AppContainer {
         ThemedSelect {
             id: fontSelect
 
-            label: "System Font"
-            description: "Global font for GTK, Qt and Shell"
-            comboWidth: 260
-            searchable: true
-            model: appearanceRoot.availableFonts
-            Component.onCompleted: {
+            function updateSelection() {
                 for (let i = 0; i < appearanceRoot.availableFonts.length; i++) {
                     if (appearanceRoot.availableFonts[i] === appearanceRoot.currentFontName) {
                         fontSelect.currentIndex = i;
@@ -241,6 +221,14 @@ AppContainer {
                 }
                 fontSelect.currentIndex = 0;
             }
+
+            label: "System Font"
+            description: "Global font for GTK, Qt and Shell"
+            comboWidth: 260
+            searchable: true
+            model: appearanceRoot.availableFonts
+            Component.onCompleted: updateSelection()
+            onModelChanged: updateSelection()
             onActivated: (index) => {
                 let newFont = model[index];
                 if (appearanceRoot.currentFontName !== newFont) {
@@ -251,13 +239,7 @@ AppContainer {
 
             Connections {
                 function onCurrentFontNameChanged() {
-                    for (let i = 0; i < appearanceRoot.availableFonts.length; i++) {
-                        if (appearanceRoot.availableFonts[i] === appearanceRoot.currentFontName) {
-                            fontSelect.currentIndex = i;
-                            return ;
-                        }
-                    }
-                    fontSelect.currentIndex = 0;
+                    fontSelect.updateSelection();
                 }
 
                 target: appearanceRoot
