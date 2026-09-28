@@ -53,41 +53,17 @@ Item {
     }
 
     function getTargetWidth(popup, item) {
-        switch (popup) {
-        case "dashboard":
-            return (item && item.implicitWidth > 0) ? (item.implicitWidth + contentHorizontalPadding) : (760 + contentHorizontalPadding);
-        case "controlCenter":
-            return (item && item.implicitWidth > 0) ? (item.implicitWidth + contentHorizontalPadding) : (856 + contentHorizontalPadding);
-        case "music":
-            return (item && item.implicitWidth > 0 ? item.implicitWidth : 240) + contentHorizontalPadding;
-        case "launcher":
-            return 720;
-        case "clipboard":
-            return 720;
-        case "wallpaper":
-            return 1040;
-        default:
-            return defaultWidth;
-        }
+        if (item && item.implicitWidth > 0)
+            return item.implicitWidth + contentHorizontalPadding;
+
+        return defaultWidth;
     }
 
     function getTargetHeight(popup, item) {
-        switch (popup) {
-        case "dashboard":
-            return (item && item.implicitHeight > 0) ? (item.implicitHeight + contentVerticalPadding) : (barMode === "island" ? 456 : 380 + contentVerticalPadding);
-        case "controlCenter":
-            return (item && item.implicitHeight > 0) ? (item.implicitHeight + contentVerticalPadding) : (380 + contentVerticalPadding);
-        case "music":
-            return (item && item.implicitHeight > 0 ? item.implicitHeight : 380) + contentVerticalPadding;
-        case "launcher":
-            return 280;
-        case "clipboard":
-            return 280;
-        case "wallpaper":
-            return 280;
-        default:
-            return defaultHeight;
-        }
+        if (item && item.implicitHeight > 0)
+            return item.implicitHeight + contentVerticalPadding;
+
+        return defaultHeight;
     }
 
     function getContentWidth(popup, item) {

@@ -10,8 +10,8 @@ OverlayWindow {
     enableShadow: true
     positionAtBottom: true
     enableBottomNotch: false
-    preferredWidth: 1040
-    preferredHeight: (SettingsService.barFramedMode || SettingsService.barConvexMode) ? 240 : 248
+    preferredWidth: content.implicitWidth + (contentPadding * 2)
+    preferredHeight: content.implicitHeight + (contentPadding * 2)
     borderWidth: 0
     initialFocusItem: content.initialFocusItem
     onPopupOpened: {

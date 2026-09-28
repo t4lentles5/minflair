@@ -69,6 +69,8 @@ Item {
         return items;
     }
     property alias initialFocusItem: shotView
+    readonly property int buttonWidth: 64
+    readonly property int buttonHeight: 48
 
     function hideWidget() {
         if (root.widget && typeof root.widget.close === "function")
@@ -91,9 +93,10 @@ Item {
         shotView.forceActiveFocus();
     }
 
-    implicitWidth: 64 * root.shotModel.length
-    implicitHeight: 48
-    anchors.fill: parent
+    implicitWidth: buttonWidth * root.shotModel.length
+    implicitHeight: buttonHeight
+    width: implicitWidth
+    height: implicitHeight
     Component.onCompleted: {
         resetScreenCapture();
     }

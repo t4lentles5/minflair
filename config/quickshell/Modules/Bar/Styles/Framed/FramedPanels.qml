@@ -111,8 +111,6 @@ Item {
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.bottom: parent.bottom
         anchors.bottomMargin: root.bezelSize
-        customWidth: 720
-        customHeight: 480
 
         sourceComponent: Component {
             LauncherContent {
@@ -132,8 +130,6 @@ Item {
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.bottom: parent.bottom
         anchors.bottomMargin: root.bezelSize
-        customWidth: 720
-        customHeight: 480
 
         sourceComponent: Component {
             ClipboardContent {
@@ -153,8 +149,6 @@ Item {
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.bottom: parent.bottom
         anchors.bottomMargin: root.bezelSize
-        customWidth: Math.min(1008, root.width - 2 * root.bezelSize - 64)
-        customHeight: 216
 
         sourceComponent: Component {
             WallpaperSelectorContent {
@@ -174,8 +168,6 @@ Item {
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.bottom: parent.bottom
         anchors.bottomMargin: root.bezelSize
-        customWidth: 320
-        customHeight: 48
         contentPadding: 0
         safeMarginX: cornerRadius * 2
         safeMarginY: 0
@@ -199,8 +191,6 @@ Item {
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.bottom: parent.bottom
         anchors.bottomMargin: root.bezelSize
-        customWidth: 512
-        customHeight: 48
         contentPadding: 0
         safeMarginX: cornerRadius * 2
         safeMarginY: 0

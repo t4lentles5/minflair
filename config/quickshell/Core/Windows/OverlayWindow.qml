@@ -24,8 +24,8 @@ PanelWindow {
     readonly property int closeDuration: HyprlandService.enableAnimations ? Constants.animNormal : 0
     property int fadeDuration: HyprlandService.enableAnimations ? Constants.animNormal : 0
     property color backgroundColor: Theme.bg
-    property int preferredWidth: 600
-    property int preferredHeight: 500
+    property int preferredWidth: (innerContentHolder.children.length > 0 && innerContentHolder.children[0].implicitWidth > 0) ? (innerContentHolder.children[0].implicitWidth + contentPadding * 2) : 600
+    property int preferredHeight: (innerContentHolder.children.length > 0 && innerContentHolder.children[0].implicitHeight > 0) ? (innerContentHolder.children[0].implicitHeight + contentPadding * 2) : 500
     property real smoothPreferredWidth: preferredWidth
     property real smoothPreferredHeight: preferredHeight
     property bool positionAtBottom: false

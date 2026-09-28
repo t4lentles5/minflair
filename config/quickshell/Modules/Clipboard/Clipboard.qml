@@ -7,8 +7,8 @@ OverlayWindow {
 
     popupId: "clipboard"
     enableShadow: true
-    preferredWidth: 720
-    preferredHeight: 480
+    preferredWidth: content.implicitWidth + (contentPadding * 2)
+    preferredHeight: content.implicitHeight + (contentPadding * 2)
     borderWidth: 0
     initialFocusItem: content.initialFocusItem
     onPopupOpened: {

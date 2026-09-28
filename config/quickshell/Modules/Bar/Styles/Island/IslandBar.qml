@@ -93,43 +93,19 @@ Item {
 
     function getTargetWidth(popup, item) {
         let pad = getTargetPadding(popup);
-        switch (popup) {
-        case "dashboard":
-            return (item && item.implicitWidth > 0) ? item.implicitWidth : 760;
-        case "controlCenter":
-            return (item && item.implicitWidth > 0) ? item.implicitWidth + (pad * 2) : 856 + (pad * 2);
-        case "music":
-            return (item && item.implicitWidth > 0 ? item.implicitWidth : 240) + (pad * 2);
-        case "launcher":
-            return 720;
-        case "clipboard":
-            return 720;
-        case "wallpaper":
-            return 1040;
-        default:
-            let w = Math.round(islandContent.implicitWidth) + 24;
-            return (w % 2 === 0) ? w : (w + 1);
-        }
+        if (item && item.implicitWidth > 0)
+            return item.implicitWidth + (pad * 2);
+
+        let w = Math.round(islandContent.implicitWidth) + 24;
+        return (w % 2 === 0) ? w : (w + 1);
     }
 
     function getTargetHeight(popup, item) {
         let pad = getTargetPadding(popup);
-        switch (popup) {
-        case "dashboard":
-            return (item && item.implicitHeight > 0) ? item.implicitHeight + (pad * 2) : 456;
-        case "controlCenter":
-            return (item && item.implicitHeight > 0) ? item.implicitHeight + (pad * 2) : 380 + (pad * 2);
-        case "music":
-            return (item && item.implicitHeight > 0 ? item.implicitHeight : 380) + (pad * 2);
-        case "launcher":
-            return 480;
-        case "clipboard":
-            return 480;
-        case "wallpaper":
-            return 248;
-        default:
-            return 36;
-        }
+        if (item && item.implicitHeight > 0)
+            return item.implicitHeight + (pad * 2);
+
+        return 36;
     }
 
     function getContentWidth(popup, item) {

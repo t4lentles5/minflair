@@ -44,6 +44,8 @@ Item {
     }]
     property int pendingActionIndex: -1
     property alias initialFocusItem: menuView
+    readonly property int buttonWidth: 64
+    readonly property int buttonHeight: 48
 
     function closeWidget() {
         if (root.widget && typeof root.widget.close === "function")
@@ -74,9 +76,10 @@ Item {
         menuView.forceActiveFocus();
     }
 
-    implicitWidth: 64 * root.menuModel.length
-    implicitHeight: 48
-    anchors.fill: parent
+    implicitWidth: buttonWidth * root.menuModel.length
+    implicitHeight: buttonHeight
+    width: implicitWidth
+    height: implicitHeight
     Component.onCompleted: {
         resetPowerMenu();
     }

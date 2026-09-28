@@ -10,8 +10,8 @@ OverlayWindow {
     contentPadding: 0
     borderWidth: 0
     windowRadius: Constants.sizeMd
-    preferredWidth: 320
-    preferredHeight: 48
+    preferredWidth: content.implicitWidth
+    preferredHeight: content.implicitHeight
     initialFocusItem: content.initialFocusItem
     enableShadow: true
     onPopupOpened: {

@@ -90,45 +90,21 @@ Item {
     function getTargetWidth(popup, item) {
         let pad = getTargetPadding(popup);
         let totalHorizPadding = (flareW + pad) * 2;
-        switch (popup) {
-        case "dashboard":
-            return (item && item.implicitWidth > 0) ? (item.implicitWidth + totalHorizPadding) : (760 + totalHorizPadding);
-        case "controlCenter":
-            return (item && item.implicitWidth > 0) ? (item.implicitWidth + totalHorizPadding) : (856 + totalHorizPadding);
-        case "music":
-            return (item && item.implicitWidth > 0 ? item.implicitWidth : 240) + totalHorizPadding;
-        case "launcher":
-            return 720;
-        case "clipboard":
-            return 720;
-        case "wallpaper":
-            return 1076;
-        default:
-            let contentW = Math.round(notchContent.implicitWidth);
-            let w = contentW + (flareW * 2) + 16;
-            return (w % 2 === 0) ? w : (w + 1);
-        }
+        if (item && item.implicitWidth > 0)
+            return item.implicitWidth + totalHorizPadding;
+
+        let contentW = Math.round(notchContent.implicitWidth);
+        let w = contentW + (flareW * 2) + 16;
+        return (w % 2 === 0) ? w : (w + 1);
     }
 
     function getTargetHeight(popup, item) {
         let pad = getTargetPadding(popup);
         let totalVertPadding = pad * 2;
-        switch (popup) {
-        case "dashboard":
-            return (item && item.implicitHeight > 0) ? (item.implicitHeight + totalVertPadding) : (380 + totalVertPadding);
-        case "controlCenter":
-            return (item && item.implicitHeight > 0) ? (item.implicitHeight + totalVertPadding) : (380 + totalVertPadding);
-        case "music":
-            return (item && item.implicitHeight > 0 ? item.implicitHeight : 380) + totalVertPadding;
-        case "launcher":
-            return 480;
-        case "clipboard":
-            return 480;
-        case "wallpaper":
-            return 248;
-        default:
-            return 40;
-        }
+        if (item && item.implicitHeight > 0)
+            return item.implicitHeight + totalVertPadding;
+
+        return 40;
     }
 
     function getContentWidth(popup, item) {

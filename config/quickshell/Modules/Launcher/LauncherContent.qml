@@ -10,7 +10,7 @@ import qs.Core.Components
 import qs.Core.Services
 import qs.Modules.Launcher.Components
 
-ColumnLayout {
+Item {
     id: root
 
     property var widget: null
@@ -18,6 +18,13 @@ ColumnLayout {
     property var allApps: []
     property var filteredApps: []
     property alias initialFocusItem: searchField
+    property int visibleItems: 8
+    property int preferredContentWidth: 700
+    readonly property int searchBarHeight: 40
+    readonly property int itemHeight: 44
+    readonly property int listSpacing: Constants.sizeXs
+    readonly property int layoutSpacing: Constants.sizeSm
+    readonly property int visibleListHeight: (visibleItems * itemHeight) + Math.max(0, (visibleItems - 1) * listSpacing)
 
     function filterApps(query) {
         query = query.toLowerCase();
@@ -129,10 +136,10 @@ ColumnLayout {
         searchField.forceActiveFocus();
     }
 
-    implicitWidth: 720
-    implicitHeight: 480
-    anchors.fill: parent
-    spacing: Constants.sizeLg
+    implicitWidth: preferredContentWidth
+    implicitHeight: searchBarHeight + layoutSpacing + visibleListHeight
+    width: implicitWidth
+    height: implicitHeight
     Component.onCompleted: {
         resetLauncher();
     }
@@ -160,110 +167,118 @@ ColumnLayout {
 
     }
 
-    Item {
-        id: topSearchContainer
+    ColumnLayout {
+        anchors.fill: parent
+        spacing: root.layoutSpacing
 
-        Layout.fillWidth: true
-        Layout.preferredHeight: (SettingsService.barFramedMode || SettingsService.barConvexMode) ? 0 : 40
-        visible: !(SettingsService.barFramedMode || SettingsService.barConvexMode)
-    }
+        Item {
+            id: topSearchContainer
 
-    Item {
-        Layout.fillWidth: true
-        Layout.fillHeight: true
-
-        GhostEmptyState {
-            anchors.centerIn: parent
-            visible: root.filteredApps.length === 0 && searchField.text !== ""
-            text: "No applications found"
-            isAnimating: visible
+            Layout.fillWidth: true
+            Layout.preferredHeight: (SettingsService.barFramedMode || SettingsService.barConvexMode) ? 0 : 40
+            visible: !(SettingsService.barFramedMode || SettingsService.barConvexMode)
         }
 
-        ListView {
-            id: appsView
+        Item {
+            Layout.fillWidth: true
+            Layout.preferredHeight: root.visibleListHeight
+            Layout.fillHeight: false
 
-            property int expandedIndex: -1
-
-            anchors.fill: parent
-            clip: true
-            model: root.filteredApps
-            spacing: Constants.sizeXs
-            currentIndex: -1
-            highlightResizeDuration: 0
-            highlightMoveDuration: Constants.animNormal
-            highlightFollowsCurrentItem: true
-            visible: root.filteredApps.length > 0
-            Keys.onPressed: function(event) {
-                root.handleKeyPress(event, false);
+            GhostEmptyState {
+                anchors.centerIn: parent
+                visible: root.filteredApps.length === 0 && searchField.text !== ""
+                text: "No applications found"
+                isAnimating: visible
             }
 
-            highlight: Item {
-                width: appsView.width
-                height: 44
-                z: 1
+            ListView {
+                id: appsView
 
-                Rectangle {
-                    anchors.fill: parent
-                    radius: Constants.sizeLg
-                    color: Theme.bgSecondary
+                property int expandedIndex: -1
+
+                anchors.fill: parent
+                clip: true
+                boundsBehavior: Flickable.StopAtBounds
+                model: root.filteredApps
+                spacing: root.listSpacing
+                currentIndex: -1
+                highlightResizeDuration: 0
+                highlightMoveDuration: Constants.animNormal
+                highlightFollowsCurrentItem: true
+                visible: root.filteredApps.length > 0
+                Keys.onPressed: function(event) {
+                    root.handleKeyPress(event, false);
                 }
 
-            }
+                highlight: Item {
+                    width: appsView.width
+                    height: 44
+                    z: 1
 
-            add: Transition {
-                NumberAnimation {
-                    properties: "opacity"
-                    from: 0
-                    to: 1
-                    duration: Constants.animNormal
-                    easing.type: Easing.OutQuint
+                    Rectangle {
+                        anchors.fill: parent
+                        radius: Constants.sizeLg
+                        color: Theme.bgSecondary
+                    }
+
                 }
 
-            }
+                add: Transition {
+                    NumberAnimation {
+                        properties: "opacity"
+                        from: 0
+                        to: 1
+                        duration: Constants.animNormal
+                        easing.type: Easing.OutQuint
+                    }
 
-            populate: Transition {
-                NumberAnimation {
-                    properties: "opacity"
-                    from: 0
-                    to: 1
-                    duration: Constants.animNormal
-                    easing.type: Easing.OutQuint
                 }
 
-            }
+                populate: Transition {
+                    NumberAnimation {
+                        properties: "opacity"
+                        from: 0
+                        to: 1
+                        duration: Constants.animNormal
+                        easing.type: Easing.OutQuint
+                    }
 
-            delegate: LauncherItemDelegate {
-                modelData: model.modelData
-                isCurrent: appsView.currentIndex === index
-                isExpanded: appsView.expandedIndex === index
-                onToggleExpanded: {
-                    if (appsView.expandedIndex === index) {
-                        appsView.expandedIndex = -1;
-                    } else {
-                        appsView.expandedIndex = index;
-                        appsView.currentIndex = index;
+                }
+
+                delegate: LauncherItemDelegate {
+                    modelData: model.modelData
+                    isCurrent: appsView.currentIndex === index
+                    isExpanded: appsView.expandedIndex === index
+                    onToggleExpanded: {
+                        if (appsView.expandedIndex === index) {
+                            appsView.expandedIndex = -1;
+                        } else {
+                            appsView.expandedIndex = index;
+                            appsView.currentIndex = index;
+                        }
+                    }
+                    onLaunchRequested: function(execCmd, terminalFlag) {
+                        root.launchApp(execCmd, terminalFlag);
                     }
                 }
-                onLaunchRequested: function(execCmd, terminalFlag) {
-                    root.launchApp(execCmd, terminalFlag);
-                }
-            }
 
-            ScrollBar.vertical: ScrollBar {
-                policy: ScrollBar.AlwaysOff
-                active: true
+                ScrollBar.vertical: ScrollBar {
+                    policy: ScrollBar.AlwaysOff
+                    active: true
+                }
+
             }
 
         }
 
-    }
+        Item {
+            id: bottomSearchContainer
 
-    Item {
-        id: bottomSearchContainer
+            Layout.fillWidth: true
+            Layout.preferredHeight: (SettingsService.barFramedMode || SettingsService.barConvexMode) ? 40 : 0
+            visible: SettingsService.barFramedMode || SettingsService.barConvexMode
+        }
 
-        Layout.fillWidth: true
-        Layout.preferredHeight: (SettingsService.barFramedMode || SettingsService.barConvexMode) ? 40 : 0
-        visible: SettingsService.barFramedMode || SettingsService.barConvexMode
     }
 
     ThemedSearchBar {
