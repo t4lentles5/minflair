@@ -31,6 +31,17 @@ Item {
     property bool hyprShadow: true
     property int hyprShadowRange: 8
     property int hyprShadowRenderPower: 3
+    property real mouseSensitivity: 0
+    property string mouseAccelProfile: "flat"
+    property bool mouseNaturalScroll: false
+    property real mouseScrollFactor: 1
+    property bool mouseLeftHanded: false
+    property int mouseFollowMouse: 1
+    property int cursorInactiveTimeout: 5
+    property bool cursorNoWarps: false
+    property bool touchpadNaturalScroll: true
+    property bool touchpadTapToClick: true
+    property bool touchpadDisableWhileTyping: true
     property bool hyprPrefsLoaded: false
     property bool isSyncing: false
     property bool isTrueFullscreen: false
@@ -78,6 +89,13 @@ Item {
 
     function triggerStartupTimer() {
         startupApplyTimer.start();
+    }
+
+    function applyMouseSettings() {
+        if (!hyprPrefsLoaded || isSyncing)
+            return ;
+
+        applyMouseSettingsTimer.restart();
     }
 
     onEnableAnimationsChanged: {
@@ -208,6 +226,61 @@ Item {
             applyHyprlandSettings();
 
     }
+    onMouseSensitivityChanged: {
+        if (hyprPrefsLoaded && !isSyncing)
+            applyMouseSettings();
+
+    }
+    onMouseAccelProfileChanged: {
+        if (hyprPrefsLoaded && !isSyncing)
+            applyMouseSettings();
+
+    }
+    onMouseNaturalScrollChanged: {
+        if (hyprPrefsLoaded && !isSyncing)
+            applyMouseSettings();
+
+    }
+    onMouseScrollFactorChanged: {
+        if (hyprPrefsLoaded && !isSyncing)
+            applyMouseSettings();
+
+    }
+    onMouseLeftHandedChanged: {
+        if (hyprPrefsLoaded && !isSyncing)
+            applyMouseSettings();
+
+    }
+    onMouseFollowMouseChanged: {
+        if (hyprPrefsLoaded && !isSyncing)
+            applyMouseSettings();
+
+    }
+    onCursorInactiveTimeoutChanged: {
+        if (hyprPrefsLoaded && !isSyncing)
+            applyMouseSettings();
+
+    }
+    onCursorNoWarpsChanged: {
+        if (hyprPrefsLoaded && !isSyncing)
+            applyMouseSettings();
+
+    }
+    onTouchpadNaturalScrollChanged: {
+        if (hyprPrefsLoaded && !isSyncing)
+            applyMouseSettings();
+
+    }
+    onTouchpadTapToClickChanged: {
+        if (hyprPrefsLoaded && !isSyncing)
+            applyMouseSettings();
+
+    }
+    onTouchpadDisableWhileTypingChanged: {
+        if (hyprPrefsLoaded && !isSyncing)
+            applyMouseSettings();
+
+    }
     Component.onCompleted: {
         readHyprPrefsProc.running = true;
         checkFullscreen();
@@ -253,6 +326,48 @@ Item {
             patchUserPrefsProc.running = false;
             patchUserPrefsProc.running = true;
         }
+    }
+
+    Timer {
+        id: applyMouseSettingsTimer
+
+        interval: 100
+        repeat: false
+        onTriggered: {
+            if (!hyprPrefsLoaded || isSyncing)
+                return ;
+
+            let evalCmd = "hl.config({ " + "input = { " + "sensitivity = " + mouseSensitivity.toFixed(2) + ", " + (mouseAccelProfile !== "" ? "accel_profile = '" + mouseAccelProfile + "', " : "") + "natural_scroll = " + (mouseNaturalScroll ? "true" : "false") + ", " + "scroll_factor = " + mouseScrollFactor.toFixed(2) + ", " + "left_handed = " + (mouseLeftHanded ? "true" : "false") + ", " + "follow_mouse = " + mouseFollowMouse + ", " + "touchpad = { " + "natural_scroll = " + (touchpadNaturalScroll ? "true" : "false") + ", " + "tap_to_click = " + (touchpadTapToClick ? "true" : "false") + ", " + "disable_while_typing = " + (touchpadDisableWhileTyping ? "true" : "false") + "} " + "}, " + "cursor = { " + "inactive_timeout = " + cursorInactiveTimeout + ", " + "no_warps = " + (cursorNoWarps ? "true" : "false") + "} " + "})";
+            mouseApplyProc.command = ["hyprctl", "eval", evalCmd];
+            mouseApplyProc.running = false;
+            mouseApplyProc.running = true;
+            let jsonArgs = {
+                "input": {
+                    "sensitivity": parseFloat(mouseSensitivity.toFixed(2)),
+                    "accel_profile": mouseAccelProfile,
+                    "natural_scroll": mouseNaturalScroll,
+                    "scroll_factor": parseFloat(mouseScrollFactor.toFixed(2)),
+                    "left_handed": mouseLeftHanded,
+                    "follow_mouse": mouseFollowMouse,
+                    "touchpad": {
+                        "natural_scroll": touchpadNaturalScroll,
+                        "tap_to_click": touchpadTapToClick,
+                        "disable_while_typing": touchpadDisableWhileTyping
+                    }
+                },
+                "cursor": {
+                    "inactive_timeout": cursorInactiveTimeout,
+                    "no_warps": cursorNoWarps
+                }
+            };
+            patchUserPrefsProc.command = ["python3", Quickshell.shellDir + "/Core/Services/scripts/update_hypr_prefs.py", JSON.stringify(jsonArgs)];
+            patchUserPrefsProc.running = false;
+            patchUserPrefsProc.running = true;
+        }
+    }
+
+    Process {
+        id: mouseApplyProc
     }
 
     Timer {
@@ -416,50 +531,41 @@ Item {
                         if (prefs["animations:enabled"] !== undefined)
                             enableAnimations = prefs["animations:enabled"];
 
+                        if (prefs["input:sensitivity"] !== undefined)
+                            mouseSensitivity = prefs["input:sensitivity"];
+
+                        if (prefs["input:accel_profile"] !== undefined && prefs["input:accel_profile"] !== "[[EMPTY]]")
+                            mouseAccelProfile = prefs["input:accel_profile"];
+
+                        if (prefs["input:natural_scroll"] !== undefined)
+                            mouseNaturalScroll = prefs["input:natural_scroll"];
+
+                        if (prefs["input:scroll_factor"] !== undefined)
+                            mouseScrollFactor = prefs["input:scroll_factor"];
+
+                        if (prefs["input:left_handed"] !== undefined)
+                            mouseLeftHanded = prefs["input:left_handed"];
+
+                        if (prefs["input:follow_mouse"] !== undefined)
+                            mouseFollowMouse = prefs["input:follow_mouse"];
+
+                        if (prefs["cursor:inactive_timeout"] !== undefined)
+                            cursorInactiveTimeout = Math.round(prefs["cursor:inactive_timeout"]);
+
+                        if (prefs["cursor:no_warps"] !== undefined)
+                            cursorNoWarps = prefs["cursor:no_warps"];
+
+                        if (prefs["input:touchpad:natural_scroll"] !== undefined)
+                            touchpadNaturalScroll = prefs["input:touchpad:natural_scroll"];
+
+                        if (prefs["input:touchpad:tap-to-click"] !== undefined)
+                            touchpadTapToClick = prefs["input:touchpad:tap-to-click"];
+
+                        if (prefs["input:touchpad:disable_while_typing"] !== undefined)
+                            touchpadDisableWhileTyping = prefs["input:touchpad:disable_while_typing"];
+
                     } catch (e) {
                         console.error("Error parsing hypr prefs: " + e);
-                    } finally {
-                        let prefs = JSON.parse(data.trim());
-                        hyprlandService.isSyncing = true;
-                        if (prefs["decoration:blur:enabled"] !== undefined)
-                            hyprBlur = prefs["decoration:blur:enabled"];
-
-                        if (prefs["decoration:rounding"] !== undefined)
-                            hyprRounding = prefs["decoration:rounding"];
-
-                        if (prefs["decoration:active_opacity"] !== undefined)
-                            hyprActiveOpacity = Math.round(prefs["decoration:active_opacity"] * 100);
-
-                        if (prefs["decoration:inactive_opacity"] !== undefined)
-                            hyprInactiveOpacity = Math.round(prefs["decoration:inactive_opacity"] * 100);
-
-                        if (prefs["decoration:blur:size"] !== undefined)
-                            hyprBlurSize = prefs["decoration:blur:size"];
-
-                        if (prefs["decoration:blur:passes"] !== undefined)
-                            hyprBlurPasses = prefs["decoration:blur:passes"];
-
-                        if (prefs["general:gaps_in"] !== undefined)
-                            hyprGapsIn = prefs["general:gaps_in"];
-
-                        if (prefs["general:gaps_out"] !== undefined)
-                            hyprGapsOut = prefs["general:gaps_out"];
-
-                        if (prefs["general:border_size"] !== undefined)
-                            hyprBorderSize = prefs["general:border_size"];
-
-                        if (prefs["decoration:shadow:enabled"] !== undefined)
-                            hyprShadow = prefs["decoration:shadow:enabled"];
-
-                        if (prefs["decoration:shadow:range"] !== undefined)
-                            hyprShadowRange = prefs["decoration:shadow:range"];
-
-                        if (prefs["decoration:shadow:render_power"] !== undefined)
-                            hyprShadowRenderPower = prefs["decoration:shadow:render_power"];
-
-                        if (prefs["animations:enabled"] !== undefined)
-                            enableAnimations = prefs["animations:enabled"];
-
                     }
                 }
             }

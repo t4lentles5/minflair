@@ -18,7 +18,7 @@ AppContainer {
 
             ColumnLayout {
                 Layout.fillWidth: true
-                spacing: Constants.size2Xl
+                spacing: Constants.sizeSm
 
                 SettingRowTemplate {
                     label: {

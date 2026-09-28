@@ -16,6 +16,17 @@ OPTIONS = [
     "decoration:shadow:range",
     "decoration:shadow:render_power",
     "animations:enabled",
+    "input:sensitivity",
+    "input:accel_profile",
+    "input:natural_scroll",
+    "input:scroll_factor",
+    "input:left_handed",
+    "input:follow_mouse",
+    "cursor:inactive_timeout",
+    "cursor:no_warps",
+    "input:touchpad:natural_scroll",
+    "input:touchpad:tap-to-click",
+    "input:touchpad:disable_while_typing",
 ]
 
 

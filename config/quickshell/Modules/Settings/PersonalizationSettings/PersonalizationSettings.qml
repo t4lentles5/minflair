@@ -15,7 +15,6 @@ AppContainer {
     property var availableFonts: ["Geist"]
     property string currentFontName: SettingsService.fontFamily || "Geist"
     property int currentFontSize: Math.round(11 * SettingsService.fontScale) || 11
-    property var availableCursors: []
 
     function applyFont() {
         SettingsService.fontFamily = appearanceRoot.currentFontName;
@@ -92,37 +91,6 @@ AppContainer {
                     }
                     if (changed)
                         appearanceRoot.availableFonts = arr;
-
-                }
-            }
-        }
-
-    }
-
-    Process {
-        id: fetchCursorsProc
-
-        command: ["sh", "-c", "find /usr/share/icons ~/.local/share/icons ~/.icons -type d -name 'cursors' 2>/dev/null | awk -F'/' '{print $(NF-1)}' | sort -u"]
-        Component.onCompleted: running = true
-
-        stdout: SplitParser {
-            onRead: (data) => {
-                if (data) {
-                    let lines = data.split('\n').map((x) => {
-                        return x.trim();
-                    }).filter((x) => {
-                        return x !== "";
-                    });
-                    let arr = appearanceRoot.availableCursors.slice();
-                    let changed = false;
-                    lines.forEach((l) => {
-                        if (arr.indexOf(l) === -1) {
-                            arr.push(l);
-                            changed = true;
-                        }
-                    });
-                    if (changed)
-                        appearanceRoot.availableCursors = arr;
 
                 }
             }
@@ -265,70 +233,6 @@ AppContainer {
                 } else {
                     SettingsService.fontScale = val;
                 }
-            }
-        }
-
-    }
-
-    AppGroup {
-        title: "Cursor"
-        icon: "cursor"
-
-        ThemedSelect {
-            id: cursorSelect
-
-            function updateSelection() {
-                for (let i = 0; i < appearanceRoot.availableCursors.length; i++) {
-                    if (appearanceRoot.availableCursors[i] === SettingsService.cursorTheme) {
-                        cursorSelect.currentIndex = i;
-                        return ;
-                    }
-                }
-            }
-
-            label: "Cursor Theme"
-            description: "Global mouse cursor theme"
-            comboWidth: 260
-            searchable: true
-            model: appearanceRoot.availableCursors
-            Component.onCompleted: updateSelection()
-            onModelChanged: updateSelection()
-            onActivated: (index) => {
-                let newTheme = model[index];
-                if (SettingsService.cursorTheme !== newTheme)
-                    SettingsService.cursorTheme = newTheme;
-
-            }
-
-            Connections {
-                function onCursorThemeChanged() {
-                    cursorSelect.updateSelection();
-                }
-
-                target: SettingsService
-            }
-
-        }
-
-        SettingSegmented {
-            label: "Cursor Size"
-            description: "Size of the mouse cursor"
-            model: [{
-                "text": "24",
-                "value": 24
-            }, {
-                "text": "32",
-                "value": 32
-            }, {
-                "text": "48",
-                "value": 48
-            }, {
-                "text": "64",
-                "value": 64
-            }]
-            currentValue: SettingsService.cursorSize
-            onActivated: (value) => {
-                SettingsService.cursorSize = value;
             }
         }
 

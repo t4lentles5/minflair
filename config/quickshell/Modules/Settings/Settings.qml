@@ -10,6 +10,7 @@ import qs.Modules.Settings.BarSettings
 import qs.Modules.Settings.EffectsSettings
 import qs.Modules.Settings.InputAndClipboardSettings
 import qs.Modules.Settings.IntegrationsSettings
+import qs.Modules.Settings.MouseSettings
 import qs.Modules.Settings.PersonalizationSettings
 import qs.Modules.Settings.SystemInfo
 import qs.Modules.Settings.WindowSettings
@@ -17,7 +18,7 @@ import qs.Modules.Settings.WindowSettings
 SidebarAppWindow {
     id: root
 
-    property var pageComponents: [personalizationComp, barSettingsComp, effectsComp, windowComp, integrationsComp, inputAndClipboardComp, systemInfoComp]
+    property var pageComponents: [personalizationComp, barSettingsComp, effectsComp, windowComp, integrationsComp, mouseComp, inputAndClipboardComp, systemInfoComp]
 
     popupId: "minflair_settings"
     windowTitle: "Minflair Settings"
@@ -53,10 +54,14 @@ SidebarAppWindow {
         "icon": "apps"
     }, {
         "index": 5,
-        "label": "Input & Clipboard",
-        "icon": "edit"
+        "label": "Mouse & Touchpad",
+        "icon": "cursor"
     }, {
         "index": 6,
+        "label": "Keyboard & Clipboard",
+        "icon": "keyboard"
+    }, {
+        "index": 7,
         "label": "System & Updates",
         "icon": "info"
     }]
@@ -104,6 +109,15 @@ SidebarAppWindow {
         id: integrationsComp
 
         IntegrationsSettings {
+            anchors.fill: parent
+        }
+
+    }
+
+    Component {
+        id: mouseComp
+
+        MouseSettings {
             anchors.fill: parent
         }
 

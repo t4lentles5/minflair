@@ -25,6 +25,19 @@ def update_lua(content, updates):
     seen_keys = set()
     seen_top_level = set()
 
+    def format_lua_val(v):
+        if isinstance(v, bool):
+            return str(v).lower()
+        if isinstance(v, (int, float)):
+            return str(v)
+        if isinstance(v, str):
+            if (v.startswith('"') and v.endswith('"')) or (
+                v.startswith("'") and v.endswith("'")
+            ):
+                return v
+            return f'"{v}"'
+        return str(v)
+
     while i < len(lines):
         line = lines[i]
 
@@ -42,9 +55,7 @@ def update_lua(content, updates):
                                 write_block(v, indent_lvl + 1)
                                 out_lines.append(f"{indent}}},")
                             else:
-                                v_str = (
-                                    str(v).lower() if isinstance(v, bool) else str(v)
-                                )
+                                v_str = format_lua_val(v)
                                 out_lines.append(f"{indent}{k} = {v_str},")
 
                     write_block(top_v, 2)
@@ -89,7 +100,7 @@ def update_lua(content, updates):
                             write_missing(mv, indent_lvl + 1)
                             out_lines.append(f"{indent_str}}},")
                         else:
-                            v_str = str(mv).lower() if isinstance(mv, bool) else str(mv)
+                            v_str = format_lua_val(mv)
                             out_lines.append(f"{indent_str}{mk} = {v_str},")
 
                 write_missing(missing_in_scope, len(scope) + 2)
@@ -105,7 +116,7 @@ def update_lua(content, updates):
             full_key = ".".join(scope) + "." + key
             if full_key in flat_updates:
                 val = flat_updates[full_key]
-                v_str = str(val).lower() if isinstance(val, bool) else str(val)
+                v_str = format_lua_val(val)
                 out_lines.append(
                     f"{m_kv.group(1)}{key}{m_kv.group(3)}{v_str}{m_kv.group(5)}"
                 )

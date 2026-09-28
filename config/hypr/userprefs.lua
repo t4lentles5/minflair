@@ -2,7 +2,7 @@ local colors = require("colors")
 
 hl.config({
 	general = {
-		gaps_in = 4,
+		gaps_in = 5,
 		gaps_out = 8,
 		border_size = 0,
 		["col.active_border"] = colors.accent_alpha,
@@ -67,6 +67,7 @@ hl.config({
 	cursor = {
 		inactive_timeout = 5,
 		warp_on_change_workspace = true,
+		no_warps = false,
 	},
 	input = {
 		kb_rules = "evdev",
@@ -76,7 +77,13 @@ hl.config({
 		sensitivity = 0,
 		touchpad = {
 			natural_scroll = true,
+			tap_to_click = true,
+			disable_while_typing = true,
 		},
+		accel_profile = "flat",
+		natural_scroll = false,
+		scroll_factor = 1,
+		left_handed = false,
 	},
 	xwayland = {
 		force_zero_scaling = true,
