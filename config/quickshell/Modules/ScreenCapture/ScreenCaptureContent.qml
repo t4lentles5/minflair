@@ -83,7 +83,7 @@ Item {
     }
 
     function runShot(mode) {
-        let scriptPath = Quickshell.shellDir + "/Scripts/screenshot.sh";
+        let scriptPath = Quickshell.shellDir + "/Modules/ScreenCapture/scripts/screenshot.sh";
         Quickshell.execDetached(["bash", scriptPath, mode]);
         root.hideWidget();
     }

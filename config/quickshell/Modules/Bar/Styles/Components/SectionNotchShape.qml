@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Effects
 import QtQuick.Shapes
 import qs.Core
+import qs.Core.Components
 import qs.Core.Services
 
 Item {

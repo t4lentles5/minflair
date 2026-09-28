@@ -4,6 +4,7 @@ import QtQuick.Layouts
 import Quickshell
 import qs.Core
 import qs.Core.Components
+import qs.Modules.Notifications.Components
 
 Rectangle {
     id: delegateRoot

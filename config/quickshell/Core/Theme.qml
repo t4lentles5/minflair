@@ -102,7 +102,7 @@ QtObject {
 
     function generateTheme(wallpaperPath) {
         generatorProc.running = false;
-        generatorProc.command = ["python3", Quickshell.shellDir + "/Scripts/generate_theme.py", wallpaperPath, generateFromWallpaper ? "True" : "False"];
+        generatorProc.command = ["python3", Quickshell.shellDir + "/Scripts/theme/generate_theme.py", wallpaperPath, generateFromWallpaper ? "True" : "False"];
         generatorProc.running = true;
     }
 
@@ -172,7 +172,7 @@ QtObject {
         onExited: function(exitCode) {
             if (exitCode === 0) {
                 applyThemeProc.running = false;
-                applyThemeProc.command = ["python3", Quickshell.shellDir + "/Scripts/apply_theme.py"];
+                applyThemeProc.command = ["python3", Quickshell.shellDir + "/Scripts/theme/apply_theme.py"];
                 applyThemeProc.running = true;
             }
         }
@@ -209,7 +209,7 @@ QtObject {
                         root.accentComplementary = colors.accentComplementary;
 
                     applyThemeProc.running = false;
-                    applyThemeProc.command = ["python3", Quickshell.shellDir + "/Scripts/apply_theme.py"];
+                    applyThemeProc.command = ["python3", Quickshell.shellDir + "/Scripts/theme/apply_theme.py"];
                     applyThemeProc.running = true;
                 } catch (e) {
                     root.applyScheme(root.themes[0].dark);

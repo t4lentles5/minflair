@@ -28,7 +28,7 @@ Item {
         authProc.running = false;
         root.authenticating = true;
         root.authFailed = false;
-        authProc.command = ["python3", Quickshell.shellDir + "/Scripts/auth.py"];
+        authProc.command = ["python3", Quickshell.shellDir + "/Scripts/system/auth.py"];
         authProc.running = true;
         authProc.write(pwd + "\n");
     }

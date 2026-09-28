@@ -66,7 +66,7 @@ Item {
                     }
                 }
             };
-            animationsProc.command = ["python3", Quickshell.shellDir + "/Scripts/update_hypr_prefs.py", JSON.stringify(jsonArgs)];
+            animationsProc.command = ["python3", Quickshell.shellDir + "/Core/Services/scripts/update_hypr_prefs.py", JSON.stringify(jsonArgs)];
             animationsProc.running = true;
         } else {
             applyHyprlandSettings();
@@ -90,7 +90,7 @@ Item {
                     "enabled": enableAnimations
                 }
             };
-            patchUserPrefsProc.command = ["python3", Quickshell.shellDir + "/Scripts/update_hypr_prefs.py", JSON.stringify(jsonArgs)];
+            patchUserPrefsProc.command = ["python3", Quickshell.shellDir + "/Core/Services/scripts/update_hypr_prefs.py", JSON.stringify(jsonArgs)];
             patchUserPrefsProc.running = false;
             patchUserPrefsProc.running = true;
         }
@@ -249,7 +249,7 @@ Item {
                     }
                 }
             };
-            patchUserPrefsProc.command = ["python3", Quickshell.shellDir + "/Scripts/update_hypr_prefs.py", JSON.stringify(jsonArgs)];
+            patchUserPrefsProc.command = ["python3", Quickshell.shellDir + "/Core/Services/scripts/update_hypr_prefs.py", JSON.stringify(jsonArgs)];
             patchUserPrefsProc.running = false;
             patchUserPrefsProc.running = true;
         }
@@ -365,7 +365,7 @@ Item {
     Process {
         id: readHyprPrefsProc
 
-        command: ["python3", Quickshell.shellDir + "/Scripts/read_hypr_prefs.py"]
+        command: ["python3", Quickshell.shellDir + "/Core/Services/scripts/read_hypr_prefs.py"]
         onExited: (code) => {
             hyprlandService.isSyncing = false;
             hyprlandService.hyprPrefsLoaded = true;

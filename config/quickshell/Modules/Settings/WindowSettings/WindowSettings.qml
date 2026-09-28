@@ -41,7 +41,7 @@ AppContainer {
             Process {
                 id: hyprScaleApplyProc
 
-                command: ["sh", "-c", Quickshell.shellDir + "/Scripts/hypr_scale.sh " + SettingsService.hyprScale]
+                command: ["sh", "-c", Quickshell.shellDir + "/Scripts/system/hypr_scale.sh " + SettingsService.hyprScale]
             }
 
         }

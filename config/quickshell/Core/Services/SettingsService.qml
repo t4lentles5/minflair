@@ -58,7 +58,7 @@ Item {
     function applyCursor(theme, size) {
         let t = theme !== undefined ? theme : cursorTheme;
         let s = size !== undefined ? size : cursorSize;
-        applyCursorProc.command = ["python3", Quickshell.shellDir + "/Scripts/apply_cursor.py", t, s.toString()];
+        applyCursorProc.command = ["python3", Quickshell.shellDir + "/Scripts/theme/apply_cursor.py", t, s.toString()];
         applyCursorProc.running = false;
         applyCursorProc.running = true;
     }
@@ -66,7 +66,7 @@ Item {
     function applyFont(font, size) {
         let f = font !== undefined ? font : fontFamily;
         let s = size !== undefined ? size : Math.round(11 * fontScale);
-        applyFontProc.command = ["python3", Quickshell.shellDir + "/Scripts/apply_font.py", f, s.toString()];
+        applyFontProc.command = ["python3", Quickshell.shellDir + "/Scripts/theme/apply_font.py", f, s.toString()];
         applyFontProc.running = false;
         applyFontProc.running = true;
     }
@@ -464,7 +464,7 @@ Item {
     Process {
         id: hyprScaleApplyProc
 
-        command: ["sh", "-c", Quickshell.shellDir + "/Scripts/hypr_scale.sh " + settingsService.hyprScale]
+        command: ["sh", "-c", Quickshell.shellDir + "/Scripts/system/hypr_scale.sh " + settingsService.hyprScale]
     }
 
     Process {

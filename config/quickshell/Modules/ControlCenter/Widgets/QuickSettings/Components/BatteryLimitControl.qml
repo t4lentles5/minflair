@@ -34,7 +34,7 @@ SvgIconButton {
     Process {
         id: statusProcess
 
-        command: [Quickshell.shellDir + "/Scripts/toggle_battery_limit.sh", "status"]
+        command: [Quickshell.shellDir + "/Scripts/system/toggle_battery_limit.sh", "status"]
 
         stdout: SplitParser {
             onRead: (data) => {
@@ -64,7 +64,7 @@ SvgIconButton {
     Process {
         id: toggleProcess
 
-        command: ["sudo", Quickshell.shellDir + "/Scripts/toggle_battery_limit.sh", "toggle"]
+        command: ["sudo", Quickshell.shellDir + "/Scripts/system/toggle_battery_limit.sh", "toggle"]
         onRunningChanged: {
             if (!running)
                 statusProcess.running = true;

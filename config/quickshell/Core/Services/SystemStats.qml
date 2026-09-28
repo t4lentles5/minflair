@@ -50,7 +50,7 @@ Item {
     Process {
         id: staticInfoProc
 
-        command: ["python3", Quickshell.shellDir + "/Scripts/get_system_info.py"]
+        command: ["python3", Quickshell.shellDir + "/Scripts/system/get_system_info.py"]
         running: true
         onExited: (exitCode) => {
             if (exitCode === 0) {
@@ -86,7 +86,7 @@ Item {
     Process {
         id: statsProc
 
-        command: ["python3", Quickshell.shellDir + "/Scripts/get_processes.py", "4000", "cpu", "--daemon", "--no-processes"]
+        command: ["python3", Quickshell.shellDir + "/Scripts/system/get_processes.py", "4000", "cpu", "--daemon", "--no-processes"]
         running: true
         onExited: (exitCode) => {
             restartTimer.start();

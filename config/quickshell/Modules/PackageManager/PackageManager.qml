@@ -441,7 +441,7 @@ SearchAppWindow {
         onTriggered: {
             root.isSearching = true;
             root.accumulatedSearchOutput = "";
-            let baseCmd = ["python3", Quickshell.shellDir + "/Scripts/search_packages.py"];
+            let baseCmd = ["python3", Quickshell.shellDir + "/Modules/PackageManager/scripts/search_packages.py"];
             searchProc.command = baseCmd.concat(nextCommand);
             searchProc.running = true;
         }

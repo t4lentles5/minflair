@@ -52,7 +52,7 @@ hl.bind(mainMod .. " + SHIFT + N", hl.dsp.workspace.toggle_special("minimized"))
 -- # Pick Color
 hl.bind(mainMod .. " + SHIFT + C", hl.dsp.exec_cmd("hyprpicker -a"))
 -- # Switch Keyboard Layout
-hl.bind(mainMod .. " + SPACE", hl.dsp.exec_cmd("$HOME/.config/quickshell/Scripts/toggle_kb_layout.sh"))
+hl.bind(mainMod .. " + SPACE", hl.dsp.exec_cmd("$HOME/.config/quickshell/Scripts/system/toggle_kb_layout.sh"))
 -- # Restart Quickshell
 hl.bind(mainMod .. " + R", hl.dsp.exec_cmd("killall qs; qs"))
 

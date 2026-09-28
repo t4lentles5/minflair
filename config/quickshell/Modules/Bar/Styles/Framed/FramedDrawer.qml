@@ -169,6 +169,25 @@ Item {
 
             property var widget
 
+            widget: QtObject {
+                property bool isOpen: root.isOpen
+                property int cornerRadius: root.cornerRadius
+                property real openProgress: root.openProgress
+                property real bounceProgress: root.bounceProgress
+                property int preferredWidth: root.contentWidth
+                property int preferredHeight: root.contentHeight
+
+                function close() {
+                    root.close();
+                }
+
+                onIsOpenChanged: {
+                    if (!isOpen && root.isOpen)
+                        root.close();
+
+                }
+            }
+
             sourceComponent: root.sourceComponent
             anchors.horizontalCenter: (root.isTop && root.popupId === "music") ? undefined : parent.horizontalCenter
             anchors.horizontalCenterOffset: (root.isTop && root.popupId === "music") ? 0 : (root.isRight ? (root.cornerRadius / 2) : (root.isLeft ? -(root.cornerRadius / 2) : 0))
@@ -200,26 +219,6 @@ Item {
                     });
                 }
             }
-
-            widget: QtObject {
-                property bool isOpen: root.isOpen
-                property int cornerRadius: root.cornerRadius
-                property real openProgress: root.openProgress
-                property real bounceProgress: root.bounceProgress
-                property int preferredWidth: root.contentWidth
-                property int preferredHeight: root.contentHeight
-
-                function close() {
-                    root.close();
-                }
-
-                onIsOpenChanged: {
-                    if (!isOpen && root.isOpen)
-                        root.close();
-
-                }
-            }
-
         }
 
     }

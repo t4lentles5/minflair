@@ -147,7 +147,7 @@ Item {
     Process {
         id: loadAppsProc
 
-        command: ["python3", Quickshell.shellDir + "/Scripts/get_apps.py"]
+        command: ["python3", Quickshell.shellDir + "/Modules/Launcher/scripts/get_apps.py"]
         onExited: function(exitCode) {
             if (exitCode === 0) {
                 try {

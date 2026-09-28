@@ -1,5 +1,6 @@
 import QtQuick
 import qs.Core
+import qs.Core.Components
 
 Rectangle {
     id: root

@@ -157,9 +157,9 @@ Item {
             let user = ("" + githubService.username).trim();
             let tok = ("" + githubService.token).replace(/[\r\n\t\x00-\x1f\x7f-\xff\s]/g, "").trim();
             if (tok !== "")
-                return ["python3", Quickshell.shellDir + "/Scripts/fetch_github_info.py", user, tok];
+                return ["python3", Quickshell.shellDir + "/Core/Services/scripts/fetch_github_info.py", user, tok];
 
-            return ["python3", Quickshell.shellDir + "/Scripts/fetch_github_info.py", user];
+            return ["python3", Quickshell.shellDir + "/Core/Services/scripts/fetch_github_info.py", user];
         }
         onExited: (exitCode) => {
             if (exitCode === 0) {
@@ -200,9 +200,9 @@ Item {
             let user = ("" + githubService.username).trim();
             let tok = ("" + githubService.token).replace(/[\r\n\t\x00-\x1f\x7f-\xff\s]/g, "").trim();
             if (tok !== "")
-                return ["python3", Quickshell.shellDir + "/Scripts/fetch_github_contributions.py", user, tok];
+                return ["python3", Quickshell.shellDir + "/Core/Services/scripts/fetch_github_contributions.py", user, tok];
 
-            return ["python3", Quickshell.shellDir + "/Scripts/fetch_github_contributions.py", user];
+            return ["python3", Quickshell.shellDir + "/Core/Services/scripts/fetch_github_contributions.py", user];
         }
         onExited: (exitCode) => {
             if (exitCode === 0) {

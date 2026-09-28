@@ -225,7 +225,7 @@ SearchAppWindow {
     Process {
         id: hyprProc
 
-        command: ["python3", Quickshell.shellDir + "/Scripts/parse_keybinds.py"]
+        command: ["python3", Quickshell.shellDir + "/Modules/KeybindsCheatSheet/scripts/parse_keybinds.py"]
         onExited: function(exitCode) {
             if (exitCode === 0) {
                 try {

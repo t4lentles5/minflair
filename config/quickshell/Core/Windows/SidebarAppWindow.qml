@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Layouts
 import qs.Core
 import qs.Core.Components
+import qs.Core.Windows.Components
 
 AppWindow {
     id: root

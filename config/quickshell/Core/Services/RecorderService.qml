@@ -19,7 +19,7 @@ Singleton {
         if (args === undefined)
             args = [];
 
-        let cmd = [Quickshell.shellDir + "/Scripts/record.sh"].concat(args);
+        let cmd = [Quickshell.shellDir + "/Modules/ScreenCapture/scripts/record.sh"].concat(args);
         Quickshell.execDetached(cmd);
         checkDelay.restart();
     }

@@ -51,7 +51,7 @@ Item {
         _lastFetchKey = key;
         loading = true;
         hasLyrics = false;
-        let cmd = ["python3", Quickshell.shellDir + "/Scripts/get_lyrics.py", "--title", title, "--artist", artist, "--album", album, "--duration", String(dur), "--file-url", url];
+        let cmd = ["python3", Quickshell.shellDir + "/Modules/MusicPopup/scripts/get_lyrics.py", "--title", title, "--artist", artist, "--album", album, "--duration", String(dur), "--file-url", url];
         lyricsProc.command = cmd;
         lyricsProc.running = false;
         lyricsProc.running = true;

@@ -4,6 +4,7 @@ import Quickshell
 import qs.Core
 import qs.Core.Components
 import qs.Core.Services
+import qs.Modules.Bar.Widgets.Dashboard.Components
 
 Card {
     id: root

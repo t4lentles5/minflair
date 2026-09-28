@@ -6,6 +6,7 @@ import qs.Core.Components
 import qs.Core.Services
 import qs.Modules.Bar
 import qs.Modules.Bar.Components
+import qs.Modules.Bar.Styles.Components
 import qs.Modules.MusicPopup as MusicModule
 import qs.Modules.Notifications as NotificationsModule
 

@@ -235,12 +235,11 @@ Item {
             Layout.fillHeight: true
             Layout.preferredHeight: root.cardItemHeight
 
-            SearchEmptyState {
+            GhostEmptyState {
                 anchors.centerIn: parent
-                emptyVisible: filteredModel.count === 0 && searchField.text === ""
-                searchEmptyVisible: filteredModel.count === 0 && searchField.text !== ""
-                emptyText: "No wallpapers in ~/Pictures/Wallpapers"
-                searchEmptyText: "No wallpapers found"
+                visible: filteredModel.count === 0
+                text: searchField.text === "" ? "No wallpapers in ~/Pictures/Wallpapers" : "No wallpapers found"
+                isAnimating: visible
             }
 
             ListView {

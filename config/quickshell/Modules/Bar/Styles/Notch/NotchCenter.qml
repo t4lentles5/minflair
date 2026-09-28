@@ -4,6 +4,7 @@ import qs.Core
 import qs.Core.Components
 import qs.Core.Services
 import qs.Modules.Bar.Components
+import qs.Modules.Bar.Styles.Components
 
 Item {
     id: root

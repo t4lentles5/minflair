@@ -63,12 +63,11 @@ Item {
             Layout.preferredHeight: root.visibleListHeight
             Layout.fillHeight: false
 
-            SearchEmptyState {
+            GhostEmptyState {
                 anchors.centerIn: parent
-                emptyVisible: ClipboardService.filteredModel.count === 0 && searchField.text === "" && !ClipboardService.isDeleting
-                searchEmptyVisible: ClipboardService.filteredModel.count === 0 && searchField.text !== "" && !ClipboardService.isDeleting
-                emptyText: "Clipboard is empty"
-                searchEmptyText: "No results found"
+                visible: ClipboardService.filteredModel.count === 0 && !ClipboardService.isDeleting
+                text: searchField.text === "" ? "Clipboard is empty" : "No results found"
+                isAnimating: visible
             }
 
             ListView {

@@ -15,7 +15,7 @@ QuickSettingsTile {
     property bool isVisible: true
 
     function toggle() {
-        btSetProc.command = ["python3", Quickshell.shellDir + "/Scripts/bluetooth.py", "toggle-power"];
+        btSetProc.command = ["python3", Quickshell.shellDir + "/Modules/ControlCenter/scripts/bluetooth.py", "toggle-power"];
         btSetProc.running = true;
     }
 
@@ -28,7 +28,7 @@ QuickSettingsTile {
     }
 
     function connect(mac) {
-        btConnectProc.command = ["python3", Quickshell.shellDir + "/Scripts/bluetooth.py", "toggle-connect", mac];
+        btConnectProc.command = ["python3", Quickshell.shellDir + "/Modules/ControlCenter/scripts/bluetooth.py", "toggle-connect", mac];
         btConnectProc.running = true;
     }
 
@@ -83,7 +83,7 @@ QuickSettingsTile {
     Process {
         id: btGetProc
 
-        command: ["python3", Quickshell.shellDir + "/Scripts/bluetooth.py", "status"]
+        command: ["python3", Quickshell.shellDir + "/Modules/ControlCenter/scripts/bluetooth.py", "status"]
 
         stdout: SplitParser {
             onRead: (data) => {
@@ -116,7 +116,7 @@ QuickSettingsTile {
     Process {
         id: btDiscoveryProc
 
-        command: ["python3", Quickshell.shellDir + "/Scripts/bluetooth.py", "scan"]
+        command: ["python3", Quickshell.shellDir + "/Modules/ControlCenter/scripts/bluetooth.py", "scan"]
 
         stdout: SplitParser {
             onRead: (data) => {
