@@ -42,18 +42,48 @@ Item {
                 })
                 readonly property bool isActive: Hyprland.focusedWorkspace ? Hyprland.focusedWorkspace.id === wsId : false
                 readonly property bool hasActualWindows: {
-                    if (!workspace)
-                        return false;
+                    // 1. Direct real-time check via workspace.toplevels (ObjectModel)
+                    if (workspace && workspace.toplevels) {
+                        if (workspace.toplevels.values !== undefined) {
+                            if (workspace.toplevels.values.length > 0)
+                                return true;
 
-                    if (workspace.toplevels && workspace.toplevels.count !== undefined)
-                        return workspace.toplevels.count > 0;
+                        } else if (workspace.toplevels.count !== undefined) {
+                            if (workspace.toplevels.count > 0)
+                                return true;
 
-                    if (workspace.lastIpcObject && workspace.lastIpcObject.windows !== undefined)
-                        return workspace.lastIpcObject.windows > 0;
+                        }
+                    }
+                    // 2. Immediate cross-check with global Hyprland toplevels list
+                    if (Hyprland.toplevels && Hyprland.toplevels.values !== undefined) {
+                        const hasMatchingToplevel = Hyprland.toplevels.values.some((top) => {
+                            if (!top)
+                                return false;
 
-                    return workspace.windows !== undefined ? workspace.windows > 0 : false;
+                            if (top.workspace && top.workspace.id === wsId)
+                                return true;
+
+                            if (top.lastIpcObject && top.lastIpcObject.workspace && top.lastIpcObject.workspace.id === wsId)
+                                return true;
+
+                            return false;
+                        });
+                        if (hasMatchingToplevel)
+                            return true;
+
+                    }
+                    // 3. Fallback to lastIpcObject only when toplevel models are not available
+                    if (workspace && (!workspace.toplevels || (workspace.toplevels.values === undefined && workspace.toplevels.count === undefined))) {
+                        if (workspace.lastIpcObject && workspace.lastIpcObject.windows !== undefined)
+                            return workspace.lastIpcObject.windows > 0;
+
+                        if (workspace.windows !== undefined)
+                            return workspace.windows > 0;
+
+                    }
+                    return false;
                 }
-                readonly property bool hasWindows: workspace !== undefined && hasActualWindows
+                readonly property bool hasWindows: hasActualWindows
                 readonly property int scaledActiveWidth: 28
                 readonly property int scaledHasWinSize: 10
                 readonly property int scaledEmptySize: 8
@@ -112,6 +142,28 @@ Item {
 
         }
 
+    }
+
+    Connections {
+        function onRawEvent(event) {
+            if (!event || !event.name)
+                return ;
+
+            const ev = event.name;
+            if (ev === "openwindow" || ev === "closewindow" || ev === "movewindowv2" || ev === "createworkspacev2" || ev === "destroyworkspacev2")
+                refreshDebounce.restart();
+
+        }
+
+        target: Hyprland
+    }
+
+    Timer {
+        id: refreshDebounce
+
+        interval: 100
+        repeat: false
+        onTriggered: Hyprland.refreshWorkspaces()
     }
 
 }
