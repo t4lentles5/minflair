@@ -81,43 +81,24 @@ Card {
                     color: Theme.fg
                 }
 
-                // Repository Badge
+                // Status Badge (Installed / Not Installed / Out-of-date)
                 Rectangle {
-                    radius: Constants.sizeXs
-                    implicitHeight: repoText.implicitHeight + 6
-                    implicitWidth: repoText.implicitWidth + 14
-                    color: "transparent"
-                    border.color: Theme.border
-                    border.width: 1
+                    readonly property bool isOutOfDate: !heroRoot.isInstalled && heroRoot.getValue("Out-of-date", "No") !== "No"
 
-                    ThemedText {
-                        id: repoText
-
-                        anchors.centerIn: parent
-                        text: (heroRoot.parsedInfo["Repository"] || "AUR").toUpperCase()
-                        customSize: Constants.sizeSm - 2
-                        color: Theme.muted
-                        font.bold: true
-                    }
-
-                }
-
-                // Status Badge (Installed / Up to date)
-                Rectangle {
                     radius: Constants.sizeXs
                     implicitHeight: statusText.implicitHeight + 6
                     implicitWidth: statusText.implicitWidth + 14
-                    color: heroRoot.isInstalled ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.15) : "transparent"
-                    border.color: heroRoot.isInstalled ? Theme.accent : Theme.border
+                    color: heroRoot.isInstalled ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.15) : (isOutOfDate ? Qt.rgba(Theme.accentComplementary.r, Theme.accentComplementary.g, Theme.accentComplementary.b, 0.15) : "transparent")
+                    border.color: heroRoot.isInstalled ? Theme.accent : (isOutOfDate ? Theme.accentComplementary : Theme.border)
                     border.width: 1
 
                     ThemedText {
                         id: statusText
 
                         anchors.centerIn: parent
-                        text: heroRoot.isInstalled ? "Installed" : (heroRoot.getValue("Out-of-date", "No") === "No" ? "Up-to-date" : "Out-of-date")
+                        text: heroRoot.isInstalled ? "Installed" : (parent.isOutOfDate ? "Out-of-date" : "Not Installed")
                         customSize: Constants.sizeSm - 2
-                        color: heroRoot.isInstalled ? Theme.accent : (heroRoot.getValue("Out-of-date", "No") === "No" ? Theme.muted : Theme.accentComplementary)
+                        color: heroRoot.isInstalled ? Theme.accent : (parent.isOutOfDate ? Theme.accentComplementary : Theme.muted)
                         font.bold: true
                     }
 
