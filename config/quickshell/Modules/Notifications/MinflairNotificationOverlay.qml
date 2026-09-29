@@ -191,7 +191,6 @@ Item {
                         anchors.fill: parent
                         notifData: model.notifData
                         expanded: toastRect.expanded
-                        isFramed: false
                     }
 
                     Behavior on border.color {

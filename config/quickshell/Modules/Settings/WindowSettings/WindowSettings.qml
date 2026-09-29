@@ -67,7 +67,7 @@ AppContainer {
 
         SettingSpinBox {
             label: "Gaps In"
-            description: "Modifying this may break the Framed Style layout"
+            description: "Modifying this may break the Convex Style layout"
             from: 0
             to: 20
             stepSize: 1
@@ -81,7 +81,7 @@ AppContainer {
 
         SettingSpinBox {
             label: "Gaps Out"
-            description: "Modifying this may break the Framed Style layout"
+            description: "Modifying this may break the Convex Style layout"
             from: 0
             to: 40
             stepSize: 1

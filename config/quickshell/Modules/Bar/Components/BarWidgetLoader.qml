@@ -35,7 +35,7 @@ Item {
 
         if (islandOrNotchOnly) {
             // "islandOrNotchOnly" usually meant it should only show if we are in a compact, expandable style (like island/notch)
-            // If the bar style is not expandable (e.g. Minflair/Framed), return false
+            // If the bar style is not expandable (e.g. Minflair/Convex), return false
             if (mainBar && mainBar.activeBarStyle && !BarStyleConfig.isExpandable(mainBar.activeBarStyle))
                 return false;
 
@@ -45,7 +45,7 @@ Item {
         if (mainBar && mainBar.activeBarStyle && BarStyleConfig.isExpandable(mainBar.activeBarStyle))
             return isExpanded;
 
-        // Standard minflair/framed bar behavior
+        // Standard minflair/convex bar behavior
         return true;
     }
     readonly property real targetWidth: loader.item ? (loader.item.implicitWidth > 0 ? loader.item.implicitWidth : (loader.item.Layout && loader.item.Layout.preferredWidth !== undefined ? loader.item.Layout.preferredWidth : 0)) : 0

@@ -109,7 +109,6 @@ Item {
             NotificationsModule.NotificationDelegateContent {
                 anchors.fill: parent
                 notifData: (notificationService && notificationService.activeList && notificationService.activeList.count > 0) ? notificationService.activeList.get(0).notifData : null
-                isFramed: false
             }
 
         }

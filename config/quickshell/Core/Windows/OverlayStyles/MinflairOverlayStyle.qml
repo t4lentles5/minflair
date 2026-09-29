@@ -28,10 +28,10 @@ Item {
         id: mainContainer
 
         readonly property real closedY: root.height > 0 ? root.height + 20 : 1200
-        readonly property real targetY: positionAtBottom ? (root.height - preferredHeight - 8) : ((root.height - preferredHeight) / 2)
+        readonly property real targetY: positionAtBottom ? Math.round(root.height - preferredHeight - 8) : Math.round((root.height - preferredHeight) / 2)
 
-        width: preferredWidth
-        height: preferredHeight
+        width: Math.round(preferredWidth)
+        height: Math.round(preferredHeight)
         anchors.horizontalCenter: parent.horizontalCenter
         transformOrigin: positionAtBottom ? Item.Bottom : Item.Center
         y: Math.round(closedY + (targetY - closedY) * bounceProgress)
@@ -52,11 +52,15 @@ Item {
                 return (w % 2 === 0) ? w : (w + 1);
             }
             readonly property int safeHeight: Math.round(parent.height)
-            readonly property real currentRadius: windowRadius
+            readonly property real currentRadius: Math.round(windowRadius)
 
             anchors.centerIn: parent
             width: safeWidth
             height: safeHeight
+            preferredRendererType: Shape.CurveRenderer
+            layer.enabled: true
+            layer.smooth: true
+            layer.samples: 4
 
             ShapePath {
                 strokeWidth: 0
@@ -94,7 +98,7 @@ Item {
 
             anchors.fill: parent
             anchors.margins: contentPadding
-            clip: true
+            clip: contentPadding > 0
         }
 
     }

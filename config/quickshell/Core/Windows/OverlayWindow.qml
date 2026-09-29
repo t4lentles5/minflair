@@ -55,15 +55,11 @@ PanelWindow {
         if (SettingsService.barConvexMode)
             return "convex";
 
-        if (SettingsService.barFramedMode)
-            return "framed";
-
         return "minflair";
     }
     readonly property bool isIsland: activeStyle === "island"
     readonly property bool isBottomNotch: activeStyle === "notch"
     readonly property bool isConvex: activeStyle === "convex"
-    readonly property bool isFramed: activeStyle === "framed"
 
     signal popupOpened()
     signal popupClosed()
@@ -178,8 +174,6 @@ PanelWindow {
                 return notchComponent;
             case "convex":
                 return convexComponent;
-            case "framed":
-                return framedComponent;
             default:
                 return minflairComponent;
             }
@@ -212,15 +206,6 @@ PanelWindow {
         id: minflairComponent
 
         MinflairOverlayStyle {
-            widget: root
-        }
-
-    }
-
-    Component {
-        id: framedComponent
-
-        FramedOverlayStyle {
             widget: root
         }
 
@@ -309,7 +294,7 @@ PanelWindow {
     }
 
     Behavior on openProgress {
-        enabled: HyprlandService.enableAnimations && (root.isFramed || root.isConvex || root.isBottomNotch)
+        enabled: HyprlandService.enableAnimations && (root.isConvex || root.isBottomNotch)
 
         NumberAnimation {
             duration: root.isOpen ? root.fadeDuration : root.closeDuration
@@ -322,18 +307,18 @@ PanelWindow {
         enabled: HyprlandService.enableAnimations
 
         NumberAnimation {
-            duration: root.isOpen ? ((root.isIsland && AppState.hasActiveNotification) ? Constants.animSlow : (root.isIsland ? Constants.animExpressive : (root.isFramed || root.isConvex) ? Constants.animSlow : Constants.animNormal)) : Constants.animNormal
+            duration: root.isOpen ? ((root.isIsland && AppState.hasActiveNotification) ? Constants.animSlow : (root.isIsland ? Constants.animExpressive : root.isConvex ? Constants.animSlow : Constants.animNormal)) : Constants.animNormal
             easing.type: {
                 if (root.isIsland)
                     return root.isOpen ? Easing.OutQuint : Easing.OutCubic;
-                else if (root.isFramed || root.isConvex)
+                else if (root.isConvex)
                     return root.isOpen ? Easing.OutCubic : Easing.InCubic;
                 else if (root.isBottomNotch)
                     return root.isOpen ? Easing.OutQuint : Easing.InCubic;
                 else
                     return root.isOpen ? Easing.OutBack : Easing.InCubic;
             }
-            easing.overshoot: (!root.isFramed && !root.isConvex && !root.isIsland && !root.isBottomNotch && root.isOpen) ? 1.04 : 0
+            easing.overshoot: (!root.isConvex && !root.isIsland && !root.isBottomNotch && root.isOpen) ? 1.04 : 0
         }
 
     }

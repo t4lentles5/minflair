@@ -43,8 +43,8 @@ PanelWindow {
         let newStyle = SettingsService.barStyle;
         let oldStyle = root.activeBarStyle;
         if (oldStyle === newStyle) {
-            let isFramedMode = newStyle === "framed" || newStyle === "convex";
-            if (!isFramedMode && barStrip.opacity < 0.05) {
+            let isConvexMode = newStyle === "convex";
+            if (!isConvexMode && barStrip.opacity < 0.05) {
                 barExitOnlyAnim.stop();
                 barStyleSwitchAnim.stop();
                 barEntranceAnim.stop();
@@ -54,9 +54,9 @@ PanelWindow {
             }
             return ;
         }
-        let wasFramed = oldStyle === "framed" || oldStyle === "convex";
-        let isFramed = newStyle === "framed" || newStyle === "convex";
-        if (isFramed) {
+        let wasConvex = oldStyle === "convex";
+        let isConvex = newStyle === "convex";
+        if (isConvex) {
             barStyleSwitchAnim.stop();
             barEntranceAnim.stop();
             barExitOnlyAnim.stop();
@@ -64,7 +64,7 @@ PanelWindow {
             barTranslate.y = 0;
             barStrip.scale = 1;
             root.activeBarStyle = newStyle;
-        } else if (wasFramed) {
+        } else if (wasConvex) {
             barExitOnlyAnim.stop();
             barStyleSwitchAnim.stop();
             barEntranceAnim.stop();
@@ -98,8 +98,8 @@ PanelWindow {
     }
     onVisibleChanged: {
         if (visible) {
-            let isFramedMode = SettingsService.barStyle === "framed" || SettingsService.barStyle === "convex";
-            if (!isFramedMode) {
+            let isConvexMode = SettingsService.barStyle === "convex";
+            if (!isConvexMode) {
                 root.activeBarStyle = SettingsService.barStyle;
                 root.currentBarMarginTop = Qt.binding(() => {
                     return root.barSurface.barMarginTop;
@@ -331,7 +331,7 @@ PanelWindow {
             z: root.activeHost === barStrip ? 5 : 1
             notificationService: root.notificationService
             mainPanelWidget: barPopups.dashboardLoader.item
-            x: root.isCompact ? ((root.width - barStrip.width) / 2) : root.currentBarMarginSide
+            x: root.isCompact ? Math.round((root.width - barStrip.width) / 2) : root.currentBarMarginSide
             y: root.currentBarMarginTop
             width: root.isCompact ? (barStrip.implicitWidth > 0 ? barStrip.implicitWidth : 180) : (root.width - root.currentBarMarginSide * 2)
             height: ((SettingsService.barIslandMode || SettingsService.barNotchMode) && barStrip.currentHeight > 0) ? barStrip.currentHeight : root.currentBarHeight
@@ -384,7 +384,7 @@ PanelWindow {
             height: root.activeBarStyle === "convex" ? 32 : 0
         }
 
-        // Center (Island, Notch, Convex) or Full Width (Minflair, Framed)
+        // Center (Island, Notch, Convex) or Full Width (Minflair)
         Region {
             x: root.isCompact ? (barStrip.x + barStrip.centerX - 16) : (barStrip.x - 16)
             y: Math.max(0, barStrip.y - 24)

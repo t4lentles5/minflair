@@ -14,7 +14,6 @@ Item {
 
     property string popupId: ""
     property bool isOpen: false
-    readonly property bool isFramed: SettingsService.barFramedMode
     readonly property bool isConvex: SettingsService.barConvexMode
     property bool positionAtLeft: false
     property int cornerRadius: Constants.sizeLg * 2
@@ -31,7 +30,7 @@ Item {
     property int contentHeight: -1
     readonly property int popupWidth: (contentWidth > 0 ? contentWidth : innerLayout.implicitWidth) + contentPadding * 2
     readonly property int popupHeight: (contentHeight > 0 ? contentHeight : innerLayout.implicitHeight) + (root.isConvex ? (root.notchVerticalPadding * 2) : (contentPadding * 2))
-    property int targetHeight: root.isFramed ? (_screenHeight > 0 ? _screenHeight - 56 : popupHeight) : (root.isConvex ? (preferredHeight > 0 ? preferredHeight : (_screenHeight > 0 ? Math.min(popupHeight, _screenHeight - 120) : popupHeight)) : Math.min(preferredHeight > 0 ? preferredHeight : popupHeight, _screenHeight > 0 ? _screenHeight - 72 : popupHeight))
+    property int targetHeight: root.isConvex ? (preferredHeight > 0 ? preferredHeight : (_screenHeight > 0 ? Math.min(popupHeight, _screenHeight - 120) : popupHeight)) : Math.min(preferredHeight > 0 ? preferredHeight : popupHeight, _screenHeight > 0 ? _screenHeight - 72 : popupHeight)
     property real smoothHeight: targetHeight
     property int targetWidth: preferredWidth > 0 ? preferredWidth : popupWidth
     property real smoothWidth: targetWidth
@@ -110,16 +109,15 @@ Item {
             id: animContainer
 
             readonly property real closedX: root.positionAtLeft ? (-smoothWidth - 20) : (_screenWidth > 0 ? _screenWidth + 20 : 3000)
-            readonly property real openX: root.positionAtLeft ? (root.isConvex ? 0 : (root.isFramed ? 8 : 8)) : (root.isConvex ? (_screenWidth - smoothWidth) : (root.isFramed ? (_screenWidth - smoothWidth - 8) : (_screenWidth - smoothWidth - 8)))
-            readonly property real currentWidth: (root.isFramed || root.isConvex) ? Math.max(smoothWidth * bounceProgress, 0.01) : smoothWidth
-            readonly property real cornerOffset: (!root.positionAtLeft && root.isFramed) ? Constants.size4Xl : 0
+            readonly property real openX: root.positionAtLeft ? (root.isConvex ? 0 : 8) : (root.isConvex ? (_screenWidth - smoothWidth) : (_screenWidth - smoothWidth - 8))
+            readonly property real currentWidth: root.isConvex ? Math.max(smoothWidth * bounceProgress, 0.01) : smoothWidth
 
-            width: Math.round(currentWidth + cornerOffset)
+            width: Math.round(currentWidth)
             height: Math.round(smoothHeight)
             clip: false
-            x: Math.round(root.positionAtLeft ? ((root.isFramed || root.isConvex) ? openX : (closedX + (openX - closedX) * bounceProgress)) : ((root.isFramed || root.isConvex) ? (openX + smoothWidth - currentWidth) : (closedX + (openX - closedX) * bounceProgress)) - cornerOffset)
-            y: root.isFramed ? 48 : (root.isConvex ? Math.round((_screenHeight - smoothHeight) / 2) : 64)
-            opacity: (root.isFramed || root.isConvex) ? 1 : openProgress
+            x: Math.round(root.positionAtLeft ? (root.isConvex ? openX : (closedX + (openX - closedX) * bounceProgress)) : (root.isConvex ? (openX + smoothWidth - currentWidth) : (closedX + (openX - closedX) * bounceProgress)))
+            y: root.isConvex ? Math.round((_screenHeight - smoothHeight) / 2) : 64
+            opacity: root.isConvex ? 1 : openProgress
 
             MouseArea {
                 anchors.fill: parent
@@ -128,7 +126,7 @@ Item {
             ThemedShadow {
                 anchors.fill: bg
                 radius: root.cornerRadius
-                active: !root.isFramed && !root.isConvex
+                active: !root.isConvex
             }
 
             Shape {
@@ -138,7 +136,10 @@ Item {
                 y: 0
                 width: parent.width
                 height: parent.height
-                layer.enabled: false
+                preferredRendererType: Shape.CurveRenderer
+                layer.enabled: true
+                layer.smooth: true
+                layer.samples: 4
 
                 ShapePath {
                     strokeWidth: 0
@@ -151,19 +152,7 @@ Item {
                             let h = bg.height;
                             let fy = Constants.size4Xl;
                             let fx = Math.min(Constants.size4Xl, w / 2.1);
-                            if (root.isFramed) {
-                                if (root.positionAtLeft) {
-                                    let mainPath = `M ${w - fx} 0 L ${fx} 0 A ${fx} ${fy} 0 0 0 0 ${fy} L 0 ${h - fy} A ${fx} ${fy} 0 0 0 ${fx} ${h} L ${w - fx} ${h} `;
-                                    let bFillet = `L ${w} ${h} A ${fx} ${fy} 0 0 1 ${w - fx} ${h - fy} `;
-                                    let tFillet = `L ${w - fx} ${fy} A ${fx} ${fy} 0 0 1 ${w} 0 Z`;
-                                    return mainPath + bFillet + tFillet;
-                                } else {
-                                    let mainPath = `M ${fx} 0 L ${w - fx} 0 A ${fx} ${fy} 0 0 1 ${w} ${fy} L ${w} ${h - fy} A ${fx} ${fy} 0 0 1 ${w - fx} ${h} L ${fx} ${h} `;
-                                    let bFillet = `L 0 ${h} A ${fx} ${fy} 0 0 0 ${fx} ${h - fy} `;
-                                    let tFillet = `L ${fx} ${fy} A ${fx} ${fy} 0 0 0 0 0 Z`;
-                                    return mainPath + bFillet + tFillet;
-                                }
-                            } else if (root.isConvex) {
+                            if (root.isConvex) {
                                 let tb = 8;
                                 if (w <= tb || h <= 0)
                                     return "";
@@ -216,11 +205,11 @@ Item {
             ColumnLayout {
                 id: innerLayout
 
-                x: root.positionAtLeft ? root.contentPadding : (root.contentPadding + animContainer.cornerOffset)
+                x: root.contentPadding
                 y: root.isConvex ? root.notchVerticalPadding : root.contentPadding
                 width: smoothWidth - root.contentPadding * 2
                 height: smoothHeight - (root.isConvex ? (root.notchVerticalPadding * 2) : (root.contentPadding * 2))
-                opacity: (root.isFramed || root.isConvex) ? root.openProgress : 1
+                opacity: root.isConvex ? root.openProgress : 1
             }
 
         }
@@ -251,12 +240,12 @@ Item {
         NumberAnimation {
             duration: root.isOpen ? root.animationDuration : root.closeDuration
             easing.type: {
-                if (root.isFramed || root.isConvex)
+                if (root.isConvex)
                     return root.isOpen ? Easing.OutCubic : Easing.InCubic;
                 else
                     return root.isOpen ? Easing.OutBack : Easing.InCubic;
             }
-            easing.overshoot: (!root.isFramed && !root.isConvex && root.isOpen) ? 1.15 : 0
+            easing.overshoot: (!root.isConvex && root.isOpen) ? 1.15 : 0
         }
 
     }

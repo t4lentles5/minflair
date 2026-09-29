@@ -27,7 +27,6 @@ Item {
     property int cursorSize: 24
     property string barStyle: "minflair"
     property bool barMinflairMode: barStyle === "minflair"
-    property bool barFramedMode: barStyle === "framed"
     property bool barIslandMode: barStyle === "island"
     property bool barNotchMode: barStyle === "notch"
     property bool barConvexMode: barStyle === "convex"

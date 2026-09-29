@@ -13,10 +13,9 @@ Item {
     property bool exclusive: true
     property bool _isInternalActive: false
     readonly property bool isIslandHandled: SettingsService.barIslandMode && (popupId === "dashboard" || popupId === "controlCenter" || popupId === "music" || popupId === "launcher" || popupId === "clipboard" || popupId === "wallpaper")
-    readonly property bool isConvexHandled: SettingsService.barConvexMode && popupId === "music"
+    readonly property bool isConvexHandled: SettingsService.barConvexMode && (popupId === "music" || popupId === "launcher" || popupId === "powerMenu" || popupId === "clipboard" || popupId === "wallpaper" || popupId === "screenshot")
     readonly property bool isNotchHandled: SettingsService.barNotchMode && (popupId === "dashboard" || popupId === "controlCenter" || popupId === "music" || popupId === "launcher" || popupId === "clipboard" || popupId === "wallpaper")
-    readonly property bool isFramedHandled: (SettingsService.barFramedMode && (popupId === "dashboard" || popupId === "controlCenter" || popupId === "music" || popupId === "launcher" || popupId === "powerMenu" || popupId === "clipboard" || popupId === "wallpaper" || popupId === "screenshot")) || (SettingsService.barConvexMode && (popupId === "music" || popupId === "launcher" || popupId === "powerMenu" || popupId === "clipboard" || popupId === "wallpaper" || popupId === "screenshot"))
-    readonly property bool shouldLoadWindow: enabled && !isIslandHandled && !isNotchHandled && !isConvexHandled && !isFramedHandled
+    readonly property bool shouldLoadWindow: enabled && !isIslandHandled && !isNotchHandled && !isConvexHandled
     readonly property bool _isActive: shouldLoadWindow && (exclusive ? AppState.isPopupOpen(popupId) : _isInternalActive)
     property bool _isClosing: false
     property alias item: loader.item

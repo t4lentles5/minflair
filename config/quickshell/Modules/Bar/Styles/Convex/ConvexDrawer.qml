@@ -160,7 +160,7 @@ Item {
             color: root.backgroundColor
             cornerRadius: root.cornerRadius
             edge: root.edge
-            isFramed: true
+            isConvex: true
             enableShadow: false
         }
 
@@ -168,25 +168,6 @@ Item {
             id: loader
 
             property var widget
-
-            widget: QtObject {
-                property bool isOpen: root.isOpen
-                property int cornerRadius: root.cornerRadius
-                property real openProgress: root.openProgress
-                property real bounceProgress: root.bounceProgress
-                property int preferredWidth: root.contentWidth
-                property int preferredHeight: root.contentHeight
-
-                function close() {
-                    root.close();
-                }
-
-                onIsOpenChanged: {
-                    if (!isOpen && root.isOpen)
-                        root.close();
-
-                }
-            }
 
             sourceComponent: root.sourceComponent
             anchors.horizontalCenter: (root.isTop && root.popupId === "music") ? undefined : parent.horizontalCenter
@@ -219,6 +200,26 @@ Item {
                     });
                 }
             }
+
+            widget: QtObject {
+                property bool isOpen: root.isOpen
+                property int cornerRadius: root.cornerRadius
+                property real openProgress: root.openProgress
+                property real bounceProgress: root.bounceProgress
+                property int preferredWidth: root.contentWidth
+                property int preferredHeight: root.contentHeight
+
+                function close() {
+                    root.close();
+                }
+
+                onIsOpenChanged: {
+                    if (!isOpen && root.isOpen)
+                        root.close();
+
+                }
+            }
+
         }
 
     }

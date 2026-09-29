@@ -1,6 +1,5 @@
 import QtQuick
 import "Styles/Convex"
-import "Styles/Framed"
 import "Styles/Island"
 import "Styles/Minflair"
 import "Styles/Notch"
@@ -17,12 +16,9 @@ Item {
     property bool loadIsland: activeBarStyle === "island"
     property bool loadNotch: activeBarStyle === "notch"
     property bool loadConvex: activeBarStyle === "convex"
-    property bool loadFramed: activeBarStyle === "framed"
     // Use unified interface exposed by IBarStyle implementation
     readonly property QtObject currentStyleItem: {
         switch (mainBar.activeBarStyle) {
-        case "framed":
-            return framedLoader.item;
         case "island":
             return islandLoader.item;
         case "notch":
@@ -64,8 +60,6 @@ Item {
             loadNotch = true;
         else if (activeBarStyle === "convex")
             loadConvex = true;
-        else if (activeBarStyle === "framed")
-            loadFramed = true;
     }
     implicitWidth: currentStyleItem && currentStyleItem.implicitWidth > 0 ? currentStyleItem.implicitWidth : (BarStyleConfig.isCompact(activeBarStyle) ? 180 : 0)
 
@@ -76,16 +70,6 @@ Item {
         active: mainBar.loadMinflair
         visible: mainBar.activeBarStyle === "minflair" || (mainBar.activeBarStyle === "" && SettingsService.barStyle === "minflair")
         sourceComponent: minflairComp
-        enabled: visible
-    }
-
-    Loader {
-        id: framedLoader
-
-        anchors.fill: parent
-        active: mainBar.loadFramed
-        visible: mainBar.activeBarStyle === "framed"
-        sourceComponent: framedComp
         enabled: visible
     }
 
@@ -123,16 +107,6 @@ Item {
         id: minflairComp
 
         MinflairBar {
-            notificationService: mainBar.notificationService
-            mainPanelWidget: mainBar.mainPanelWidget
-        }
-
-    }
-
-    Component {
-        id: framedComp
-
-        FramedBar {
             notificationService: mainBar.notificationService
             mainPanelWidget: mainBar.mainPanelWidget
         }

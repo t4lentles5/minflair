@@ -55,7 +55,7 @@ Item {
 
             Layout.fillWidth: true
             Layout.preferredHeight: 40
-            visible: !(SettingsService.barFramedMode || SettingsService.barConvexMode)
+            visible: !SettingsService.barConvexMode
         }
 
         Item {
@@ -84,7 +84,7 @@ Item {
                 highlightFollowsCurrentItem: true
                 Keys.onPressed: function(event) {
                     if (event.key === Qt.Key_Down) {
-                        if ((SettingsService.barFramedMode || SettingsService.barConvexMode) && clipboardView.currentIndex === ClipboardService.filteredModel.count - 1) {
+                        if (SettingsService.barConvexMode && clipboardView.currentIndex === ClipboardService.filteredModel.count - 1) {
                             searchField.forceActiveFocus();
                             clipboardView.currentIndex = -1;
                         } else {
@@ -92,7 +92,7 @@ Item {
                         }
                         event.accepted = true;
                     } else if (event.key === Qt.Key_Up) {
-                        if (!(SettingsService.barFramedMode || SettingsService.barConvexMode) && clipboardView.currentIndex === 0) {
+                        if (!SettingsService.barConvexMode && clipboardView.currentIndex === 0) {
                             searchField.forceActiveFocus();
                             clipboardView.currentIndex = -1;
                         } else {
@@ -248,7 +248,7 @@ Item {
 
             Layout.fillWidth: true
             Layout.preferredHeight: 40
-            visible: SettingsService.barFramedMode || SettingsService.barConvexMode
+            visible: SettingsService.barConvexMode
         }
 
     }
@@ -256,7 +256,7 @@ Item {
     RowLayout {
         id: searchRow
 
-        parent: (SettingsService.barFramedMode || SettingsService.barConvexMode) ? bottomSearchContainer : topSearchContainer
+        parent: SettingsService.barConvexMode ? bottomSearchContainer : topSearchContainer
         anchors.fill: parent
         spacing: Constants.sizeXs
 

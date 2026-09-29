@@ -415,7 +415,7 @@ Item {
                 anchors.fill: parent
                 notifData: root.notifDataA
                 expanded: root.expanded
-                isFramed: false
+                isConvex: true
             }
 
             transform: Translate {
@@ -440,7 +440,7 @@ Item {
                 anchors.fill: parent
                 notifData: root.notifDataB
                 expanded: root.expanded
-                isFramed: false
+                isConvex: true
             }
 
             transform: Translate {

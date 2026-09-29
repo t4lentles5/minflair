@@ -6,12 +6,12 @@ import qs.Core
 import qs.Core.Services
 import qs.Core.Windows
 import qs.Modules.Bar
-import qs.Modules.Bar.Styles.Framed
+import qs.Modules.Bar.Styles.Convex
 
 ShellRoot {
     id: root
 
-    readonly property bool isFramed: SettingsService.barStyle === "framed" || SettingsService.barStyle === "convex"
+    readonly property bool isConvex: SettingsService.barStyle === "convex"
 
     Process {
         id: globalSocketCleanup
@@ -55,14 +55,14 @@ ShellRoot {
 
         notificationService: globalNotificationService
         barSurface: barSurface
-        visible: SettingsService.settingsLoaded && !root.isFramed
+        visible: SettingsService.settingsLoaded && !root.isConvex
     }
 
-    FramedDesktop {
-        id: framedDesktopSurface
+    ConvexDesktop {
+        id: convexDesktopSurface
 
         notificationService: globalNotificationService
-        visible: SettingsService.settingsLoaded && root.isFramed
+        visible: SettingsService.settingsLoaded && root.isConvex
     }
 
     GlobalPopups {

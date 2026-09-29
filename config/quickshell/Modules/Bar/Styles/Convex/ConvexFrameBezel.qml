@@ -10,7 +10,7 @@ Item {
     property bool hasFrame: true
     property bool isShellReady: false
     property int barHeight: 48
-    property string activeBarStyle: "framed"
+    property string activeBarStyle: "convex"
     property int bezelSize: 8
     property int innerRadius: Constants.size4Xl
     property real fsTransitionProg: 1
@@ -26,6 +26,7 @@ Item {
 
     Shape {
         anchors.fill: parent
+        preferredRendererType: Shape.CurveRenderer
 
         ShapePath {
             strokeWidth: 0
@@ -55,15 +56,6 @@ Item {
                 }
             }
 
-        }
-
-        layer.effect: MultiEffect {
-            shadowEnabled: true
-            shadowBlur: 1
-            blurMax: 16
-            shadowColor: Qt.alpha(Theme.shadow, 0.85)
-            shadowVerticalOffset: 0
-            shadowHorizontalOffset: 0
         }
 
     }

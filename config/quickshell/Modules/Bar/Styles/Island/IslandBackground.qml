@@ -10,7 +10,7 @@ Item {
 
     property bool enableShadow: true
     property real radius: height / 2
-    default property alias content: shape.data
+    default property alias content: contentSlot.data
 
     ThemedShadow {
         anchors.fill: shape
@@ -22,12 +22,12 @@ Item {
         id: shape
 
         anchors.fill: parent
-        clip: true
         radius: root.radius
         color: Theme.bg
-        border.width: 0
         antialiasing: true
-        border.color: "transparent"
+        layer.enabled: true
+        layer.smooth: true
+        layer.samples: 4
 
         Behavior on color {
             ColorAnimation {
@@ -36,6 +36,12 @@ Item {
 
         }
 
+    }
+
+    Item {
+        id: contentSlot
+
+        anchors.fill: parent
     }
 
 }

@@ -39,7 +39,7 @@ QtObject {
     property color border: Qt.rgba(fg.r, fg.g, fg.b, 0.15)
     property color accent: themes[0].dark.accent
     property color accentComplementary: themes[0].dark.accentComplementary
-    property color shadow: isDark ? Qt.rgba(0, 0, 0, 0.45) : Qt.rgba(0, 0, 0, 0.1)
+    property color shadow: isDark ? Qt.rgba(0, 0, 0, 0.45) : Qt.rgba(0, 0, 0, 0.25)
     property bool generateFromWallpaper: false
     property bool wallpaperIsDark: true
     property var wallpaperColors: null

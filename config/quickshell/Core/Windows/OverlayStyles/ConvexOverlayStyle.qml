@@ -47,7 +47,10 @@ Item {
             readonly property real h: height
 
             anchors.fill: parent
+            preferredRendererType: Shape.CurveRenderer
             layer.enabled: HyprlandService.hyprShadow
+            layer.smooth: true
+            layer.samples: HyprlandService.hyprShadow ? 4 : 1
 
             ShapePath {
                 strokeWidth: 0
@@ -109,7 +112,7 @@ Item {
             }
 
             layer.effect: MultiEffect {
-                shadowEnabled: true
+                shadowEnabled: HyprlandService.hyprShadow
                 shadowBlur: 1
                 blurMax: 16
                 shadowColor: Qt.alpha(Theme.shadow, 0.75)

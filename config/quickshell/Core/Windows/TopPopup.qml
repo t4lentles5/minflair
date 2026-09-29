@@ -14,11 +14,10 @@ Item {
 
     property string popupId: ""
     property bool isOpen: false
-    readonly property bool isFramed: SettingsService.barFramedMode
     readonly property bool isMinflair: SettingsService.barMinflairMode
     readonly property bool isNotch: SettingsService.barNotchMode
     readonly property bool isConvex: SettingsService.barConvexMode
-    readonly property bool isAttachedToTop: isFramed || isMinflair || (isConvex && popupId === "music")
+    readonly property bool isAttachedToTop: isMinflair || (isConvex && popupId === "music")
     property int cornerRadius: Constants.sizeLg * 2
     property int contentPadding: Constants.sizeLg
     default property alias content: innerLayout.data
@@ -135,7 +134,7 @@ Item {
     Item {
         id: animContainer
 
-        readonly property real targetH: (root.isFramed && root.positionAtRight) ? (smoothHeight + root.cornerRadius) : smoothHeight
+        readonly property real targetH: smoothHeight
         readonly property real currentHeight: root.isAttachedToTop ? Math.max(targetH * Math.max(0, bounceProgress), 0.01) : smoothHeight
 
         width: smoothWidth
@@ -174,7 +173,7 @@ Item {
             color: root.backgroundColor
             cornerRadius: root.cornerRadius
             positionAtRight: root.positionAtRight
-            isFramed: true
+            isConvex: true
             enableShadow: false
             visible: root.isAttachedToTop && !notchBg.visible
         }
@@ -211,6 +210,10 @@ Item {
             width: safeWidth
             height: safeHeight
             visible: !root.isAttachedToTop
+            preferredRendererType: Shape.CurveRenderer
+            layer.enabled: true
+            layer.smooth: true
+            layer.samples: 4
 
             ShapePath {
                 strokeWidth: 0

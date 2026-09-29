@@ -623,7 +623,6 @@ Item {
                     anchors.fill: parent
                     notifData: notifDataA
                     expanded: islandRect.expanded
-                    isFramed: false
                 }
 
                 transform: Translate {
@@ -648,7 +647,6 @@ Item {
                     anchors.fill: parent
                     notifData: notifDataB
                     expanded: islandRect.expanded
-                    isFramed: false
                 }
 
                 transform: Translate {

@@ -175,8 +175,8 @@ Item {
             id: topSearchContainer
 
             Layout.fillWidth: true
-            Layout.preferredHeight: (SettingsService.barFramedMode || SettingsService.barConvexMode) ? 0 : 40
-            visible: !(SettingsService.barFramedMode || SettingsService.barConvexMode)
+            Layout.preferredHeight: SettingsService.barConvexMode ? 0 : 40
+            visible: !SettingsService.barConvexMode
         }
 
         Item {
@@ -275,8 +275,8 @@ Item {
             id: bottomSearchContainer
 
             Layout.fillWidth: true
-            Layout.preferredHeight: (SettingsService.barFramedMode || SettingsService.barConvexMode) ? 40 : 0
-            visible: SettingsService.barFramedMode || SettingsService.barConvexMode
+            Layout.preferredHeight: SettingsService.barConvexMode ? 40 : 0
+            visible: SettingsService.barConvexMode
         }
 
     }
@@ -284,7 +284,7 @@ Item {
     ThemedSearchBar {
         id: searchField
 
-        parent: (SettingsService.barFramedMode || SettingsService.barConvexMode) ? bottomSearchContainer : topSearchContainer
+        parent: SettingsService.barConvexMode ? bottomSearchContainer : topSearchContainer
         anchors.fill: parent
         preferredHeight: 40
         placeholderText: "Search applications..."

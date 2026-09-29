@@ -9,7 +9,7 @@ Item {
 
     property var notifData
     property bool expanded: false
-    property bool isFramed: false
+    property bool isConvex: false
 
     implicitHeight: layout.implicitHeight
 
@@ -28,7 +28,7 @@ Item {
             Layout.preferredWidth: iconContainer.isUrgencyIcon ? Constants.sizeLg : Constants.size4Xl
             Layout.preferredHeight: iconContainer.isUrgencyIcon ? Constants.sizeLg : Constants.size4Xl
             notifData: root.notifData
-            bgColor: root.isFramed ? "transparent" : Theme.bgSecondary
+            bgColor: root.isConvex ? "transparent" : Theme.bgSecondary
         }
 
         ColumnLayout {

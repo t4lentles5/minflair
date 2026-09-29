@@ -10,32 +10,13 @@ import qs.Modules.Settings.Components
 AppContainer {
     id: barSettingsRoot
 
-    readonly property bool isFramed: SettingsService.barFramedMode || SettingsService.barConvexMode
-    property string lastStandardStyle: ["minflair", "island", "notch"].includes(SettingsService.barStyle) ? SettingsService.barStyle : "minflair"
-    property string lastFramedStyle: ["framed", "convex"].includes(SettingsService.barStyle) ? SettingsService.barStyle : "framed"
-
     AppGroup {
-        title: barSettingsRoot.isFramed ? "Framed Desktop" : "Standard Top Bar"
-        icon: barSettingsRoot.isFramed ? "window" : "bar"
-
-        SettingToggle {
-            label: "Framed Desktop"
-            description: "Toggle between standard top bar and framed desktop layout"
-            checked: barSettingsRoot.isFramed
-            onCheckedChanged: {
-                if (checked !== barSettingsRoot.isFramed) {
-                    if (checked)
-                        SettingsService.barStyle = barSettingsRoot.lastFramedStyle;
-                    else
-                        SettingsService.barStyle = barSettingsRoot.lastStandardStyle;
-                }
-            }
-        }
+        title: "Bar Style"
+        icon: "bar"
 
         SettingSegmented {
-            visible: !barSettingsRoot.isFramed
             label: "Style"
-            description: "Minflair, Island or Notch"
+            description: "Choose between Minflair, Island, Notch, or Convex"
             model: [{
                 "text": "Minflair",
                 "value": "minflair"
@@ -45,28 +26,12 @@ AppContainer {
             }, {
                 "text": "Notch",
                 "value": "notch"
-            }]
-            currentValue: ["minflair", "island", "notch"].includes(SettingsService.barStyle) ? SettingsService.barStyle : barSettingsRoot.lastStandardStyle
-            onActivated: (value) => {
-                barSettingsRoot.lastStandardStyle = value;
-                SettingsService.barStyle = value;
-            }
-        }
-
-        SettingSegmented {
-            visible: barSettingsRoot.isFramed
-            label: "Style"
-            description: "Framed Bar or Convex Notch"
-            model: [{
-                "text": "Framed",
-                "value": "framed"
             }, {
                 "text": "Convex",
                 "value": "convex"
             }]
-            currentValue: ["framed", "convex"].includes(SettingsService.barStyle) ? SettingsService.barStyle : barSettingsRoot.lastFramedStyle
+            currentValue: SettingsService.barStyle
             onActivated: (value) => {
-                barSettingsRoot.lastFramedStyle = value;
                 SettingsService.barStyle = value;
             }
         }

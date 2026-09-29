@@ -27,9 +27,10 @@ Item {
         anchors.fill: parent
         radius: Constants.size2Xl
         color: Theme.bg
-        border.width: 0
         antialiasing: true
-        border.color: "transparent"
+        layer.enabled: true
+        layer.smooth: true
+        layer.samples: 4
 
         Behavior on color {
             ColorAnimation {

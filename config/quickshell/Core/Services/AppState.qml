@@ -69,13 +69,6 @@ Item {
             if (popupId.startsWith("systemTray_"))
                 return "tray";
 
-        } else if (s === "framed") {
-            if (popupId === "dashboard" || popupId === "music")
-                return "top";
-
-            if (popupId === "controlCenter" || popupId.startsWith("systemTray_"))
-                return "right";
-
         } else if (s === "minflair") {
             if (popupId === "dashboard" || popupId === "music")
                 return "top";

@@ -74,7 +74,10 @@ Item {
         id: visibleShape
 
         anchors.fill: parent
-        layer.enabled: root.enableShadow && HyprlandService.hyprShadow && opacity > 0.001
+        preferredRendererType: Shape.CurveRenderer
+        layer.enabled: root.enableShadow && HyprlandService.hyprShadow && root.opacity > 0.001
+        layer.smooth: root.enableShadow
+        layer.samples: root.enableShadow ? 4 : 1
 
         ShapePath {
             strokeWidth: root.borderWidth
@@ -88,7 +91,7 @@ Item {
         }
 
         layer.effect: MultiEffect {
-            shadowEnabled: true
+            shadowEnabled: root.enableShadow && HyprlandService.hyprShadow && root.opacity > 0.001
             shadowColor: Qt.alpha(Theme.shadow, 0.85)
             blurMax: 16
             shadowBlur: 3

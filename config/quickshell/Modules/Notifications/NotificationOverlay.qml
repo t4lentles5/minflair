@@ -22,7 +22,7 @@ Item {
         id: loader
 
         anchors.fill: parent
-        sourceComponent: (SettingsService.barNotchMode || SettingsService.barConvexMode) ? notchComponent : (SettingsService.barIslandMode ? islandComponent : (SettingsService.barFramedMode ? framedComponent : minflairComponent))
+        sourceComponent: (SettingsService.barNotchMode || SettingsService.barConvexMode) ? notchComponent : (SettingsService.barIslandMode ? islandComponent : minflairComponent)
     }
 
     Component {
@@ -41,15 +41,6 @@ Item {
         Item {
             property bool hasActiveNotifications: false
             property var blockContainer: null
-        }
-
-    }
-
-    Component {
-        id: framedComponent
-
-        FramedNotificationOverlay {
-            notificationService: root.notificationService
         }
 
     }

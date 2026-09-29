@@ -11,7 +11,7 @@ Item {
     property int barHeight: 48
     property int bezelSize: 8
     property bool isExiting: false
-    readonly property bool isExclusionActive: (SettingsService.barFramedMode || SettingsService.barConvexMode) && !root.hasFullscreen && !root.isExiting
+    readonly property bool isExclusionActive: SettingsService.barConvexMode && !root.hasFullscreen && !root.isExiting
 
     PanelWindow {
         id: bottomExclusion

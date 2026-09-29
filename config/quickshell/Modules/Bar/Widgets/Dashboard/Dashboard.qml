@@ -10,7 +10,7 @@ Item {
 
     property string popupId: "dashboard"
     property bool isOpen: false
-    property int popupStartY: SettingsService.barFramedMode ? 48 : 56
+    property int popupStartY: SettingsService.barConvexMode ? 48 : 56
     readonly property bool isConvex: SettingsService.barConvexMode
     readonly property bool _visible: contentLoader.item ? contentLoader.item._visible : false
 
@@ -59,7 +59,7 @@ Item {
         ignoreUnknownSignals: true
     }
 
-    // TopPopup for minflair and framed modes (top and center, horizontal)
+    // TopPopup for minflair mode (top and center, horizontal)
     Component {
         id: topPopupComponent
 

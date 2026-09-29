@@ -7,14 +7,14 @@ import qs.Core.Services
 Item {
     id: root
 
-    property bool enableShadow: !isFramed
+    property bool enableShadow: !isConvex
     property color color: Theme.bg
     property color borderColor: "transparent"
     property int borderWidth: 0
     property real cornerRadius: Constants.size2Xl
     property bool positionAtRight: false
     property int edge: positionAtRight ? Qt.RightEdge : Qt.TopEdge // Qt.TopEdge, Qt.BottomEdge, Qt.RightEdge
-    property bool isFramed: SettingsService.barFramedMode || SettingsService.barConvexMode || SettingsService.barMinflairMode
+    property bool isConvex: SettingsService.barConvexMode || SettingsService.barMinflairMode
     readonly property real rx: cornerRadius
     readonly property real ry: Math.max(0.1, Math.min(cornerRadius, height / 2.1))
     readonly property real w: width
@@ -22,7 +22,10 @@ Item {
 
     Shape {
         anchors.fill: parent
+        preferredRendererType: Shape.CurveRenderer
         layer.enabled: root.enableShadow && HyprlandService.hyprShadow
+        layer.smooth: root.enableShadow
+        layer.samples: root.enableShadow ? 4 : 1
 
         ShapePath {
             strokeWidth: root.borderWidth
@@ -96,7 +99,7 @@ Item {
         }
 
         layer.effect: MultiEffect {
-            shadowEnabled: true
+            shadowEnabled: root.enableShadow && HyprlandService.hyprShadow
             shadowColor: Qt.alpha(Theme.shadow, 0.85)
             blurMax: 16
             shadowBlur: 1

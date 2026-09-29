@@ -89,7 +89,7 @@ Item {
             anchors.margins: Constants.sizeMd
             visible: !LyricsService.loading && LyricsService.hasLyrics && LyricsService.isSynced
             model: LyricsService.lines
-            spacing: Constants.sizeMd
+            spacing: Constants.sizeSm
             clip: true
             boundsBehavior: Flickable.StopAtBounds
             highlightFollowsCurrentItem: true
@@ -134,7 +134,7 @@ Item {
                 property bool isCurrent: LyricsService.currentLineIndex === index
 
                 width: ListView.view.width
-                height: lineText.implicitHeight + 12
+                height: lineText.implicitHeight
 
                 ThemedText {
                     id: lineText
@@ -149,7 +149,6 @@ Item {
                     font.weight: Font.DemiBold
                     color: isCurrent ? Theme.fg : Theme.muted
                     opacity: isCurrent ? 1 : 0.3
-                    scale: isCurrent ? 1.05 : 1
                     x: isCurrent ? 6 : 0
                     transformOrigin: Item.Left
 
@@ -162,14 +161,6 @@ Item {
                     }
 
                     Behavior on opacity {
-                        NumberAnimation {
-                            duration: Constants.animSlow
-                            easing.type: Easing.OutCubic
-                        }
-
-                    }
-
-                    Behavior on scale {
                         NumberAnimation {
                             duration: Constants.animSlow
                             easing.type: Easing.OutCubic

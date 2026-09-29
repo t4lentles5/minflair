@@ -225,7 +225,7 @@ Item {
 
             Layout.fillWidth: true
             Layout.preferredHeight: 38
-            visible: !(SettingsService.barFramedMode || SettingsService.barConvexMode)
+            visible: !SettingsService.barConvexMode
         }
 
         Item {
@@ -432,7 +432,7 @@ Item {
 
             Layout.fillWidth: true
             Layout.preferredHeight: 38
-            visible: SettingsService.barFramedMode || SettingsService.barConvexMode
+            visible: SettingsService.barConvexMode
         }
 
     }
@@ -440,7 +440,7 @@ Item {
     ThemedSearchBar {
         id: searchField
 
-        parent: (SettingsService.barFramedMode || SettingsService.barConvexMode) ? bottomSearchContainer : topSearchContainer
+        parent: SettingsService.barConvexMode ? bottomSearchContainer : topSearchContainer
         anchors.fill: parent
         preferredHeight: 38
         placeholderText: "Search wallpapers..."

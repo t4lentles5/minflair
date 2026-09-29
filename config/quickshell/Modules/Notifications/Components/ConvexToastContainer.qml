@@ -360,7 +360,7 @@ Item {
                 anchors.fill: parent
                 notifData: overlayRoot ? overlayRoot.notifDataA : null
                 expanded: toastContainer.expanded
-                isFramed: false
+                isConvex: true
             }
 
             transform: Translate {
@@ -386,7 +386,7 @@ Item {
                 anchors.fill: parent
                 notifData: overlayRoot ? overlayRoot.notifDataB : null
                 expanded: toastContainer.expanded
-                isFramed: false
+                isConvex: true
             }
 
             transform: Translate {
