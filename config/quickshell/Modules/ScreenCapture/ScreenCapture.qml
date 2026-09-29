@@ -9,7 +9,6 @@ OverlayWindow {
     exclusive: true
     positionAtBottom: true
     contentPadding: 0
-    borderWidth: 0
     windowRadius: Constants.sizeMd
     preferredWidth: content.implicitWidth
     preferredHeight: content.implicitHeight

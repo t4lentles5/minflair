@@ -41,8 +41,6 @@ Item {
     readonly property int verticalOffset: Constants.sizeLg
     readonly property int overshootHeadroom: 20
     property real diagProgress: root.isOpen ? 1 : 0
-    property alias openProgress: root.diagProgress
-    property alias bounceProgress: root.diagProgress
     property bool hasBeenHovered: false
 
     signal popupOpened()

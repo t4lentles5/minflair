@@ -36,15 +36,6 @@ Item {
     }
 
     Component {
-        id: convexComponent
-
-        ConvexNotificationOverlay {
-            notificationService: root.notificationService
-        }
-
-    }
-
-    Component {
         id: islandComponent
 
         Item {

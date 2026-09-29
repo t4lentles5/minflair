@@ -12,7 +12,6 @@ OverlayWindow {
     enableBottomNotch: false
     preferredWidth: content.implicitWidth + (contentPadding * 2)
     preferredHeight: content.implicitHeight + (contentPadding * 2)
-    borderWidth: 0
     initialFocusItem: content.initialFocusItem
     onPopupOpened: {
         content.resetWallpaperSelector();

@@ -131,7 +131,7 @@ Item {
                     width: notificationContainer.width
                     height: (isRemoving && root.activeCount > 1) ? 0 : (content.implicitHeight + Constants.sizeSm * 2 + 4)
                     opacity: (isRemoving && root.activeCount > 1) ? 0 : 1
-                    color: mainMouseArea.containsMouse ? Theme.bgTertiary : Theme.bgSecondary
+                    color: Theme.bgSecondary
                     radius: Constants.sizeSm
                     border.width: 0
                     clip: true

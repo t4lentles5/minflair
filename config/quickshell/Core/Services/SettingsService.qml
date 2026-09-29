@@ -256,7 +256,6 @@ Item {
                 "cursorTheme": settingsService.cursorTheme,
                 "cursorSize": settingsService.cursorSize,
                 "barStyle": settingsService.barStyle,
-                "barFramedMode": settingsService.barFramedMode,
                 "barCompactMode": settingsService.barCompactMode,
                 "barIslandExpanded": settingsService.barIslandExpanded,
                 "barNotchExpanded": settingsService.barNotchExpanded,
@@ -409,9 +408,8 @@ Item {
                         applyCursor(settingsService.cursorTheme, settingsService.cursorSize);
                         applyFont(settingsService.fontFamily, Math.round(11 * settingsService.fontScale));
                         if (prefs.barStyle !== undefined)
-                            settingsService.barStyle = prefs.barStyle === "floating" ? "minflair" : prefs.barStyle;
-                        else if (prefs.barFramedMode !== undefined)
-                            settingsService.barStyle = prefs.barFramedMode ? "framed" : "minflair";
+                            settingsService.barStyle = prefs.barStyle;
+
                         if (prefs.barCompactMode !== undefined)
                             settingsService.barCompactMode = prefs.barCompactMode;
 

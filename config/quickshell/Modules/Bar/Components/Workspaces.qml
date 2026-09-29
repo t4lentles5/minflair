@@ -43,44 +43,17 @@ Item {
                 readonly property bool isActive: Hyprland.focusedWorkspace ? Hyprland.focusedWorkspace.id === wsId : false
                 readonly property bool hasActualWindows: {
                     // 1. Direct real-time check via workspace.toplevels (ObjectModel)
-                    if (workspace && workspace.toplevels) {
-                        if (workspace.toplevels.values !== undefined) {
-                            if (workspace.toplevels.values.length > 0)
-                                return true;
-
-                        } else if (workspace.toplevels.count !== undefined) {
-                            if (workspace.toplevels.count > 0)
-                                return true;
-
-                        }
-                    }
-                    // 2. Immediate cross-check with global Hyprland toplevels list
-                    if (Hyprland.toplevels && Hyprland.toplevels.values !== undefined) {
-                        const hasMatchingToplevel = Hyprland.toplevels.values.some((top) => {
-                            if (!top)
-                                return false;
-
-                            if (top.workspace && top.workspace.id === wsId)
-                                return true;
-
-                            if (top.lastIpcObject && top.lastIpcObject.workspace && top.lastIpcObject.workspace.id === wsId)
-                                return true;
-
-                            return false;
-                        });
-                        if (hasMatchingToplevel)
+                    if (workspace && workspace.toplevels && workspace.toplevels.values) {
+                        if (workspace.toplevels.values.length > 0)
                             return true;
 
                     }
-                    // 3. Fallback to lastIpcObject only when toplevel models are not available
-                    if (workspace && (!workspace.toplevels || (workspace.toplevels.values === undefined && workspace.toplevels.count === undefined))) {
-                        if (workspace.lastIpcObject && workspace.lastIpcObject.windows !== undefined)
-                            return workspace.lastIpcObject.windows > 0;
+                    // 2. Cross-check with global Hyprland toplevels list
+                    if (Hyprland.toplevels && Hyprland.toplevels.values)
+                        return Hyprland.toplevels.values.some((top) => {
+                            return top && top.workspace && top.workspace.id === wsId;
+                        });
 
-                        if (workspace.windows !== undefined)
-                            return workspace.windows > 0;
-
-                    }
                     return false;
                 }
                 readonly property bool hasWindows: hasActualWindows

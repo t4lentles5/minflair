@@ -29,7 +29,6 @@ PanelWindow {
     property real smoothPreferredWidth: preferredWidth
     property real smoothPreferredHeight: preferredHeight
     property bool positionAtBottom: false
-    // Legacy properties for compatibility (in case anything externally relies on them)
     property bool enableBottomNotch: true
     property int notchFlareWidth: 18
     property int notchFlareHeight: 16
@@ -41,8 +40,6 @@ PanelWindow {
     property int windowRadius: Constants.size3Xl
     property bool enableShadow: false
     property real smoothWindowRadius: windowRadius
-    property int borderWidth: 0
-    property color borderColor: "transparent"
     property real smoothContentPadding: contentPadding
     property real openProgress: root.isOpen ? 1 : 0
     property real bounceProgress: root.isOpen ? 1 : 0

@@ -13,12 +13,6 @@ Item {
     required property var notificationService
     property var mainPanelWidget: null
     property string activeBarStyle: ""
-    // Backwards compatibility properties (deprecated, point to style loader)
-    readonly property bool isFramed: activeBarStyle === "framed"
-    readonly property bool isIsland: activeBarStyle === "island"
-    readonly property bool isNotch: activeBarStyle === "notch"
-    readonly property bool isConvex: activeBarStyle === "convex"
-    readonly property bool isCenteredBar: isIsland || isNotch
     property bool loadMinflair: activeBarStyle === "minflair" || (activeBarStyle === "" && SettingsService.barStyle === "minflair")
     property bool loadIsland: activeBarStyle === "island"
     property bool loadNotch: activeBarStyle === "notch"
@@ -54,17 +48,6 @@ Item {
     readonly property real blockY: currentStyleItem ? (currentStyleItem.blockY || 0) : 0
     readonly property real blockWidth: currentStyleItem ? (currentStyleItem.blockWidth || 0) : 0
     readonly property real blockHeight: currentStyleItem ? (currentStyleItem.blockHeight || 0) : 0
-    // Maintain backwards compatibility aliases for shell.qml
-    readonly property real leftIslandWidth: leftWidth
-    readonly property real rightIslandWidth: rightWidth
-    readonly property real centerIslandX: isIsland ? centerX : (width - centerWidth) / 2
-    readonly property real centerIslandWidth: isIsland ? centerWidth : width
-    readonly property real centerConvexX: isConvex ? centerX : 0
-    readonly property real centerConvexWidth: isConvex ? centerWidth : 0
-    readonly property real centerNotchX: isNotch ? centerX : 0
-    readonly property real centerNotchWidth: isNotch ? centerWidth : 0
-    readonly property bool hasNotchActiveOverlay: isNotch && (AppState.activePopup === "dashboard" || AppState.activePopup === "controlCenter" || AppState.activePopup === "music")
-    readonly property bool isNotchOccupied: isOccupied
 
     function close() {
         if (currentStyleItem && typeof currentStyleItem.close === "function")
@@ -84,7 +67,7 @@ Item {
         else if (activeBarStyle === "framed")
             loadFramed = true;
     }
-    implicitWidth: currentStyleItem && currentStyleItem.implicitWidth > 0 ? currentStyleItem.implicitWidth : ((isIsland || isNotch) ? 180 : 0)
+    implicitWidth: currentStyleItem && currentStyleItem.implicitWidth > 0 ? currentStyleItem.implicitWidth : (BarStyleConfig.isCompact(activeBarStyle) ? 180 : 0)
 
     Loader {
         id: minflairLoader

@@ -36,7 +36,7 @@ Item {
     property bool _isPruning: false
     property bool wasPausedByHostPopup: false
     readonly property bool isOccupied: isOverlayActive || hasActiveNotifications
-    // Bar Compatibility
+    // Bar Style Interface
     readonly property real leftWidth: 0
     readonly property real rightWidth: 0
     readonly property real centerX: x
