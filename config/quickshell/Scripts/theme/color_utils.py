@@ -1,3 +1,8 @@
+import sys
+
+sys.dont_write_bytecode = True
+
+
 def sanitize_color(c):
     s = str(c)
     if s.startswith("#") and len(s) > 7:

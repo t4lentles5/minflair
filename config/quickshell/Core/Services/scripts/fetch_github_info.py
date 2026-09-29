@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
-import json
 import sys
+
+sys.dont_write_bytecode = True
+
+import json
 import urllib.error
 import urllib.request
 

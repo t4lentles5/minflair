@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
+import sys
+
+sys.dont_write_bytecode = True
 
 import json
 import os
 import re
 import subprocess
-import sys
 
 os.environ["LC_ALL"] = "C"
 

@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
+import sys
+
+sys.dont_write_bytecode = True
+
 import json
 import os
 import pwd
 import re
 import shutil
 import subprocess
-import sys
 import time
 
 uid_to_user = {}

@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
+import sys
+
+sys.dont_write_bytecode = True
+
 import json
 import subprocess
-import sys
 
 
 def get_devices():

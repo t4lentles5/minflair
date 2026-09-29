@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
+import sys
+
+sys.dont_write_bytecode = True
+
 import json
 import os
 import re
-import sys
 
 
 def update_lua(content, updates):

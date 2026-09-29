@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
+import sys
+
+sys.dont_write_bytecode = True
+
 import json
 import os
-import sys
 
 from theme_extractors.image_utils import prepare_image
 from theme_extractors.magick_utils import extract_histogram_colors, get_brightness

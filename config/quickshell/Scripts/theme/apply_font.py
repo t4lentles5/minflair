@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
+import sys
+
+sys.dont_write_bytecode = True
+
 import configparser
 import json
 import re
 import subprocess
-import sys
 from pathlib import Path
 
 

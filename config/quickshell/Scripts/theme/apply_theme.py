@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
+import sys
+
+sys.dont_write_bytecode = True
+
 import json
 import os
-import sys
 
 from color_utils import blend_hex, get_brightness
 from theme_appliers import (
