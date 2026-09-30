@@ -32,7 +32,7 @@ Item {
     property var convexHost: null
     property alias notificationOverlay: notificationOverlay
     property var activeTrayPopup: null
-    readonly property bool isFloatingPopupVisible: (usesFloatingPopups && ((dashboardLoader.item && dashboardLoader.item.isOpen) || (musicLoader.item && musicLoader.item.isOpen) || (controlCenterLoader.item && controlCenterLoader.item.isOpen) || (notificationsCenterLoader.item && notificationsCenterLoader.item.isOpen))) || (activeTrayPopup && activeTrayPopup.isOpen) || (activeBarStyle === "convex" && ((dashboardLoader.item && dashboardLoader.item.isOpen) || (controlCenterLoader.item && controlCenterLoader.item.isOpen) || (notificationsCenterLoader.item && notificationsCenterLoader.item.isOpen)))
+    readonly property bool isFloatingPopupVisible: (usesFloatingPopups && ((dashboardLoader.item && (dashboardLoader.item.isOpen || dashboardLoader.item._visible)) || (musicLoader.item && (musicLoader.item.isOpen || musicLoader.item._visible)) || (controlCenterLoader.item && (controlCenterLoader.item.isOpen || controlCenterLoader.item._visible)) || (notificationsCenterLoader.item && (notificationsCenterLoader.item.isOpen || notificationsCenterLoader.item._visible)))) || (activeTrayPopup && (activeTrayPopup.isOpen || activeTrayPopup._visible)) || (activeBarStyle === "convex" && ((dashboardLoader.item && (dashboardLoader.item.isOpen || dashboardLoader.item._visible)) || (controlCenterLoader.item && (controlCenterLoader.item.isOpen || controlCenterLoader.item._visible)) || (notificationsCenterLoader.item && (notificationsCenterLoader.item.isOpen || notificationsCenterLoader.item._visible))))
 
     MouseArea {
         anchors.fill: parent
@@ -107,12 +107,16 @@ Item {
                 }
                 return root.width - implicitWidth - 8;
             }
-            y: (root.activeBarStyle === "notch" || root.activeBarStyle === "convex") ? root.popupStartY + 8 : root.popupStartY
+            y: root.activeBarStyle === "minflair" ? root.popupStartY : root.popupStartY + 8
             onIsOpenChanged: {
                 if (isOpen)
                     root.activeTrayPopup = this;
-                else if (root.activeTrayPopup === this)
+
+            }
+            onFullyClosed: {
+                if (root.activeTrayPopup === this)
                     root.activeTrayPopup = null;
+
             }
         }
 

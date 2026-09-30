@@ -33,8 +33,8 @@ Item {
     property real smoothHeight: targetHeight
     property int targetWidth: preferredWidth > 0 ? preferredWidth : popupWidth
     property real smoothWidth: targetWidth
-    property int animationDuration: HyprlandService.enableAnimations ? Constants.animSlow : 0
-    readonly property int closeDuration: HyprlandService.enableAnimations ? Constants.animNormal : 0
+    property int animationDuration: HyprlandService.enableAnimations ? (root.isAttachedToTop ? Constants.animSlow : Constants.animNormal) : 0
+    readonly property int closeDuration: HyprlandService.enableAnimations ? Constants.animFast : 0
     readonly property int fadeDuration: HyprlandService.enableAnimations ? Constants.animNormal : 0
     property color backgroundColor: Theme.bg
     property bool animateHeight: false
@@ -141,9 +141,9 @@ Item {
         height: root.isAttachedToTop ? currentHeight : smoothHeight
         clip: root.isAttachedToTop
         x: root.positionAtRight ? 2 * root.overshootHeadroom + smoothWidth - width : root.overshootHeadroom
-        y: root.isAttachedToTop ? 0 : (root.isConvex ? (0 - 10 * (1 - Math.max(0, bounceProgress))) : 8 - (16 * (1 - Math.max(0, bounceProgress))))
-        opacity: root.isAttachedToTop ? 1 : Math.min(1, Math.max(0, bounceProgress / 0.55))
-        scale: root.isAttachedToTop ? 1 : (0.93 + 0.07 * Math.max(0, bounceProgress))
+        y: root.isAttachedToTop ? 0 : (-10 * (1 - Math.max(0, Math.min(1, bounceProgress))))
+        opacity: root.isAttachedToTop ? 1 : Math.max(0, Math.min(1, bounceProgress))
+        scale: root.isAttachedToTop ? 1 : (0.94 + 0.06 * Math.max(0, Math.min(1, bounceProgress)))
         transformOrigin: root.positionAtRight ? Item.TopRight : Item.Top
 
         HoverHandler {
@@ -291,16 +291,14 @@ Item {
         NumberAnimation {
             id: bounceAnim
 
-            duration: root.isOpen ? (root.isConvex ? Constants.animNormal : root.animationDuration) : root.closeDuration
+            duration: root.isOpen ? root.animationDuration : root.closeDuration
             easing.type: {
                 if (root.isAttachedToTop)
                     return root.isOpen ? Easing.OutCubic : Easing.InCubic;
-                else if (root.isConvex)
-                    return root.isOpen ? Easing.OutQuint : Easing.InCubic;
                 else
-                    return root.isOpen ? Easing.OutBack : Easing.InCubic;
+                    return root.isOpen ? Easing.OutCubic : Easing.OutQuad;
             }
-            easing.overshoot: (!root.isAttachedToTop && root.isOpen && !root.isConvex) ? 1.15 : 0
+            easing.overshoot: 0
             onRunningChanged: {
                 if (!running && !root.isOpen) {
                     closeDelayTimer.stop();

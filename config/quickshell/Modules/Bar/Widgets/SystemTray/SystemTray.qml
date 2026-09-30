@@ -27,14 +27,9 @@ Item {
     implicitHeight: contentLoader.item ? contentLoader.item.implicitHeight : 0
     visible: _visible
     onIsOpenChanged: {
-        if (!root.isOpen) {
+        if (!root.isOpen)
             AppState.closePopup(root.popupId);
-            if (contentLoader.item && contentLoader.item.content && contentLoader.item.content.length > 0) {
-                if (contentLoader.item.content[0].resetToRoot)
-                    contentLoader.item.content[0].resetToRoot();
 
-            }
-        }
         if (contentLoader.item && contentLoader.item.isOpen !== root.isOpen)
             contentLoader.item.isOpen = root.isOpen;
 
@@ -68,6 +63,11 @@ Item {
         }
 
         function onFullyClosed() {
+            if (contentLoader.item && contentLoader.item.content && contentLoader.item.content.length > 0) {
+                if (contentLoader.item.content[0].resetToRoot)
+                    contentLoader.item.content[0].resetToRoot();
+
+            }
             root.fullyClosed();
             AppState.closePopup(root.popupId);
         }

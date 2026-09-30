@@ -200,8 +200,6 @@ ColumnLayout {
 
                     property bool isHovered: itemMouseArea.containsMouse
                     property bool isPressed: itemMouseArea.pressed
-                    property real animOffsetY: 6
-                    property real itemOpacity: 0
 
                     Layout.fillWidth: true
                     Layout.preferredHeight: (modelData && modelData.isSeparator) ? 1 : 32
@@ -219,21 +217,6 @@ ColumnLayout {
                             return !menuRoot.isRedundantSeparator(index);
 
                         return modelData.text !== "";
-                    }
-                    opacity: itemOpacity
-                    Component.onCompleted: {
-                        staggerTimer.start();
-                    }
-
-                    Timer {
-                        id: staggerTimer
-
-                        interval: Math.min(index * 12, 120)
-                        repeat: false
-                        onTriggered: {
-                            itemRoot.itemOpacity = 1;
-                            itemRoot.animOffsetY = 0;
-                        }
                     }
 
                     RowLayout {
@@ -361,26 +344,6 @@ ColumnLayout {
                                 menuRoot.closeRequested();
                             }
                         }
-                    }
-
-                    transform: Translate {
-                        y: itemRoot.animOffsetY
-                    }
-
-                    Behavior on itemOpacity {
-                        NumberAnimation {
-                            duration: Constants.animNormal
-                            easing.type: Easing.OutCubic
-                        }
-
-                    }
-
-                    Behavior on animOffsetY {
-                        NumberAnimation {
-                            duration: Constants.animNormal
-                            easing.type: Easing.OutCubic
-                        }
-
                     }
 
                     Behavior on color {

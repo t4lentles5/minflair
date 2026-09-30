@@ -119,6 +119,8 @@ hl.bind(mainMod .. " + SHIFT + S", hl.dsp.exec_cmd("socat - UNIX-CONNECT:/tmp/qu
 hl.bind("CTRL + ALT + D", hl.dsp.exec_cmd("socat - UNIX-CONNECT:/tmp/quickshell_dashboard"))
 -- # Toggle Music Popup
 hl.bind("CTRL + ALT + M", hl.dsp.exec_cmd("socat - UNIX-CONNECT:/tmp/quickshell_music"))
+-- # Toggle Notifications Center
+hl.bind("CTRL + ALT +N", hl.dsp.exec_cmd("socat - UNIX-CONNECT:/tmp/quickshell_notificationsCenter"))
 
 -- ## Quickshell Apps
 
