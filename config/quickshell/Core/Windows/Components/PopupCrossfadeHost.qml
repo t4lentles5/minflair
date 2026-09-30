@@ -7,9 +7,9 @@ import qs.Core.Services
 import qs.Modules.Bar.Widgets.Dashboard as DashboardModule
 import qs.Modules.Clipboard as ClipboardModule
 import qs.Modules.ControlCenter as ControlCenterModule
-import qs.Modules.ControlCenter.Widgets.NotificationCenter as NotificationCenterModule
 import qs.Modules.Launcher as LauncherModule
 import qs.Modules.MusicPopup as MusicModule
+import qs.Modules.NotificationCenter as NotificationCenterModule
 import qs.Modules.WallpaperSelector as WallpaperModule
 
 Item {

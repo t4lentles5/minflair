@@ -36,7 +36,10 @@ def parse_lrc(lrc_str):
             if not line.startswith("["):  # Ignore tags like [ar:...]
                 plain_text.append(line)
 
-    return synced, lines, "\n".join(plain_text)
+    while lines and not lines[-1].get("text", "").strip():
+        lines.pop()
+
+    return synced, lines, "\n".join(plain_text).strip()
 
 
 def get_cache_path(title, artist, duration):

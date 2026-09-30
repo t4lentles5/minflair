@@ -74,13 +74,21 @@ Item {
         ListView {
             id: lyricsList
 
+            readonly property int totalLines: LyricsService.lines ? LyricsService.lines.length : 0
+            readonly property bool isNearEnd: totalLines > 0 && LyricsService.currentLineIndex >= totalLines - 4
+            readonly property bool isNearStart: LyricsService.currentLineIndex <= 0
+            readonly property bool contentFits: contentHeight <= height
+            readonly property real maxContentY: Math.max(0, contentHeight - height)
+
             anchors.top: lyricsHeader.bottom
             anchors.bottom: parent.bottom
             anchors.left: parent.left
             anchors.right: parent.right
-            anchors.margins: Constants.sizeMd
-            topMargin: Constants.sizeSm
-            bottomMargin: Constants.sizeSm
+            anchors.topMargin: Constants.sizeSm
+            anchors.leftMargin: Constants.sizeLg
+            anchors.rightMargin: Constants.sizeLg
+            anchors.bottomMargin: Constants.sizeLg
+            bottomMargin: 0
             visible: !LyricsService.loading && LyricsService.hasLyrics && LyricsService.isSynced
             model: LyricsService.lines
             spacing: Constants.sizeSm
@@ -91,7 +99,7 @@ Item {
             highlightMoveVelocity: -1
             preferredHighlightBegin: Math.max(topMargin + 20, Math.round(lyricsList.height / 2 - 20))
             preferredHighlightEnd: Math.max(topMargin + 60, Math.round(lyricsList.height / 2 + 20))
-            highlightRangeMode: LyricsService.currentLineIndex > 0 ? ListView.ApplyRange : ListView.NoHighlightRange
+            highlightRangeMode: (contentFits || isNearStart || isNearEnd) ? ListView.NoHighlightRange : ListView.ApplyRange
             onVisibleChanged: {
                 if (visible) {
                     if (LyricsService.currentLineIndex <= 0) {
@@ -111,14 +119,30 @@ Item {
                 }
             }
 
+            NumberAnimation {
+                id: scrollEndAnim
+
+                target: lyricsList
+                property: "contentY"
+                duration: Constants.animSlow
+                easing.type: Easing.OutCubic
+            }
+
             Connections {
                 function onCurrentLineIndexChanged() {
                     if (!lyricsList.dragging && !lyricsMouse.pressed) {
-                        if (LyricsService.currentLineIndex <= 0) {
+                        let idx = LyricsService.currentLineIndex;
+                        if (idx <= 0) {
                             lyricsList.currentIndex = 0;
                             lyricsList.contentY = -lyricsList.topMargin;
                         } else {
-                            lyricsList.currentIndex = LyricsService.currentLineIndex;
+                            lyricsList.currentIndex = idx;
+                            if (lyricsList.isNearEnd && lyricsList.contentHeight > lyricsList.height) {
+                                if (lyricsList.contentY < lyricsList.maxContentY) {
+                                    scrollEndAnim.to = lyricsList.maxContentY;
+                                    scrollEndAnim.restart();
+                                }
+                            }
                         }
                     }
                 }
@@ -149,9 +173,11 @@ Item {
                 id: lineItem
 
                 property bool isCurrent: LyricsService.currentLineIndex === index
+                readonly property bool hasText: modelData && modelData.text && modelData.text.trim().length > 0
 
                 width: ListView.view.width
-                height: lineText.implicitHeight + Constants.size2Xs
+                height: hasText ? (lineText.implicitHeight + Constants.size2Xs) : 0
+                visible: hasText
 
                 ThemedText {
                     id: lineText
@@ -214,7 +240,10 @@ Item {
             anchors.bottom: parent.bottom
             anchors.left: parent.left
             anchors.right: parent.right
-            anchors.margins: Constants.sizeMd
+            anchors.topMargin: Constants.sizeSm
+            anchors.leftMargin: Constants.sizeLg
+            anchors.rightMargin: Constants.sizeLg
+            anchors.bottomMargin: Constants.sizeLg
             visible: !LyricsService.loading && LyricsService.hasLyrics && !LyricsService.isSynced
             contentWidth: width
             contentHeight: plainText.implicitHeight
@@ -224,7 +253,7 @@ Item {
                 id: plainText
 
                 width: parent.width
-                text: LyricsService.plainLyrics
+                text: LyricsService.plainLyrics.trim()
                 horizontalAlignment: Text.AlignHCenter
                 wrapMode: Text.WordWrap
                 customSize: Constants.sizeMd

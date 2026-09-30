@@ -112,9 +112,11 @@ Item {
                     let res = JSON.parse(data);
                     if (res.success) {
                         lyricsService.isSynced = res.synced;
-                        lyricsService.lines = res.lines || [];
-                        lyricsService.plainLyrics = res.plainLyrics || "";
-                        lyricsService.hasLyrics = (res.lines && res.lines.length > 0) || (res.plainLyrics !== "");
+                        let rawLines = res.lines || [];
+                        while (rawLines.length > 0 && (!rawLines[rawLines.length - 1].text || rawLines[rawLines.length - 1].text.trim() === ""))rawLines.pop()
+                        lyricsService.lines = rawLines;
+                        lyricsService.plainLyrics = (res.plainLyrics || "").trim();
+                        lyricsService.hasLyrics = (rawLines.length > 0) || (lyricsService.plainLyrics !== "");
                     } else {
                         lyricsService.hasLyrics = false;
                         lyricsService.isSynced = false;
