@@ -23,6 +23,12 @@ ThemedSlider {
     onMoved: (val) => {
         return root.setBrightness(val);
     }
+    onIconClicked: {
+        if (root.brightness <= 5)
+            root.setBrightness(100);
+        else
+            root.setBrightness(5);
+    }
 
     Timer {
         interval: 250

@@ -8,12 +8,13 @@ Item {
     id: displayProfileService
 
     property bool nightLightActive: false
+    property int nightLightTemperature: 4500
     property bool caffeineActive: false
     property bool gameModeActive: false
 
     function applyNightLight(state) {
         if (state) {
-            nightLightProc.command = ["hyprsunset", "-t", "4500"];
+            nightLightProc.command = ["hyprsunset", "-t", displayProfileService.nightLightTemperature.toString()];
             nightLightProc.running = false;
             nightLightProc.running = true;
         } else {
@@ -35,6 +36,14 @@ Item {
             SettingsService.saveSettings();
 
         applyNightLight(nightLightActive);
+    }
+    onNightLightTemperatureChanged: {
+        if (SettingsService.settingsLoaded)
+            SettingsService.saveSettings();
+
+        if (nightLightActive)
+            applyNightLight(true);
+
     }
     onCaffeineActiveChanged: {
         if (SettingsService.settingsLoaded)

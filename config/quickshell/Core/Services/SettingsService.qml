@@ -30,8 +30,6 @@ Item {
     property bool barIslandMode: barStyle === "island"
     property bool barNotchMode: barStyle === "notch"
     property bool barConvexMode: barStyle === "convex"
-    property bool barCompactMode: false
-    readonly property bool isBarCompact: barCompactMode && barConvexMode
     property bool barIslandExpanded: false
     property bool barNotchExpanded: false
     property string barSlotL1: "workspaces"
@@ -42,7 +40,7 @@ Item {
     property string barSlotR1: "recording"
     property string barSlotR2: "control_center"
     property string barSlotR3: "tray"
-    readonly property int barWidgetHeight: (barIslandMode || barNotchMode || isBarCompact) ? 28 : 32
+    readonly property int barWidgetHeight: (barIslandMode || barNotchMode || barConvexMode) ? 28 : 32
 
     function saveSettings() {
         saveTimer.restart();
@@ -157,11 +155,6 @@ Item {
             saveSettings();
 
     }
-    onBarCompactModeChanged: {
-        if (settingsLoaded)
-            saveSettings();
-
-    }
     onBarIslandExpandedChanged: {
         if (settingsLoaded)
             saveSettings();
@@ -234,6 +227,7 @@ Item {
                 "nightLightActive": DisplayProfileService.nightLightActive,
                 "caffeineActive": DisplayProfileService.caffeineActive,
                 "gameModeActive": DisplayProfileService.gameModeActive,
+                "nightLightTemperature": DisplayProfileService.nightLightTemperature,
                 "keyboardLayout": HyprlandService.keyboardLayout,
                 "wpAutoShuffle": HyprlandService.wpAutoShuffle,
                 "wpShuffleInterval": HyprlandService.wpShuffleInterval,
@@ -255,7 +249,6 @@ Item {
                 "cursorTheme": settingsService.cursorTheme,
                 "cursorSize": settingsService.cursorSize,
                 "barStyle": settingsService.barStyle,
-                "barCompactMode": settingsService.barCompactMode,
                 "barIslandExpanded": settingsService.barIslandExpanded,
                 "barNotchExpanded": settingsService.barNotchExpanded,
                 "barSlotL1": settingsService.barSlotL1,
@@ -334,6 +327,9 @@ Item {
                         if (prefs.gameModeActive !== undefined)
                             DisplayProfileService.gameModeActive = prefs.gameModeActive;
 
+                        if (prefs.nightLightTemperature !== undefined)
+                            DisplayProfileService.nightLightTemperature = prefs.nightLightTemperature;
+
                         if (prefs.keyboardLayout !== undefined)
                             HyprlandService.keyboardLayout = prefs.keyboardLayout;
 
@@ -408,9 +404,6 @@ Item {
                         applyFont(settingsService.fontFamily, Math.round(11 * settingsService.fontScale));
                         if (prefs.barStyle !== undefined)
                             settingsService.barStyle = prefs.barStyle;
-
-                        if (prefs.barCompactMode !== undefined)
-                            settingsService.barCompactMode = prefs.barCompactMode;
 
                         if (prefs.barIslandExpanded !== undefined)
                             settingsService.barIslandExpanded = prefs.barIslandExpanded;

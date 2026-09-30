@@ -7,6 +7,7 @@ import qs.Core
 import qs.Core.Components
 import qs.Core.Services
 import qs.Core.Windows
+import qs.Modules.ControlCenter.Widgets.QuickSettings.Components
 
 Item {
     id: root
@@ -16,7 +17,7 @@ Item {
     property int activePageIndex: 0
 
     implicitWidth: mainPage.implicitWidth
-    implicitHeight: activePageIndex === 0 ? mainPage.implicitHeight : (activePageIndex === 1 ? wifiPage.implicitHeight : bluetoothPage.implicitHeight)
+    implicitHeight: mainPage.implicitHeight
 
     Item {
         id: stackContainer
@@ -30,157 +31,114 @@ Item {
             width: parent.width
             spacing: Constants.sizeLg
             x: root.activePageIndex === 0 ? 0 : -parent.width
-            visible: root.activePageIndex === 0
 
-            Card {
+            ColumnLayout {
                 Layout.fillWidth: true
+                spacing: Constants.sizeLg
 
-                ColumnLayout {
-                    anchors.fill: parent
-                    spacing: Constants.sizeLg
+                GridLayout {
+                    id: topControlsGrid
 
-                    RowLayout {
-                        id: topControlsRow
+                    Layout.fillWidth: true
+                    columns: 2
+                    rowSpacing: Constants.sizeLg
+                    columnSpacing: Constants.sizeLg
+
+                    WifiControl {
+                        id: wifiControl
 
                         Layout.fillWidth: true
-                        spacing: Constants.sizeLg
+                        isVisible: root.quickSettingsOpen
+                        expanded: root.activePageIndex === 1
+                        onMenuClicked: {
+                            if (isActive)
+                                root.activePageIndex = 1;
 
-                        WifiControl {
-                            id: wifiControl
-
-                            Layout.fillWidth: true
-                            isVisible: root.quickSettingsOpen
-                            expanded: root.activePageIndex === 1
-                            onMenuClicked: {
-                                if (isActive)
-                                    root.activePageIndex = 1;
-
-                            }
-                            onIsActiveChanged: {
-                                if (!isActive && root.activePageIndex === 1)
-                                    root.activePageIndex = 0;
-
-                            }
                         }
+                        onIsActiveChanged: {
+                            if (!isActive && root.activePageIndex === 1)
+                                root.activePageIndex = 0;
 
-                        BluetoothControl {
-                            id: btControl
-
-                            Layout.fillWidth: true
-                            isVisible: root.quickSettingsOpen
-                            expanded: root.activePageIndex === 2
-                            onMenuClicked: {
-                                if (isActive)
-                                    root.activePageIndex = 2;
-
-                            }
-                            onIsActiveChanged: {
-                                if (!isActive && root.activePageIndex === 2)
-                                    root.activePageIndex = 0;
-
-                            }
                         }
-
                     }
 
-                    RowLayout {
-                        id: bottomControlsRow
+                    BluetoothControl {
+                        id: btControl
 
-                        Layout.alignment: Qt.AlignHCenter
-                        spacing: Constants.sizeLg
-
-                        VolumeControl {
-                            id: volControl
-
-                            ThemedTooltip {
-                                visible: volControl.hovered
-                                text: "Sound"
-                            }
+                        Layout.fillWidth: true
+                        isVisible: root.quickSettingsOpen
+                        expanded: root.activePageIndex === 2
+                        onMenuClicked: {
+                            if (isActive)
+                                root.activePageIndex = 2;
 
                         }
-
-                        MicControl {
-                            id: micBtn
-
-                            ThemedTooltip {
-                                visible: micBtn.hovered
-                                text: "Microphone"
-                            }
+                        onIsActiveChanged: {
+                            if (!isActive && root.activePageIndex === 2)
+                                root.activePageIndex = 0;
 
                         }
-
-                        CaffeineControl {
-                            id: caffeineBtn
-
-                            ThemedTooltip {
-                                visible: caffeineBtn.hovered
-                                text: "Caffeine"
-                            }
-
-                        }
-
-                        NightLightControl {
-                            id: nightLightBtn
-
-                            ThemedTooltip {
-                                visible: nightLightBtn.hovered
-                                text: "Night Light"
-                            }
-
-                        }
-
-                        GameModeControl {
-                            id: gamepadBtn
-
-                            ThemedTooltip {
-                                visible: gamepadBtn.hovered
-                                text: "Game Mode"
-                            }
-
-                        }
-
-                        CaptureControl {
-                            id: recordBtn
-
-                            ThemedTooltip {
-                                visible: recordBtn.hovered
-                                text: "Screen Capture"
-                            }
-
-                        }
-
-                        BatteryLimitControl {
-                            id: batteryLimitBtn
-
-                            isVisible: root.quickSettingsOpen
-
-                            ThemedTooltip {
-                                visible: batteryLimitBtn.hovered
-                                text: batteryLimitBtn.disabled ? "Battery Limit (Unsupported)" : (batteryLimitBtn.isLimitActive ? "Battery Limit (80% Active)" : "Battery Limit (100%)")
-                            }
-
-                        }
-
                     }
+
+                }
+
+                GridLayout {
+                    id: middleControlsGrid
+
+                    Layout.fillWidth: true
+                    columns: 2
+                    rowSpacing: Constants.sizeLg
+                    columnSpacing: Constants.sizeLg
+
+                    NightLightControl {
+                        id: nightLightBtn
+
+                        Layout.fillWidth: true
+                    }
+
+                    CaffeineControl {
+                        id: caffeineBtn
+
+                        Layout.fillWidth: true
+                    }
+
+                    GameModeControl {
+                        id: gamepadBtn
+
+                        Layout.fillWidth: true
+                    }
+
+                    BatteryLimitControl {
+                        id: batteryLimitBtn
+
+                        Layout.fillWidth: true
+                        isVisible: root.quickSettingsOpen
+                    }
+
+                }
+
+                Card {
+                    Layout.fillWidth: true
 
                     ColumnLayout {
                         id: sliderCol
 
-                        Layout.fillWidth: true
+                        anchors.fill: parent
                         spacing: Constants.sizeLg
 
+                        BrightnessSlider {
+                            Layout.fillWidth: true
+                            isVisible: root.quickSettingsOpen
+                        }
+
                         VolumeSlider {
-                            volume: volControl.volume
-                            muted: volControl.muted
-                            onMoved: (val) => {
-                                return volControl.setVolume(val);
-                            }
-                            onIconClicked: volControl.toggleMute()
+                            Layout.fillWidth: true
                         }
 
                         ThemedSlider {
                             id: micSlider
 
+                            Layout.fillWidth: true
                             enabled: !AudioService.micMuted
                             value: AudioService.micVolume
                             icon: AudioService.micMuted ? "microphone-off" : "microphone"
@@ -188,10 +146,6 @@ Item {
                                 AudioService.setMicVolume(val);
                             }
                             onIconClicked: AudioService.setMicMuted(!AudioService.micMuted)
-                        }
-
-                        BrightnessSlider {
-                            isVisible: root.quickSettingsOpen
                         }
 
                     }
@@ -212,56 +166,64 @@ Item {
 
         }
 
-        Card {
+        ColumnLayout {
             id: wifiPage
 
+            spacing: Constants.sizeSm
             width: parent.width
+            height: parent.height
             x: root.activePageIndex === 1 ? 0 : parent.width
-            visible: root.activePageIndex === 1
 
-            ColumnLayout {
-                anchors.fill: parent
-                spacing: Constants.sizeLg
+            RowLayout {
+                Layout.fillWidth: true
 
-                RowLayout {
-                    Layout.fillWidth: true
-                    spacing: Constants.sizeSm
-
-                    SvgIconButton {
-                        icon: "chevron-left"
-                        iconSize: Constants.sizeLg
-                        flat: true
-                        onClicked: root.activePageIndex = 0
-                    }
-
-                    ThemedText {
-                        text: "Wi-Fi Networks"
-                        customSize: Constants.sizeLg
-                        font.bold: true
-                        Layout.fillWidth: true
-                    }
-
-                    Item {
-                        Layout.fillWidth: true
-                    }
-
+                SvgIconButton {
+                    icon: "chevron-left"
+                    iconSize: Constants.sizeLg
+                    flat: true
+                    onClicked: root.activePageIndex = 0
                 }
 
-                WifiList {
+                ThemedText {
+                    text: "Wi-Fi Networks"
+                    customSize: Constants.sizeMd
+                    font.bold: true
                     Layout.fillWidth: true
-                    isVisible: root.quickSettingsOpen
-                    expanded: root.activePageIndex === 1
-                    isActive: wifiControl.isActive
-                    wifiList: wifiControl.wifiList
-                    onConnect: (ssid) => {
-                        return wifiControl.connect(ssid);
+                }
+
+                SvgIconButton {
+                    icon: "reload"
+                    iconSize: Constants.sizeMd
+                    flat: true
+                    onClicked: wifiControl.scan()
+                    visible: wifiControl.isActive
+
+                    RotationAnimation on rotation {
+                        from: 0
+                        to: 360
+                        duration: 1000
+                        loops: Animation.Infinite
+                        running: wifiControl.isScanning
                     }
+
                 }
 
             }
 
+            WifiList {
+                Layout.fillWidth: true
+                isVisible: root.quickSettingsOpen
+                expanded: root.activePageIndex === 1
+                isActive: wifiControl.isActive
+                wifiList: wifiControl.wifiList
+                isScanning: wifiControl.isScanning
+                onConnect: (ssid) => {
+                    return wifiControl.connect(ssid);
+                }
+            }
+
             Behavior on x {
-                enabled: root.quickSettingsOpen && root.activePageIndex === 1
+                enabled: root.quickSettingsOpen
 
                 NumberAnimation {
                     duration: Constants.animNormal
@@ -272,57 +234,65 @@ Item {
 
         }
 
-        Card {
+        ColumnLayout {
             id: bluetoothPage
 
+            spacing: Constants.sizeLg
             width: parent.width
+            height: parent.height
             x: root.activePageIndex === 2 ? 0 : parent.width
-            visible: root.activePageIndex === 2
-            backgroundColor: Theme.bgSecondary
 
-            ColumnLayout {
-                anchors.fill: parent
-                spacing: Constants.sizeLg
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: Constants.sizeSm
 
-                RowLayout {
-                    Layout.fillWidth: true
-                    spacing: Constants.sizeSm
-
-                    SvgIconButton {
-                        icon: "chevron-left"
-                        iconSize: Constants.sizeLg
-                        flat: true
-                        onClicked: root.activePageIndex = 0
-                    }
-
-                    ThemedText {
-                        text: "Bluetooth Devices"
-                        customSize: Constants.sizeLg
-                        font.bold: true
-                        Layout.fillWidth: true
-                    }
-
-                    Item {
-                        Layout.fillWidth: true
-                    }
-
+                SvgIconButton {
+                    icon: "chevron-left"
+                    iconSize: Constants.sizeLg
+                    flat: true
+                    onClicked: root.activePageIndex = 0
                 }
 
-                BluetoothList {
+                ThemedText {
+                    text: "Bluetooth Devices"
+                    customSize: Constants.sizeLg
+                    font.bold: true
                     Layout.fillWidth: true
-                    isVisible: root.quickSettingsOpen
-                    expanded: root.activePageIndex === 2
-                    isActive: btControl.isActive
-                    btList: btControl.btList
-                    onConnect: (mac) => {
-                        return btControl.connect(mac);
+                }
+
+                SvgIconButton {
+                    icon: "reload"
+                    iconSize: Constants.sizeMd
+                    flat: true
+                    onClicked: btControl.scan()
+                    visible: btControl.isActive
+
+                    RotationAnimation on rotation {
+                        from: 0
+                        to: 360
+                        duration: 1000
+                        loops: Animation.Infinite
+                        running: btControl.isScanning
                     }
+
                 }
 
             }
 
+            BluetoothList {
+                Layout.fillWidth: true
+                isVisible: root.quickSettingsOpen
+                expanded: root.activePageIndex === 2
+                isActive: btControl.isActive
+                btList: btControl.btList
+                isScanning: btControl.isScanning
+                onConnect: (mac) => {
+                    return btControl.connect(mac);
+                }
+            }
+
             Behavior on x {
-                enabled: root.quickSettingsOpen && root.activePageIndex === 2
+                enabled: root.quickSettingsOpen
 
                 NumberAnimation {
                     duration: Constants.animNormal

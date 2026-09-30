@@ -133,8 +133,7 @@ Item {
             icon: "chevron-right"
             iconSize: Constants.sizeMd
             visible: delegateRoot.hasActions
-            isActive: delegateRoot.isExpanded
-            iconColor: isActive ? Theme.fg : Theme.muted
+            iconColor: delegateRoot.isExpanded ? Theme.fg : Theme.muted
             anchors.right: parent.right
             anchors.rightMargin: Constants.sizeLg
             anchors.verticalCenter: mainContent.verticalCenter

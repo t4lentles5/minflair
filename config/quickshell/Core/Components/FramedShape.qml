@@ -41,23 +41,6 @@ Item {
                     if (w <= 0 || h <= 0)
                         return "";
 
-                    if (root.positionAtRight) {
-                        let r_x = Math.min(rx, w / 2.5);
-                        let r_y = Math.min(ry, h / 2.5);
-                        let r_bl = Math.min(rx, (h - r_y) / 2);
-                        let r_tr = Math.min(Constants.size4Xl, w / 2, h / 2);
-                        let p = `M 0 0 `;
-                        p += `A ${r_x} ${r_y} 0 0 1 ${r_x} ${r_y} `;
-                        p += `L ${r_x} ${Math.max(r_y, h - r_y - r_bl)} `;
-                        p += `A ${r_bl} ${r_bl} 0 0 0 ${r_x + r_bl} ${Math.max(r_y, h - r_y)} `;
-                        p += `L ${Math.max(r_x + r_bl, w - r_x)} ${Math.max(r_y, h - r_y)} `;
-                        p += `A ${r_x} ${r_y} 0 0 1 ${w} ${h} `;
-                        p += `L ${w} ${r_tr} `;
-                        p += `A ${r_tr} ${r_tr} 0 0 0 ${w - r_tr} 0 `;
-                        p += `L 0 0 `;
-                        p += `Z`;
-                        return p;
-                    }
                     if (root.edge === Qt.RightEdge) {
                         let pRight = `M 0 0 `;
                         pRight += `A ${rx} ${ry} 0 0 1 ${rx} ${ry} `;

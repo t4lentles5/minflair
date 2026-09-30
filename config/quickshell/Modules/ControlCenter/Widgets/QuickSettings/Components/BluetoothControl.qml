@@ -11,6 +11,7 @@ QuickSettingsTile {
     id: root
 
     property bool expanded: false
+    property bool isScanning: btDiscoveryProc.running
     property var btList: []
     property bool isVisible: true
 
@@ -20,11 +21,11 @@ QuickSettingsTile {
     }
 
     function scan() {
-        if (root.expanded && root.isActive) {
-            if (!btDiscoveryProc.running)
-                btDiscoveryProc.running = true;
+        if (!root.isActive)
+            return ;
 
-        }
+        btDiscoveryProc.running = false;
+        btDiscoveryProc.running = true;
     }
 
     function connect(mac) {
@@ -47,25 +48,32 @@ QuickSettingsTile {
     }
     onClicked: root.toggle()
     onExpandedChanged: {
-        if (expanded && isActive) {
-            if (!btDiscoveryProc.running)
-                btDiscoveryProc.running = true;
-
-        } else {
+        if (expanded)
+            scan();
+        else
             btDiscoveryProc.running = false;
-        }
     }
     onIsActiveChanged: {
-        if (expanded && isActive) {
-            if (!btDiscoveryProc.running)
-                btDiscoveryProc.running = true;
-
-        } else {
-            btDiscoveryProc.running = false;
-        }
-        if (!isActive)
+        if (!isActive) {
             expanded = false;
-
+            btDiscoveryProc.running = false;
+            btList = [];
+        } else {
+            btGetProc.running = false;
+            btGetProc.running = true;
+        }
+    }
+    onIsVisibleChanged: {
+        if (isVisible && isActive) {
+            btGetProc.running = false;
+            btGetProc.running = true;
+        }
+    }
+    Component.onCompleted: {
+        if (isActive) {
+            btGetProc.running = false;
+            btGetProc.running = true;
+        }
     }
 
     Timer {
@@ -93,9 +101,12 @@ QuickSettingsTile {
                 try {
                     let parsed = JSON.parse(data);
                     root.isActive = parsed.powered;
-                    if (!root.expanded)
-                        root.btList = parsed.devices || [];
+                    if (!btDiscoveryProc.running || root.btList.length === 0) {
+                        let devs = (parsed.devices || []).slice();
+                        if (devs.length > 0 || !root.isScanning)
+                            root.btList = devs;
 
+                    }
                 } catch (e) {
                 }
             }
@@ -126,7 +137,7 @@ QuickSettingsTile {
                 try {
                     let parsed = JSON.parse(data);
                     if (parsed.event === "devices")
-                        root.btList = parsed.devices || [];
+                        root.btList = (parsed.devices || []).slice();
 
                 } catch (e) {
                 }

@@ -17,14 +17,14 @@ Item {
     required property int bezelSize
     required property var notificationService
     readonly property bool hasAnyDrawerOpen: (bottomDrawerLauncher.isOpen) || (bottomDrawerClipboard.isOpen) || (bottomDrawerWallpaper.isOpen) || (bottomDrawerPower.isOpen) || (bottomDrawerScreenshot.isOpen)
-    readonly property bool isConvexMusicOpen: SettingsService.barConvexMode && AppState.isPopupOpen("music")
+    readonly property bool isConvexPopupOpen: SettingsService.barConvexMode && (AppState.isPopupOpen("music") || AppState.isPopupOpen("notificationsCenter"))
 
     anchors.fill: parent
 
     // Click outside to close any open popups
     MouseArea {
         anchors.fill: parent
-        enabled: root.hasAnyDrawerOpen || root.isConvexMusicOpen
+        enabled: root.hasAnyDrawerOpen || root.isConvexPopupOpen
         onClicked: {
             AppState.closeAllPopups();
         }

@@ -11,14 +11,15 @@ Rectangle {
     property bool expanded: false
     property bool isActive: false
     property var btList: []
+    property bool isScanning: false
     property bool timedOut: false
     property bool isVisible: true
 
     signal connect(string mac)
 
     Layout.fillWidth: true
-    Layout.preferredHeight: expanded ? Math.max(btListCol.implicitHeight, 80) : 0
-    implicitHeight: Layout.preferredHeight
+    Layout.fillHeight: expanded
+    implicitHeight: expanded ? Math.max(btListCol.implicitHeight, 80) : 0
     opacity: expanded ? 1 : 0
     visible: opacity > 0
     clip: true
@@ -26,52 +27,57 @@ Rectangle {
     color: "transparent"
     border.width: 0
 
-    Timer {
-        id: scanTimeout
-
-        interval: 10000
-        running: root.expanded && root.isVisible && root.btList.length === 0
-        onTriggered: root.timedOut = true
-        onRunningChanged: {
-            if (!running && !root.expanded)
-                root.timedOut = false;
-
-        }
-    }
-
     ColumnLayout {
         anchors.centerIn: parent
-        spacing: Constants.sizeXs
+        spacing: Constants.sizeSm
         visible: root.expanded && root.btList.length === 0
 
         Item {
             Layout.alignment: Qt.AlignHCenter
-            width: 20
-            height: 20
-            visible: !root.timedOut
+            width: Constants.size2Xl
+            height: Constants.size2Xl
+            visible: root.isScanning
 
             SvgIcon {
                 anchors.centerIn: parent
                 icon: "reload"
-                iconColor: Theme.muted
-                iconSize: Constants.sizeMd
+                iconColor: Theme.accent
+                iconSize: Constants.sizeLg
                 flat: true
             }
 
             RotationAnimation on rotation {
                 from: 0
                 to: 360
-                duration: 1200
+                duration: 1000
                 loops: Animation.Infinite
-                running: parent.visible && !root.timedOut
+                running: root.expanded && root.isScanning && root.btList.length === 0
             }
 
         }
 
+        SvgIcon {
+            Layout.alignment: Qt.AlignHCenter
+            icon: "bluetooth-off"
+            iconColor: Theme.muted
+            iconSize: Constants.size2Xl
+            flat: true
+            visible: !root.isScanning
+        }
+
         ThemedText {
             Layout.alignment: Qt.AlignHCenter
-            text: root.timedOut ? "No devices found" : "Scanning..."
+            text: root.isScanning ? "Searching for devices..." : "No devices found"
+            color: root.isScanning ? Theme.fg : Theme.muted
+            font.bold: root.isScanning
+        }
+
+        ThemedText {
+            Layout.alignment: Qt.AlignHCenter
+            text: "Make sure device is in pairing mode"
             color: Theme.muted
+            customSize: Constants.sizeXs + 2
+            visible: !root.isScanning
         }
 
     }
@@ -79,9 +85,7 @@ Rectangle {
     ColumnLayout {
         id: btListCol
 
-        anchors.top: parent.top
-        anchors.left: parent.left
-        anchors.right: parent.right
+        anchors.fill: parent
         visible: root.btList.length > 0
 
         ThemedText {
@@ -93,7 +97,7 @@ Rectangle {
 
         ScrollView {
             Layout.fillWidth: true
-            Layout.preferredHeight: Math.min(btRepeaterCol.implicitHeight, 200)
+            Layout.fillHeight: true
             contentHeight: btRepeaterCol.implicitHeight
             clip: true
             ScrollBar.vertical.policy: ScrollBar.AlwaysOff
@@ -101,83 +105,30 @@ Rectangle {
             ColumnLayout {
                 id: btRepeaterCol
 
-                width: parent.width
+                width: btListCol.width
                 spacing: Constants.sizeXs
 
                 Repeater {
                     model: root.btList
 
-                    Item {
-                        id: btItem
-
-                        Layout.fillWidth: true
-                        implicitHeight: 36
-
-                        Rectangle {
-                            anchors.fill: parent
-                            radius: Constants.sizeLg
-                            color: hoverHandlerB.hovered ? Theme.bgSecondary : "transparent"
-
-                            Behavior on color {
-                                ColorAnimation {
-                                    duration: Constants.animFast
-                                }
-
-                            }
-
+                    ControlCenterListDelegate {
+                        titleText: modelData.name
+                        subtitleText: "Connected device"
+                        iconName: modelData.connected ? "bluetooth" : "bluetooth-off"
+                        isActive: modelData.connected
+                        showLock: false
+                        onClicked: root.connect(modelData.mac)
+                        onActionClicked: {
+                            settingsProc.running = true;
                         }
-
-                        RowLayout {
-                            anchors.fill: parent
-                            anchors.leftMargin: Constants.sizeSm
-                            anchors.rightMargin: Constants.sizeSm
-                            spacing: Constants.sizeSm
-
-                            SvgIcon {
-                                icon: modelData.connected ? "bluetooth" : "bluetooth-off"
-                                iconColor: modelData.connected ? Theme.accent : Theme.fg
-                                iconSize: Constants.sizeLg
-                                flat: true
-                                opacity: modelData.connected ? 1 : 0.7
-                            }
-
-                            ThemedText {
-                                text: modelData.name
-                                color: modelData.connected ? Theme.accent : Theme.fg
-                                font.bold: modelData.connected
-                                Layout.fillWidth: true
-                                elide: Text.ElideRight
-                            }
-
-                            Rectangle {
-                                visible: modelData.connected
-                                radius: height / 2
-                                implicitWidth: statusText.implicitWidth + Constants.sizeXs
-                                implicitHeight: statusText.implicitHeight + 2
-                                color: Theme.bgSecondary
-
-                                ThemedText {
-                                    id: statusText
-
-                                    anchors.centerIn: parent
-                                    text: "Connected"
-                                    customSize: Constants.sizeXs - 1
-                                    font.bold: true
-                                    color: Theme.accent
-                                }
-
-                            }
-
+                        onDisconnectClicked: {
+                            disconnectProc.command = ["bluetoothctl", "disconnect", modelData.mac];
+                            disconnectProc.running = true;
                         }
-
-                        HoverHandler {
-                            id: hoverHandlerB
+                        onForgetClicked: {
+                            forgetProc.command = ["bluetoothctl", "remove", modelData.mac];
+                            forgetProc.running = true;
                         }
-
-                        TapHandler {
-                            onTapped: root.connect(modelData.mac)
-                        }
-
                     }
 
                 }
@@ -186,6 +137,20 @@ Rectangle {
 
         }
 
+    }
+
+    Process {
+        id: settingsProc
+
+        command: ["blueman-manager"]
+    }
+
+    Process {
+        id: disconnectProc
+    }
+
+    Process {
+        id: forgetProc
     }
 
     transform: Translate {
@@ -204,7 +169,7 @@ Rectangle {
     Behavior on Layout.preferredHeight {
         NumberAnimation {
             duration: Constants.animNormal
-            easing.type: Easing.OutCubic
+            easing.type: root.expanded ? Easing.OutExpo : Easing.OutCubic
         }
 
     }
@@ -212,7 +177,7 @@ Rectangle {
     Behavior on opacity {
         NumberAnimation {
             duration: Constants.animNormal
-            easing.type: Easing.OutCubic
+            easing.type: root.expanded ? Easing.Linear : Easing.OutCubic
         }
 
     }

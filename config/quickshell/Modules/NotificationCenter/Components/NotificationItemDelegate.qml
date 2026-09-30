@@ -34,10 +34,8 @@ Rectangle {
 
     width: ListView.view.width
     height: delegateLayout.implicitHeight + Constants.sizeLg * 2
-    color: delegateMouseArea.containsMouse ? Theme.bgTertiary : Theme.bgSecondary
+    color: Theme.bgSecondary
     radius: Constants.sizeXl
-    border.width: 1
-    border.color: delegateMouseArea.containsMouse ? Theme.accent : Theme.border
 
     MouseArea {
         id: delegateMouseArea
@@ -143,13 +141,6 @@ Rectangle {
         NumberAnimation {
             duration: Constants.animFast
             easing.type: Easing.OutQuint
-        }
-
-    }
-
-    Behavior on border.color {
-        ColorAnimation {
-            duration: Constants.animNormal
         }
 
     }

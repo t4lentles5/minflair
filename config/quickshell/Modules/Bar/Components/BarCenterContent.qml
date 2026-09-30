@@ -20,7 +20,6 @@ RowLayout {
 
     MinflairButton {
         widget: root.widget
-        iconSize: Constants.sizeXl
         enableIntervalAnim: root.animateTransitions
         Layout.alignment: Qt.AlignVCenter
         customClickHandler: (mouse) => {
@@ -89,16 +88,14 @@ RowLayout {
         visible: opacity > 0.001
         clip: true
         Layout.alignment: Qt.AlignVCenter
-        Layout.preferredHeight: 28
-        Layout.preferredWidth: !root.isExpandable || root.isExpanded ? powerBtn.width : 0
+        Layout.preferredHeight: SettingsService.barWidgetHeight
+        Layout.preferredWidth: !root.isExpandable || root.isExpanded ? powerBtn.implicitWidth : 0
         opacity: !root.isExpandable || root.isExpanded ? 1 : 0
 
         PowerButton {
             id: powerBtn
 
             popupId: "powerMenu"
-            width: implicitWidth + 8
-            height: 28
             anchors.centerIn: parent
         }
 

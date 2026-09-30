@@ -36,16 +36,6 @@ AppContainer {
             }
         }
 
-        SettingToggle {
-            visible: SettingsService.barStyle === "convex"
-            label: "Compact Bar"
-            description: "Reduce bar height and simplify buttons with divider separators"
-            checked: SettingsService.barCompactMode
-            onCheckedChanged: {
-                SettingsService.barCompactMode = checked;
-            }
-        }
-
     }
 
     AppGroup {

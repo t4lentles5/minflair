@@ -27,10 +27,13 @@ Item {
     implicitHeight: contentLoader.item ? contentLoader.item.implicitHeight : 0
     visible: _visible
     onIsOpenChanged: {
-        if (!root.isOpen && contentLoader.item && contentLoader.item.content && contentLoader.item.content.length > 0) {
-            if (contentLoader.item.content[0].resetToRoot)
-                contentLoader.item.content[0].resetToRoot();
+        if (!root.isOpen) {
+            AppState.closePopup(root.popupId);
+            if (contentLoader.item && contentLoader.item.content && contentLoader.item.content.length > 0) {
+                if (contentLoader.item.content[0].resetToRoot)
+                    contentLoader.item.content[0].resetToRoot();
 
+            }
         }
         if (contentLoader.item && contentLoader.item.isOpen !== root.isOpen)
             contentLoader.item.isOpen = root.isOpen;
@@ -66,6 +69,7 @@ Item {
 
         function onFullyClosed() {
             root.fullyClosed();
+            AppState.closePopup(root.popupId);
         }
 
         target: contentLoader.item
@@ -76,14 +80,14 @@ Item {
         function onTogglePopup(id) {
             if (id === root.popupId)
                 root.isOpen = !root.isOpen;
-            else if (root.isOpen && id !== "")
+            else if (root.isOpen && id !== "" && AppState.getSlot(id) === AppState.getSlot(root.popupId))
                 root.isOpen = false;
         }
 
         function onOpenPopup(id) {
             if (id === root.popupId)
                 root.isOpen = true;
-            else if (root.isOpen && id !== "")
+            else if (root.isOpen && id !== "" && AppState.getSlot(id) === AppState.getSlot(root.popupId))
                 root.isOpen = false;
         }
 

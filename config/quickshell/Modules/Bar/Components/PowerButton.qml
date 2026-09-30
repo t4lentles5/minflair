@@ -4,6 +4,8 @@ import qs.Modules.Bar
 
 BarButton {
     icon: "power"
-    iconSize: (SettingsService.isBarCompact || BarStyleConfig.isCompact(SettingsService.barStyle)) ? Constants.sizeLg + 2 : Constants.sizeXl
-    iconColor: Theme.accent
+    iconSize: Constants.sizeLg
+    iconColor: Theme.fg
+    hasBackground: true
+    popupId: "powerMenu"
 }

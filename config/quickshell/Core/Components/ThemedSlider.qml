@@ -3,94 +3,106 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import qs.Core
 import qs.Core.Components
+import qs.Core.Services
 
-RowLayout {
+Item {
     id: root
 
     property string label: ""
     property string icon: ""
+    property string suffix: ""
+    property int decimals: 0
+    property color accentColor: Theme.accent
     property real from: 0
     property real to: 100
     property real stepSize: 1
     property real value: 0
-    property string suffix: ""
-    property int decimals: 0
+    property bool enabled: true
 
     signal moved(real val)
     signal iconClicked()
 
     Layout.fillWidth: true
-    spacing: Constants.sizeMd
+    implicitHeight: 32
 
-    SvgIcon {
-        id: sliderIcon
-
-        icon: root.icon
-        iconSize: Constants.sizeLg
-        flat: true
-        iconColor: root.enabled ? Theme.fg : Theme.muted
-        bgColor: "transparent"
-        visible: root.icon !== ""
-        Layout.alignment: Qt.AlignVCenter
-
-        MouseArea {
-            anchors.fill: parent
-            cursorShape: parent.visible ? Qt.PointingHandCursor : Qt.ArrowCursor
-            onClicked: root.iconClicked()
-        }
-
-    }
-
-    ThemedText {
-        text: root.label
-        font.bold: true
-        color: root.enabled ? Theme.fg : Theme.muted
-        visible: root.label !== ""
-        elide: Text.ElideRight
-    }
-
-    BaseSlider {
+    Slider {
         id: internalSlider
 
-        Layout.fillWidth: true
+        anchors.fill: parent
         from: root.from
         to: root.to
         stepSize: root.stepSize
         value: root.value
-        color: root.enabled ? Theme.accent : Theme.muted
         enabled: root.enabled
-        onMoved: root.moved(value)
-    }
+        onMoved: {
+            root.moved(internalSlider.value);
+        }
 
-    Rectangle {
-        id: valueBadge
+        HoverHandler {
+            id: sliderHover
 
-        Layout.preferredWidth: Math.max(48, valueText.implicitWidth + Constants.sizeSm)
-        Layout.preferredHeight: 22
-        radius: Constants.sizeLg
-        color: Theme.bgSecondary
+            cursorShape: root.enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
+        }
 
-        ThemedText {
-            id: valueText
+        background: Rectangle {
+            anchors.fill: parent
+            color: Theme.bg // Contrast against bgSecondary cards
+            radius: height / 2
 
-            anchors.centerIn: parent
-            text: root.value.toFixed(root.decimals) + root.suffix
-            customSize: Constants.sizeXs + 2
-            font.bold: true
-            color: !root.enabled ? Theme.muted : Theme.fg
+            Rectangle {
+                width: internalSlider.visualPosition * parent.width
+                height: parent.height
+                color: root.enabled ? root.accentColor : Theme.muted
+                radius: height / 2
 
-            Behavior on color {
-                ColorAnimation {
-                    duration: Constants.animFast
+                Behavior on width {
+                    enabled: HyprlandService.enableAnimations
+
+                    NumberAnimation {
+                        duration: Constants.animFast
+                        easing.type: Easing.OutQuad
+                    }
+
                 }
 
             }
 
         }
 
-        Behavior on color {
-            ColorAnimation {
-                duration: Constants.animFast
+        // Empty handle since we don't need a visible knob for a thick slider
+        handle: Item {
+        }
+
+    }
+
+    RowLayout {
+        anchors.fill: parent
+        anchors.leftMargin: Constants.sizeSm
+        anchors.rightMargin: Constants.sizeSm
+        spacing: Constants.sizeSm
+
+        SvgIcon {
+            id: sliderIcon
+
+            icon: root.icon
+            iconSize: Constants.sizeMd
+            flat: true
+            iconColor: Theme.bg
+            bgColor: "transparent"
+            visible: root.icon !== ""
+            Layout.alignment: Qt.AlignVCenter
+
+            MouseArea {
+                anchors.fill: parent
+                cursorShape: parent.visible ? Qt.PointingHandCursor : Qt.ArrowCursor
+                onClicked: root.iconClicked()
+            }
+
+            Behavior on iconColor {
+                ColorAnimation {
+                    duration: Constants.animFast
+                }
+
             }
 
         }

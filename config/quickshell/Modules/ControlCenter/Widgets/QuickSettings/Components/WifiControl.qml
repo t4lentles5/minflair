@@ -11,6 +11,7 @@ QuickSettingsTile {
     id: root
 
     property bool expanded: false
+    property bool isScanning: wifiScanProc.running
     property var wifiList: []
     property var _tempWifiList: []
     property string connectedSsid: "Disconnected"
@@ -28,10 +29,14 @@ QuickSettingsTile {
         root.isActive = !root.isActive;
     }
 
-    function scan() {
-        if (root.expanded)
-            wifiScanProc.running = true;
+    function scan(forceRescan) {
+        if (!root.isActive)
+            return ;
 
+        let rescan = (forceRescan === undefined) ? true : forceRescan;
+        wifiScanProc.command = ["nmcli", "-t", "-f", "SSID,SIGNAL,IN-USE,SECURITY", "device", "wifi", "list", "--rescan", rescan ? "yes" : "no"];
+        wifiScanProc.running = false;
+        wifiScanProc.running = true;
     }
 
     function connect(ssid) {
@@ -43,6 +48,33 @@ QuickSettingsTile {
     label: "Wi-Fi"
     subtitle: root.currentSsid
     onClicked: root.toggle()
+    onExpandedChanged: {
+        if (expanded)
+            scan(true);
+
+    }
+    onIsActiveChanged: {
+        if (isActive) {
+            scan(false);
+            if (expanded)
+                scan(true);
+
+        } else {
+            wifiList = [];
+            _tempWifiList = [];
+            connectedSsid = "Disconnected";
+        }
+    }
+    onIsVisibleChanged: {
+        if (isVisible && isActive && root.wifiList.length === 0)
+            scan(false);
+
+    }
+    Component.onCompleted: {
+        if (isActive && root.wifiList.length === 0)
+            scan(false);
+
+    }
 
     Timer {
         interval: 2000
@@ -51,9 +83,6 @@ QuickSettingsTile {
         triggeredOnStart: true
         onTriggered: {
             wifiGetProc.running = true;
-            if (root.expanded)
-                scan();
-
         }
     }
 
@@ -90,12 +119,20 @@ QuickSettingsTile {
     Process {
         id: wifiScanProc
 
-        command: ["nmcli", "-t", "-f", "SSID,SIGNAL,IN-USE,SECURITY", "device", "wifi", "list"]
+        command: ["nmcli", "-t", "-f", "SSID,SIGNAL,IN-USE,SECURITY", "device", "wifi", "list", "--rescan", "yes"]
         onRunningChanged: {
-            if (running)
+            if (running) {
                 root._tempWifiList = [];
-            else
-                root.wifiList = root._tempWifiList;
+            } else {
+                let sortedList = (root._tempWifiList || []).slice();
+                sortedList.sort((a, b) => {
+                    if (a.active !== b.active)
+                        return a.active ? -1 : 1;
+
+                    return b.signal - a.signal;
+                });
+                root.wifiList = sortedList;
+            }
         }
 
         stdout: SplitParser {
@@ -108,33 +145,33 @@ QuickSettingsTile {
                 if (parts.length < 4)
                     return ;
 
-                let ssid = parts[0].replace(/__COLON__/g, ":");
-                let signal = parseInt(parts[1]);
-                let inUse = parts[2] === "*";
-                let security = parts[3].replace(/__COLON__/g, ":");
+                let ssid = parts[0].replace(/__COLON__/g, ":").trim();
+                let signal = parseInt(parts[1]) || 0;
+                let inUse = parts[2].trim() === "*";
+                let security = parts[3].replace(/__COLON__/g, ":").trim();
                 if (!ssid)
                     return ;
 
-                let list = root._tempWifiList;
+                let list = (root._tempWifiList || []).slice();
                 let exists = false;
                 for (let i = 0; i < list.length; i++) {
                     if (list[i].ssid === ssid) {
                         exists = true;
                         if (inUse || signal > list[i].signal) {
-                            list[i].signal = signal;
-                            list[i].active = inUse;
-                            list[i].secured = security && security !== "--" && security !== "";
+                            list[i].signal = Math.max(list[i].signal, signal);
+                            list[i].active = list[i].active || inUse;
+                            list[i].secured = list[i].secured || Boolean(security && security !== "--" && security !== "");
                         }
                         break;
                     }
                 }
                 if (!exists)
                     list.push({
-                    "ssid": ssid,
-                    "signal": signal,
-                    "active": inUse,
-                    "secured": security && security !== "--" && security !== ""
-                });
+                        "ssid": ssid,
+                        "signal": signal,
+                        "active": inUse,
+                        "secured": Boolean(security && security !== "--" && security !== "")
+                    });
 
                 root._tempWifiList = list;
             }

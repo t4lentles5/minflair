@@ -41,35 +41,11 @@ Rectangle {
             mainBar: root.mainBar
         }
 
-        Divider {
-            id: divL1L2
-
-            vertical: true
-            visible: SettingsService.isBarCompact && slotL1.shouldShow && (slotL2.shouldShow || slotL3.shouldShow)
-            opacity: visible ? 1 : 0
-            Layout.fillHeight: false
-            Layout.preferredHeight: 14
-            Layout.preferredWidth: visible ? 1 : 0
-            Layout.alignment: Qt.AlignVCenter
-        }
-
         BarWidgetLoader {
             id: slotL2
 
             widgetType: SettingsService.barSlotL2
             mainBar: root.mainBar
-        }
-
-        Divider {
-            id: divL2L3
-
-            vertical: true
-            visible: SettingsService.isBarCompact && (slotL1.shouldShow || slotL2.shouldShow) && slotL3.shouldShow
-            opacity: visible ? 1 : 0
-            Layout.fillHeight: false
-            Layout.preferredHeight: 14
-            Layout.preferredWidth: visible ? 1 : 0
-            Layout.alignment: Qt.AlignVCenter
         }
 
         BarWidgetLoader {

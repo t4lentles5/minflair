@@ -8,6 +8,7 @@ import qs.Modules.Bar
 import qs.Modules.Bar.Components
 import qs.Modules.Bar.Styles.Components
 import qs.Modules.MusicPopup as MusicModule
+import qs.Modules.NotificationCenter as NotificationCenterModule
 import qs.Modules.Notifications as NotificationsModule
 
 Item {
@@ -40,7 +41,8 @@ Item {
     property bool expanded: false
     property real notifProgress: (hasActiveNotifications && !isRemovingNotif) ? 1 : 0
     // Music Popup logic
-    readonly property bool isMusicPopup: SettingsService.barConvexMode && AppState.isPopupOpen("music")
+    readonly property bool isCenterPopup: SettingsService.barConvexMode && (AppState.isPopupOpen("music") || AppState.isPopupOpen("notificationsCenter"))
+    readonly property string activePopupType: AppState.isPopupOpen("music") ? "music" : (AppState.isPopupOpen("notificationsCenter") ? "notif" : "")
     property bool isOpen: false
     property bool isClosing: false
     property real openProgress: 0
@@ -55,16 +57,16 @@ Item {
     readonly property real idleH: BarStyleConfig.barHeight("convex")
     readonly property real notifW: getNotifTargetWidth(activeSlot === "A" ? notifDataA : notifDataB)
     readonly property real notifH: getNotifTargetHeight(activeSlot === "A" ? contentA : contentB)
-    readonly property real musicW: (musicLoader.item && musicLoader.item.implicitWidth > 0 ? musicLoader.item.implicitWidth : 240) + totalHorizPadding
-    readonly property real musicH: (musicLoader.item && musicLoader.item.implicitHeight > 0 ? musicLoader.item.implicitHeight : 380) + totalVertPadding
+    readonly property real popupW: (musicLoader.item && musicLoader.item.implicitWidth > 0 ? musicLoader.item.implicitWidth : 240) + totalHorizPadding
+    readonly property real popupH: (musicLoader.item && musicLoader.item.implicitHeight > 0 ? musicLoader.item.implicitHeight : 380) + totalVertPadding
     property real smoothNotifW: notifW
     property real smoothNotifH: notifH
-    property real smoothMusicW: musicW
-    property real smoothMusicH: musicH
+    property real smoothPopupW: popupW
+    property real smoothPopupH: popupH
     readonly property real baseW: idleW + (smoothNotifW - idleW) * notifProgress
     readonly property real baseH: idleH + (smoothNotifH - idleH) * notifProgress
-    readonly property real currentWidth: Math.round(baseW + (smoothMusicW - baseW) * openProgress)
-    readonly property real currentHeight: Math.round(baseH + (smoothMusicH - baseH) * openProgress)
+    readonly property real currentWidth: Math.round(baseW + (smoothPopupW - baseW) * openProgress)
+    readonly property real currentHeight: Math.round(baseH + (smoothPopupH - baseH) * openProgress)
     readonly property real currentRadius: Math.round(Constants.sizeLg + (Constants.size3Xl - Constants.sizeLg) * openProgress)
 
     function getNotifTargetWidth(notifData) {
@@ -97,7 +99,7 @@ Item {
     }
 
     // Music Open / Close handlers
-    function openMusic() {
+    function openPopup() {
         if (isOpen)
             return ;
 
@@ -108,10 +110,10 @@ Item {
     }
 
     function close() {
-        closeMusic();
+        closePopup();
     }
 
-    function closeMusic() {
+    function closePopup() {
         if (isClosing)
             return ;
 
@@ -119,16 +121,19 @@ Item {
         isOpen = false;
         openProgress = 0;
         if (!HyprlandService.enableAnimations)
-            finishClosingMusic();
+            finishClosingPopup();
 
     }
 
-    function finishClosingMusic() {
+    function finishClosingPopup() {
         if (isClosing) {
             isClosing = false;
             AppState.isConvexOpen = false;
             if (AppState.isPopupOpen("music"))
                 AppState.closePopup("music");
+
+            if (AppState.isPopupOpen("notificationsCenter"))
+                AppState.closePopup("notificationsCenter");
 
         }
     }
@@ -220,11 +225,11 @@ Item {
             notchDisplayTimer.restart();
         }
     }
-    onIsMusicPopupChanged: {
-        if (isMusicPopup)
-            root.openMusic();
+    onIsCenterPopupChanged: {
+        if (isCenterPopup)
+            root.openPopup();
         else if (root.isOpen)
-            root.closeMusic();
+            root.closePopup();
     }
 
     Connections {
@@ -478,12 +483,24 @@ Item {
 
             anchors.fill: parent
             active: root.isOpen || root.openProgress > 0.001
+            sourceComponent: root.activePopupType === "music" ? musicComp : (root.activePopupType === "notif" ? notifComp : null)
+        }
 
-            sourceComponent: Component {
-                MusicModule.MiniMusicWidget {
-                    widget: root
-                }
+        Component {
+            id: musicComp
 
+            MusicModule.MiniMusicWidget {
+                widget: root
+            }
+
+        }
+
+        Component {
+            id: notifComp
+
+            NotificationCenterModule.NotificationCenter {
+                controlCenterOpen: true // or false
+                notificationService: root.notificationService
             }
 
         }
@@ -571,7 +588,7 @@ Item {
             easing.type: root.isClosing ? Easing.OutCubic : Easing.OutQuint
             onRunningChanged: {
                 if (!running && root.isClosing)
-                    root.finishClosingMusic();
+                    root.finishClosingPopup();
 
             }
         }
@@ -594,7 +611,7 @@ Item {
 
     }
 
-    Behavior on smoothMusicW {
+    Behavior on smoothPopupW {
         enabled: HyprlandService.enableAnimations && root.openProgress >= 0.85
 
         NumberAnimation {
@@ -604,7 +621,7 @@ Item {
 
     }
 
-    Behavior on smoothMusicH {
+    Behavior on smoothPopupH {
         enabled: HyprlandService.enableAnimations && root.openProgress >= 0.85
 
         NumberAnimation {

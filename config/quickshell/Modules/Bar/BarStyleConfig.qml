@@ -10,25 +10,25 @@ QtObject {
             "hasFrame": false,
             "hasExpandableHost": false,
             "usesFloatingPopups": true,
-            "isCompact": false
+            "isPill": false
         },
         "island": {
             "hasFrame": false,
             "hasExpandableHost": true,
             "usesFloatingPopups": false,
-            "isCompact": true
+            "isPill": true
         },
         "notch": {
             "hasFrame": false,
             "hasExpandableHost": true,
             "usesFloatingPopups": false,
-            "isCompact": true
+            "isPill": true
         },
         "convex": {
             "hasFrame": true,
             "hasExpandableHost": false,
             "usesFloatingPopups": true,
-            "isCompact": false
+            "isPill": false
         }
     })
 
@@ -37,13 +37,13 @@ QtObject {
     }
 
     function barHeight(style) {
+        if (style === "convex")
+            return 40;
+
         if (style === "island" || style === "notch")
             return 36;
 
-        if (SettingsService.barCompactMode && style === "convex")
-            return 36;
-
-        return 48; // minflair
+        return 44; // minflair
     }
 
     function barMarginTop(style) {
@@ -60,7 +60,7 @@ QtObject {
         return 8; // minflair, island
     }
 
-    function isCompact(style) {
+    function isPill(style) {
         return style === "island" || style === "notch";
     }
 

@@ -9,6 +9,7 @@ import qs.Modules.Clipboard as ClipboardModule
 import qs.Modules.ControlCenter as ControlCenterModule
 import qs.Modules.Launcher as LauncherModule
 import qs.Modules.MusicPopup as MusicModule
+import qs.Modules.NotificationCenter as NotificationCenterModule
 import qs.Modules.Notifications as NotificationsModule
 import qs.Modules.WallpaperSelector as WallpaperModule
 
@@ -18,7 +19,7 @@ Item {
     required property var notificationService
     property var mainPanelWidget: null
     readonly property string currentPopup: AppState.activePopup
-    readonly property bool isHostPopup: SettingsService.barNotchMode && (currentPopup === "dashboard" || currentPopup === "controlCenter" || currentPopup === "music" || currentPopup === "launcher" || currentPopup === "clipboard" || currentPopup === "wallpaper")
+    readonly property bool isHostPopup: SettingsService.barNotchMode && (currentPopup === "dashboard" || currentPopup === "controlCenter" || currentPopup === "notificationsCenter" || currentPopup === "music" || currentPopup === "launcher" || currentPopup === "clipboard" || currentPopup === "wallpaper")
     property string activePopupName: ""
     readonly property var activeItem: loaderA ? loaderA.item : null
     readonly property string effectivePopup: (AppState.activePopup !== "" && notchBar.isHostPopup) ? AppState.activePopup : activePopupName
@@ -67,6 +68,8 @@ Item {
             return dashboardComp;
         case "controlCenter":
             return controlCenterComp;
+        case "notificationsCenter":
+            return notificationsCenterComp;
         case "music":
             return musicComp;
         case "launcher":
@@ -93,6 +96,22 @@ Item {
         if (item && item.implicitWidth > 0)
             return item.implicitWidth + totalHorizPadding;
 
+        switch (popup) {
+        case "wallpaper":
+            return 1008 + totalHorizPadding;
+        case "launcher":
+            return 640 + totalHorizPadding;
+        case "clipboard":
+            return 520 + totalHorizPadding;
+        case "dashboard":
+            return 720 + totalHorizPadding;
+        case "controlCenter":
+            return 400 + totalHorizPadding;
+        case "notificationsCenter":
+            return 400 + totalHorizPadding;
+        case "music":
+            return 320 + totalHorizPadding;
+        }
         let contentW = Math.round(notchContent.implicitWidth);
         let w = contentW + (flareW * 2) + 16;
         return (w % 2 === 0) ? w : (w + 1);
@@ -104,6 +123,22 @@ Item {
         if (item && item.implicitHeight > 0)
             return item.implicitHeight + totalVertPadding;
 
+        switch (popup) {
+        case "wallpaper":
+            return 216 + totalVertPadding;
+        case "launcher":
+            return 400 + totalVertPadding;
+        case "clipboard":
+            return 360 + totalVertPadding;
+        case "dashboard":
+            return 500 + totalVertPadding;
+        case "controlCenter":
+            return 440 + totalVertPadding;
+        case "notificationsCenter":
+            return 440 + totalVertPadding;
+        case "music":
+            return 180 + totalVertPadding;
+        }
         return 40;
     }
 
@@ -141,7 +176,7 @@ Item {
             closeImmediately();
             return ;
         }
-        let isHost = (newPopup === "dashboard" || newPopup === "controlCenter" || newPopup === "music" || newPopup === "launcher" || newPopup === "clipboard" || newPopup === "wallpaper");
+        let isHost = (newPopup === "dashboard" || newPopup === "controlCenter" || newPopup === "notificationsCenter" || newPopup === "music" || newPopup === "launcher" || newPopup === "clipboard" || newPopup === "wallpaper");
         if (!isHost) {
             if (isOpen)
                 close();
@@ -878,7 +913,16 @@ Item {
         ControlCenterModule.ControlCenterContent {
             widget: notchBar
             notificationService: notchBar.notificationService
-            isHorizontal: true
+        }
+
+    }
+
+    Component {
+        id: notificationsCenterComp
+
+        NotificationCenterModule.NotificationCenter {
+            notificationService: notchBar.notificationService
+            controlCenterOpen: true
         }
 
     }

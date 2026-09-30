@@ -24,8 +24,9 @@ Item {
 
         if (widgetType === "media") {
             let p = MprisService.activePlayer;
-            let hasMedia = p !== null && (((p.trackTitle || "").trim() !== "") || ((p.trackArtist || "").trim() !== ""));
-            if (!hasMedia)
+            let rawHas = p !== null && (((p.trackTitle || "").trim() !== "") || ((p.trackArtist || "").trim() !== ""));
+            let hasMedia = (loader.item && loader.item.hasMedia !== undefined) ? loader.item.hasMedia : rawHas;
+            if (!hasMedia && (!loader.item || loader.item.implicitWidth <= 0.5))
                 return false;
 
         }
@@ -121,11 +122,6 @@ Item {
         id: wsComp
 
         Workspaces {
-            // Generic logic instead of isIsland || isNotch
-            property bool isCompactStyle: (root.mainBar && root.mainBar.activeBarStyle ? BarStyleConfig.isCompact(root.mainBar.activeBarStyle) : false) || SettingsService.isBarCompact
-
-            compact: isCompactStyle
-            height: SettingsService.isBarCompact ? 24 : (isCompactStyle ? 28 : implicitHeight)
         }
 
     }
@@ -160,10 +156,7 @@ Item {
         id: ccComp
 
         ControlCenterButton {
-            property bool isCompactStyle: (root.mainBar && root.mainBar.activeBarStyle ? BarStyleConfig.isCompact(root.mainBar.activeBarStyle) : false) || SettingsService.isBarCompact
-
             notificationService: root.mainBar ? root.mainBar.notificationService : null
-            horizontalPadding: isCompactStyle ? (SettingsService.isBarCompact ? Constants.sizeXs : 10) : Constants.sizeLg
         }
 
     }

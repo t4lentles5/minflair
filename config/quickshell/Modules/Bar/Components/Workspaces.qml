@@ -9,12 +9,10 @@ Item {
     id: root
 
     property color bgColor: Theme.bgSecondary
-    property bool compact: false
-    readonly property bool isCompactMode: root.compact || SettingsService.isBarCompact
 
-    implicitWidth: (hLayout.implicitWidth > 0 ? hLayout.implicitWidth : hLayout.childrenRect.width) + (root.bgColor === "transparent" ? 8 : (root.isCompactMode ? 18 : 24))
-    implicitHeight: SettingsService.isBarCompact ? 24 : SettingsService.barWidgetHeight
-    height: SettingsService.isBarCompact ? 24 : (parent && parent.height > 0 ? parent.height : implicitHeight)
+    implicitWidth: (hLayout.implicitWidth > 0 ? hLayout.implicitWidth : hLayout.childrenRect.width) + (root.bgColor === "transparent" ? 8 : 18)
+    implicitHeight: SettingsService.barWidgetHeight
+    height: parent && parent.height > 0 ? parent.height : implicitHeight
 
     Rectangle {
         anchors.fill: parent
@@ -28,7 +26,7 @@ Item {
 
         anchors.centerIn: parent
         width: implicitWidth
-        spacing: root.isCompactMode ? 6 : Constants.sizeSm
+        spacing: 6
 
         Repeater {
             model: 10
@@ -51,8 +49,8 @@ Item {
                     // 2. Cross-check with global Hyprland toplevels list
                     if (Hyprland.toplevels && Hyprland.toplevels.values)
                         return Hyprland.toplevels.values.some((top) => {
-                            return top && top.workspace && top.workspace.id === wsId;
-                        });
+                        return top && top.workspace && top.workspace.id === wsId;
+                    });
 
                     return false;
                 }

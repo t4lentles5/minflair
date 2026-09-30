@@ -13,18 +13,64 @@ Rectangle {
     readonly property bool isPlaying: MprisService.isPlaying
     readonly property string trackTitle: hasPlayer ? (MprisService.activePlayer.trackTitle || "").trim() : ""
     readonly property string trackArtist: hasPlayer ? (MprisService.activePlayer.trackArtist || "").trim() : ""
-    readonly property bool hasMedia: trackTitle !== "" || trackArtist !== ""
+    readonly property bool rawHasMedia: hasPlayer && (trackTitle !== "" || trackArtist !== "")
+    property bool hasMedia: rawHasMedia
+    property string lastTrackTitle: ""
+    property string lastTrackArtist: ""
+    readonly property string displayTitle: trackTitle !== "" ? trackTitle : ((hideDebounceTimer.running || collapseProgress > 0.001) ? lastTrackTitle : "")
+    readonly property string displayArtist: trackArtist !== "" ? trackArtist : ((hideDebounceTimer.running || collapseProgress > 0.001) ? lastTrackArtist : "")
+    property real collapseProgress: hasMedia ? 1 : 0
     property bool isHovered: mouseArea.containsMouse
     property bool isPressed: mouseArea.pressed
     readonly property bool isCenteredBar: SettingsService.barIslandMode || SettingsService.barNotchMode
+    property real lastContentWidth: 0
+    readonly property real measuredWidth: contentRow.implicitWidth > 0 ? contentRow.implicitWidth : lastContentWidth
+    readonly property real fullWidth: Math.min(300, measuredWidth)
 
+    onTrackTitleChanged: {
+        if (trackTitle !== "")
+            lastTrackTitle = trackTitle;
+
+    }
+    onTrackArtistChanged: {
+        if (trackArtist !== "")
+            lastTrackArtist = trackArtist;
+
+    }
+    onRawHasMediaChanged: {
+        if (rawHasMedia) {
+            hideDebounceTimer.stop();
+            hasMedia = true;
+        } else {
+            hideDebounceTimer.restart();
+        }
+    }
+    onMeasuredWidthChanged: {
+        if (contentRow.implicitWidth > 0)
+            lastContentWidth = contentRow.implicitWidth;
+
+    }
     implicitHeight: SettingsService.barWidgetHeight
     height: parent && parent.height > 0 ? parent.height : implicitHeight
-    implicitWidth: root.hasMedia ? Math.min(300, contentRow.implicitWidth) : 0
+    implicitWidth: Math.round(fullWidth * collapseProgress)
     width: implicitWidth
-    visible: root.hasMedia
+    opacity: collapseProgress
+    visible: collapseProgress > 0.001
+    clip: collapseProgress < 0.999
     color: "transparent"
     scale: isPressed ? 0.95 : (isHovered ? 1.02 : 1)
+
+    Timer {
+        id: hideDebounceTimer
+
+        interval: 350
+        repeat: false
+        onTriggered: {
+            if (!root.rawHasMedia)
+                root.hasMedia = false;
+
+        }
+    }
 
     MouseArea {
         id: mouseArea
@@ -56,7 +102,7 @@ Rectangle {
 
             readonly property var barIndices: [1, 3, 5, 9, 12, 16, 20, 25]
 
-            visible: root.hasMedia
+            visible: root.hasMedia || root.collapseProgress > 0.001
             spacing: 2
             width: implicitWidth
             height: 14
@@ -109,17 +155,17 @@ Rectangle {
         SlideText {
             id: artistText
 
-            visible: root.hasMedia && root.trackArtist !== ""
-            text: root.trackArtist
+            visible: (root.hasMedia || root.collapseProgress > 0.001) && root.displayArtist !== ""
+            text: root.displayArtist
             elide: Text.ElideRight
-            Layout.maximumWidth: root.trackTitle !== "" ? 100 : 200
+            Layout.maximumWidth: root.displayTitle !== "" ? 100 : 200
             Layout.preferredWidth: Math.min(implicitWidth, Layout.maximumWidth)
         }
 
         ThemedText {
             id: separatorText
 
-            visible: root.hasMedia && root.trackArtist !== "" && root.trackTitle !== ""
+            visible: (root.hasMedia || root.collapseProgress > 0.001) && root.displayArtist !== "" && root.displayTitle !== ""
             text: "-"
             customSize: Constants.sizeMd
             font.bold: false
@@ -129,11 +175,21 @@ Rectangle {
         SlideText {
             id: titleText
 
-            visible: root.hasMedia && root.trackTitle !== ""
-            text: root.trackTitle
+            visible: (root.hasMedia || root.collapseProgress > 0.001) && root.displayTitle !== ""
+            text: root.displayTitle
             elide: Text.ElideRight
-            Layout.maximumWidth: root.trackArtist !== "" ? 120 : 200
+            Layout.maximumWidth: root.displayArtist !== "" ? 120 : 200
             Layout.preferredWidth: Math.min(implicitWidth, Layout.maximumWidth)
+        }
+
+    }
+
+    Behavior on collapseProgress {
+        enabled: HyprlandService.enableAnimations
+
+        NumberAnimation {
+            duration: Constants.animNormal
+            easing.type: Easing.OutCubic
         }
 
     }

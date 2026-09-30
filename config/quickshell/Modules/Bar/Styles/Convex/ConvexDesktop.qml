@@ -26,7 +26,7 @@ PanelWindow {
     readonly property var styleData: BarStyleConfig.styleOf("convex")
     readonly property bool hasExpandableHost: styleData.hasExpandableHost
     readonly property bool usesFloatingPopups: styleData.usesFloatingPopups
-    readonly property bool isCompact: styleData.isCompact
+    readonly property bool isPill: styleData.isPill
     readonly property bool needsFocus: AppState.isFocusPopupOpen && convexPanels.hasAnyDrawerOpen
     property bool loadConvexBar: true
 
@@ -135,7 +135,7 @@ PanelWindow {
             notificationService: root.notificationService
             popupStartY: root.barHeight
             activeBarStyle: root.activeBarStyle
-            isCompact: false
+            isPill: false
             usesFloatingPopups: true
             hasExpandableHost: true
             activeHost: null
@@ -259,7 +259,7 @@ PanelWindow {
 
         // Active Popups Overlay (Full Screen for Clicks/Focus)
         Region {
-            property bool isActive: barPopups.isFloatingPopupVisible || convexPanels.hasAnyDrawerOpen || convexPanels.isConvexMusicOpen
+            property bool isActive: barPopups.isFloatingPopupVisible || convexPanels.hasAnyDrawerOpen || convexPanels.isConvexPopupOpen
 
             x: 0
             y: 0

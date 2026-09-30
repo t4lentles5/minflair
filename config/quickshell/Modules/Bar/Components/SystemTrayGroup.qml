@@ -13,7 +13,7 @@ Rectangle {
 
     property bool forceHide: false
     readonly property bool shouldShow: !forceHide && trayRow.implicitWidth > 0
-    readonly property real targetWidth: Math.min(trayRow.implicitWidth + (SettingsService.isBarCompact ? Constants.sizeXs : Constants.sizeSm * 2), Layout.maximumWidth)
+    readonly property real targetWidth: Math.min(trayRow.implicitWidth + Constants.sizeXs * 2, Layout.maximumWidth)
 
     implicitHeight: SettingsService.barWidgetHeight
     implicitWidth: shouldShow ? targetWidth : 0
@@ -21,20 +21,20 @@ Rectangle {
     height: implicitHeight
     Layout.preferredHeight: SettingsService.barWidgetHeight
     Layout.alignment: Qt.AlignVCenter
-    Layout.maximumWidth: 150 + Constants.sizeSm * 2
+    Layout.maximumWidth: 150 + Constants.sizeXs * 2
     Layout.preferredWidth: implicitWidth
     opacity: shouldShow ? 1 : 0
     visible: opacity > 0.001 && implicitWidth > 0.5
     clip: true
-    color: SettingsService.isBarCompact ? "transparent" : Theme.bgSecondary
+    color: Theme.bgSecondary
     radius: height / 2
 
     Flickable {
         id: trayFlick
 
         anchors.fill: parent
-        anchors.leftMargin: SettingsService.isBarCompact ? Constants.size2Xs : Constants.sizeSm
-        anchors.rightMargin: SettingsService.isBarCompact ? Constants.size2Xs : Constants.sizeSm
+        anchors.leftMargin: Constants.sizeXs
+        anchors.rightMargin: Constants.sizeXs
         contentWidth: trayRow.implicitWidth
         contentHeight: height
         boundsBehavior: Flickable.StopAtBounds
@@ -60,7 +60,7 @@ Rectangle {
 
                 delegate: STray.TrayItem {
                     trayItem: modelData
-                    iconSize: (SettingsService.isBarCompact || BarStyleConfig.isCompact(SettingsService.barStyle)) ? Constants.sizeSm : Constants.sizeMd
+                    iconSize: Constants.sizeSm
                     onClicked: (mouse) => {
                         if (mouse.button === Qt.RightButton) {
                             if (modelData.menu)

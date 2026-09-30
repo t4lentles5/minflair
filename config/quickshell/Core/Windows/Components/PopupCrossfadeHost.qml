@@ -7,6 +7,7 @@ import qs.Core.Services
 import qs.Modules.Bar.Widgets.Dashboard as DashboardModule
 import qs.Modules.Clipboard as ClipboardModule
 import qs.Modules.ControlCenter as ControlCenterModule
+import qs.Modules.ControlCenter.Widgets.NotificationCenter as NotificationCenterModule
 import qs.Modules.Launcher as LauncherModule
 import qs.Modules.MusicPopup as MusicModule
 import qs.Modules.WallpaperSelector as WallpaperModule
@@ -22,7 +23,7 @@ Item {
     property real defaultWidth: 0
     property real defaultHeight: 0
     readonly property string currentPopup: AppState.activePopup
-    readonly property bool isHostPopup: (barMode === "island" && SettingsService.barIslandMode || barMode === "notch" && SettingsService.barNotchMode) && (currentPopup === "dashboard" || currentPopup === "controlCenter" || currentPopup === "music" || currentPopup === "launcher" || currentPopup === "clipboard" || currentPopup === "wallpaper")
+    readonly property bool isHostPopup: (barMode === "island" && SettingsService.barIslandMode || barMode === "notch" && SettingsService.barNotchMode) && (currentPopup === "dashboard" || currentPopup === "controlCenter" || currentPopup === "notificationsCenter" || currentPopup === "music" || currentPopup === "launcher" || currentPopup === "clipboard" || currentPopup === "wallpaper")
     property string activePopupName: ""
     readonly property string effectivePopup: (AppState.activePopup !== "" && root.isHostPopup) ? AppState.activePopup : activePopupName
     readonly property var activeItem: loaderA ? loaderA.item : null
@@ -39,6 +40,8 @@ Item {
             return dashboardComp;
         case "controlCenter":
             return controlCenterComp;
+        case "notificationsCenter":
+            return notificationsCenterComp;
         case "music":
             return musicComp;
         case "launcher":
@@ -56,6 +59,22 @@ Item {
         if (item && item.implicitWidth > 0)
             return item.implicitWidth + contentHorizontalPadding;
 
+        switch (popup) {
+        case "wallpaper":
+            return 1008 + contentHorizontalPadding;
+        case "launcher":
+            return 640 + contentHorizontalPadding;
+        case "clipboard":
+            return 520 + contentHorizontalPadding;
+        case "dashboard":
+            return 720 + contentHorizontalPadding;
+        case "controlCenter":
+            return 400 + contentHorizontalPadding;
+        case "notificationsCenter":
+            return 400 + contentHorizontalPadding;
+        case "music":
+            return 320 + contentHorizontalPadding;
+        }
         return defaultWidth;
     }
 
@@ -63,6 +82,22 @@ Item {
         if (item && item.implicitHeight > 0)
             return item.implicitHeight + contentVerticalPadding;
 
+        switch (popup) {
+        case "wallpaper":
+            return 216 + contentVerticalPadding;
+        case "launcher":
+            return 400 + contentVerticalPadding;
+        case "clipboard":
+            return 360 + contentVerticalPadding;
+        case "dashboard":
+            return 500 + contentVerticalPadding;
+        case "controlCenter":
+            return 440 + contentVerticalPadding;
+        case "notificationsCenter":
+            return 440 + contentVerticalPadding;
+        case "music":
+            return 180 + contentVerticalPadding;
+        }
         return defaultHeight;
     }
 
@@ -137,7 +172,7 @@ Item {
             root.closeImmediately();
             return ;
         }
-        let isHost = (newPopup === "dashboard" || newPopup === "controlCenter" || newPopup === "music" || newPopup === "launcher" || newPopup === "clipboard" || newPopup === "wallpaper");
+        let isHost = (newPopup === "dashboard" || newPopup === "controlCenter" || newPopup === "notificationsCenter" || newPopup === "music" || newPopup === "launcher" || newPopup === "clipboard" || newPopup === "wallpaper");
         if (!isHost) {
             if (root.isOpen)
                 root.close();
@@ -304,7 +339,16 @@ Item {
         ControlCenterModule.ControlCenterContent {
             widget: root.parent
             notificationService: root.notificationService
-            isHorizontal: true
+        }
+
+    }
+
+    Component {
+        id: notificationsCenterComp
+
+        NotificationCenterModule.NotificationCenter {
+            notificationService: root.notificationService
+            controlCenterOpen: true
         }
 
     }

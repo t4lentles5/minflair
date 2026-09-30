@@ -21,8 +21,7 @@ RowLayout {
         icon: "player-shuffle"
         iconSize: Constants.sizeSm
         flat: true
-        isActive: playerControls.isShuffleActive
-        iconColor: isActive ? Theme.accent : (MprisService.activePlayer !== null ? Theme.fg : Theme.muted)
+        iconColor: playerControls.isShuffleActive ? Theme.accent : (MprisService.activePlayer !== null ? Theme.fg : Theme.muted)
         disabled: MprisService.activePlayer === null
         onClicked: {
             MprisService.toggleShuffle();
@@ -127,8 +126,7 @@ RowLayout {
         icon: playerControls.currentLoopState === 1 ? "player-loop-once" : "player-loop"
         iconSize: Constants.sizeSm
         flat: true
-        isActive: playerControls.currentLoopState !== 0
-        iconColor: isActive ? Theme.accent : (MprisService.activePlayer !== null ? Theme.fg : Theme.muted)
+        iconColor: (playerControls.currentLoopState !== 0) ? Theme.accent : (MprisService.activePlayer !== null ? Theme.fg : Theme.muted)
         disabled: MprisService.activePlayer === null
         onClicked: {
             MprisService.cycleLoop();

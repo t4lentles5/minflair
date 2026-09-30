@@ -96,10 +96,10 @@ Item {
                 property bool isHovered: clickArea.containsMouse
                 property bool isPressed: clickArea.pressed
 
-                width: contentRow.implicitWidth + (SettingsService.isBarCompact ? 12 : 24)
+                width: contentRow.implicitWidth + 16
                 height: SettingsService.barWidgetHeight
-                color: SettingsService.isBarCompact ? ((isHovered || isPressed) ? Theme.bgSecondary : "transparent") : ((isHovered || isPressed) ? Theme.bgTertiary : Theme.bgSecondary)
-                radius: SettingsService.isBarCompact ? Constants.sizeMd : (height / 2)
+                color: (isHovered || isPressed) ? Theme.bgTertiary : Theme.bgSecondary
+                radius: height / 2
                 scale: isPressed ? 0.95 : (isHovered ? 1.02 : 1)
 
                 Row {

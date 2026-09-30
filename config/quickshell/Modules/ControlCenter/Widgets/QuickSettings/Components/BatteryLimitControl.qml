@@ -6,15 +6,18 @@ import qs.Core
 import qs.Core.Components
 import qs.Core.Services
 
-SvgIconButton {
+QuickSettingsTile {
     id: root
 
     property bool isLimitActive: false
     property bool isVisible: true
+    property bool disabled: false
 
-    icon: root.isLimitActive ? "charger-filled" : "charger"
-    iconColor: root.isLimitActive ? Theme.accent : Theme.muted
-    iconSize: Constants.sizeXl
+    isActive: root.isLimitActive
+    icon: isActive ? "charger-filled" : "charger"
+    label: "Battery Limit"
+    subtitle: root.disabled ? "Unsupported" : (root.isLimitActive ? "80% Limit" : "100%")
+    onMenuClicked: clicked()
     onClicked: {
         toggleProcess.running = true;
     }

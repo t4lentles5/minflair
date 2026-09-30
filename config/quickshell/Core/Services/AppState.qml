@@ -26,7 +26,7 @@ Item {
     property bool isNotchOpen: false
     property bool isConvexOpen: false
     property real barConvexWidth: 220
-    property real barConvexHeight: 36
+    property real barConvexHeight: 40
     property real activeConvexWidth: barConvexWidth
     property real activeConvexHeight: barConvexHeight
     property bool lockConvexCenterHeight: false
@@ -38,6 +38,13 @@ Item {
 
     signal togglePopup(string popupId)
     signal openPopup(string popupId)
+
+    function isBarPopup(id) {
+        if (!id)
+            return false;
+
+        return id === "dashboard" || id === "controlCenter" || id === "notificationsCenter" || id === "music" || id.startsWith("systemTray_");
+    }
 
     function isFocusPopup(id) {
         return focusPopups.indexOf(id) !== -1;
@@ -62,25 +69,22 @@ Item {
             return "focus";
 
         let s = barStyle || SettingsService.barStyle;
-        if (s === "island" || s === "notch") {
-            if (popupId === "dashboard" || popupId === "controlCenter" || popupId === "music")
+        if (s === "minflair") {
+            if (isBarPopup(popupId))
+                return "bar";
+
+        } else if (s === "island" || s === "notch") {
+            if (popupId === "dashboard" || popupId === "controlCenter" || popupId === "notificationsCenter" || popupId === "music")
                 return "center";
 
             if (popupId.startsWith("systemTray_"))
                 return "tray";
 
-        } else if (s === "minflair") {
-            if (popupId === "dashboard" || popupId === "music")
-                return "top";
-
-            if (popupId === "controlCenter" || popupId.startsWith("systemTray_"))
-                return "right";
-
         } else if (s === "convex") {
             if (popupId === "dashboard")
                 return "left";
 
-            if (popupId === "music")
+            if (popupId === "music" || popupId === "notificationsCenter")
                 return "center";
 
             if (popupId === "controlCenter" || popupId.startsWith("systemTray_"))
@@ -142,7 +146,9 @@ Item {
         if (next.indexOf(popupId) === -1)
             next.push(popupId);
 
-        if (SettingsService.barIslandMode || SettingsService.barNotchMode) {
+        if (SettingsService.barMinflairMode && isBarPopup(popupId)) {
+            activePopup = popupId;
+        } else if (SettingsService.barIslandMode || SettingsService.barNotchMode) {
             activePopup = popupId;
         } else if (isFocusPopup(activePopup)) {
         } else if (next.length === 1)
@@ -183,7 +189,7 @@ Item {
             let next = [];
             for (let i = 0; i < activePopupsList.length; i++) {
                 let item = activePopupsList[i];
-                if (isFocusPopup(item) || SettingsService.barIslandMode || SettingsService.barNotchMode)
+                if (isFocusPopup(item) || (SettingsService.barMinflairMode && isBarPopup(item)) || SettingsService.barIslandMode || SettingsService.barNotchMode)
                     continue;
 
                 next.push(item);

@@ -143,6 +143,9 @@ Item {
         scrollAnim.stop();
         wallView.contentX = 0;
         searchField.text = "";
+        if (wallModel.count > 0)
+            filterWallpapers("");
+
         loadWallpapersProc.lines = [];
         loadWallpapersProc.running = true;
         searchField.forceActiveFocus();
@@ -185,15 +188,26 @@ Item {
 
         command: ["bash", "-c", "find ~/Pictures/Wallpapers -maxdepth 2 -type f 2>/dev/null | grep -iE '\\.(jpg|jpeg|png|webp|gif)$'"]
         onExited: function(exitCode) {
-            wallModel.clear();
             let sortedLines = lines.sort(function(a, b) {
                 return a.name.localeCompare(b.name);
             });
-            for (let i = 0; i < sortedLines.length; i++) {
-                wallModel.append(sortedLines[i]);
+            let changed = (sortedLines.length !== wallModel.count);
+            if (!changed) {
+                for (let k = 0; k < sortedLines.length; k++) {
+                    if (sortedLines[k].rawPath !== wallModel.get(k).rawPath) {
+                        changed = true;
+                        break;
+                    }
+                }
+            }
+            if (changed || wallModel.count === 0) {
+                wallModel.clear();
+                for (let i = 0; i < sortedLines.length; i++) {
+                    wallModel.append(sortedLines[i]);
+                }
+                filterWallpapers(searchField.text);
             }
             lines = [];
-            filterWallpapers(searchField.text);
         }
 
         stdout: SplitParser {
@@ -237,7 +251,7 @@ Item {
 
             GhostEmptyState {
                 anchors.centerIn: parent
-                visible: filteredModel.count === 0
+                visible: filteredModel.count === 0 && !loadWallpapersProc.running
                 text: searchField.text === "" ? "No wallpapers in ~/Pictures/Wallpapers" : "No wallpapers found"
                 isAnimating: visible
             }
@@ -318,8 +332,8 @@ Item {
 
                                 Behavior on opacity {
                                     NumberAnimation {
-                                        duration: Constants.animFast
-                                        easing.type: Easing.OutQuint
+                                        duration: Constants.animNormal
+                                        easing.type: Easing.OutCubic
                                     }
 
                                 }

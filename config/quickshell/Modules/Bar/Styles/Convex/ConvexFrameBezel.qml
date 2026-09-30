@@ -9,7 +9,7 @@ Item {
 
     property bool hasFrame: true
     property bool isShellReady: false
-    property int barHeight: 48
+    property int barHeight: 40
     property string activeBarStyle: "convex"
     property int bezelSize: 8
     property int innerRadius: Constants.size4Xl

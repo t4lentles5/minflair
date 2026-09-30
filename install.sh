@@ -113,7 +113,7 @@ if [ "$IS_LAPTOP" = true ]; then
 
   # Configure sudoers rule so Quickshell can toggle battery limits without password prompts
   log "Configuring sudoers for battery charge limit script..."
-  echo "$USER ALL=(ALL) NOPASSWD: $HOME/.config/quickshell/Scripts/toggle_battery_limit.sh" | sudo tee /etc/sudoers.d/quickshell-battery >/dev/null
+  echo "$USER ALL=(ALL) NOPASSWD: $HOME/.config/quickshell/Scripts/system/toggle_battery_limit.sh" | sudo tee /etc/sudoers.d/quickshell-battery >/dev/null
   sudo chmod 0440 /etc/sudoers.d/quickshell-battery
   ok "Battery charge limit support and sudoers configured."
 fi

@@ -21,8 +21,9 @@ Item {
     readonly property real lyricsWidth: 320
     property bool isExpanded: true
     readonly property bool isVisibleOnScreen: widget !== null && widget.isOpen !== undefined ? widget.isOpen : true
+    readonly property bool showLyrics: isExpanded && LyricsService.hasLyrics
 
-    implicitWidth: isExpanded ? (playerWidth + mainRow.spacing + lyricsWidth) : playerWidth
+    implicitWidth: showLyrics ? (playerWidth + mainRow.spacing + lyricsWidth) : playerWidth
     implicitHeight: playerColumn.implicitHeight
     width: implicitWidth
     height: implicitHeight
@@ -93,8 +94,8 @@ Item {
                     icon: "quote"
                     iconSize: Constants.sizeSm
                     flat: true
-                    isActive: root.isExpanded
-                    iconColor: isActive ? Theme.accent : Theme.fg
+                    visible: LyricsService.hasLyrics
+                    iconColor: root.showLyrics ? Theme.accent : Theme.fg
                     onClicked: root.isExpanded = !root.isExpanded
                 }
 
@@ -209,8 +210,9 @@ Item {
 
         // RIGHT LYRICS VIEW
         MusicLyricsPanel {
-            isExpanded: root.isExpanded
-            Layout.preferredWidth: root.lyricsWidth
+            isExpanded: root.showLyrics
+            Layout.preferredWidth: root.showLyrics ? root.lyricsWidth : 0
+            visible: root.showLyrics
         }
 
     }

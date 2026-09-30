@@ -23,7 +23,7 @@ PanelWindow {
     readonly property bool hasFrame: styleData.hasFrame
     readonly property bool hasExpandableHost: styleData.hasExpandableHost
     readonly property bool usesFloatingPopups: styleData.usesFloatingPopups
-    readonly property bool isCompact: styleData.isCompact
+    readonly property bool isPill: styleData.isPill
     readonly property QtObject activeHost: {
         if (SettingsService.barIslandMode || SettingsService.barNotchMode)
             return barStrip;
@@ -331,9 +331,9 @@ PanelWindow {
             z: root.activeHost === barStrip ? 5 : 1
             notificationService: root.notificationService
             mainPanelWidget: barPopups.dashboardLoader.item
-            x: root.isCompact ? Math.round((root.width - barStrip.width) / 2) : root.currentBarMarginSide
+            x: root.isPill ? Math.round((root.width - barStrip.width) / 2) : root.currentBarMarginSide
             y: root.currentBarMarginTop
-            width: root.isCompact ? (barStrip.implicitWidth > 0 ? barStrip.implicitWidth : 180) : (root.width - root.currentBarMarginSide * 2)
+            width: root.isPill ? (barStrip.implicitWidth > 0 ? barStrip.implicitWidth : 180) : (root.width - root.currentBarMarginSide * 2)
             height: ((SettingsService.barIslandMode || SettingsService.barNotchMode) && barStrip.currentHeight > 0) ? barStrip.currentHeight : root.currentBarHeight
             transformOrigin: Item.Top
             Component.onCompleted: {
@@ -356,7 +356,7 @@ PanelWindow {
             notificationService: root.notificationService
             popupStartY: root.barSurface.popupStartY
             activeBarStyle: root.activeBarStyle
-            isCompact: root.isCompact
+            isPill: root.isPill
             usesFloatingPopups: root.usesFloatingPopups
             hasExpandableHost: root.hasExpandableHost
             activeHost: root.activeHost
@@ -386,9 +386,9 @@ PanelWindow {
 
         // Center (Island, Notch, Convex) or Full Width (Minflair)
         Region {
-            x: root.isCompact ? (barStrip.x + barStrip.centerX - 16) : (barStrip.x - 16)
+            x: root.isPill ? (barStrip.x + barStrip.centerX - 16) : (barStrip.x - 16)
             y: Math.max(0, barStrip.y - 24)
-            width: root.isCompact ? (barStrip.centerWidth + 32) : (barStrip.width + 32)
+            width: root.isPill ? (barStrip.centerWidth + 32) : (barStrip.width + 32)
             height: barStrip.height + 40
         }
 

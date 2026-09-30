@@ -8,9 +8,10 @@ Rectangle {
     id: root
 
     property string icon: ""
-    property color iconColor: Theme.fg
+    property bool isActive: false
+    property color iconColor: isActive ? Theme.fg : Theme.fg
     property bool flat: false
-    property color bgColor: flat ? "transparent" : Theme.bg
+    property color bgColor: isActive ? Theme.accent : (flat ? "transparent" : Theme.bg)
     property int iconSize: Constants.sizeLg
     property bool isCircle: false
     property bool useOriginalColors: false

@@ -9,6 +9,7 @@ import qs.Modules.Clipboard as ClipboardModule
 import qs.Modules.ControlCenter as ControlCenterModule
 import qs.Modules.Launcher as LauncherModule
 import qs.Modules.MusicPopup as MusicModule
+import qs.Modules.NotificationCenter as NotificationCenterModule
 import qs.Modules.Notifications as NotificationsModule
 import qs.Modules.WallpaperSelector as WallpaperModule
 
@@ -18,7 +19,7 @@ Item {
     required property var notificationService
     property var mainPanelWidget: null
     readonly property string currentPopup: AppState.activePopup
-    readonly property bool isHostPopup: SettingsService.barIslandMode && (currentPopup === "dashboard" || currentPopup === "controlCenter" || currentPopup === "music" || currentPopup === "launcher" || currentPopup === "clipboard" || currentPopup === "wallpaper")
+    readonly property bool isHostPopup: SettingsService.barIslandMode && (currentPopup === "dashboard" || currentPopup === "controlCenter" || currentPopup === "notificationsCenter" || currentPopup === "music" || currentPopup === "launcher" || currentPopup === "clipboard" || currentPopup === "wallpaper")
     property string activePopupName: ""
     readonly property var activeItem: loaderA ? loaderA.item : null
     readonly property string effectivePopup: (AppState.activePopup !== "" && islandBar.isHostPopup) ? AppState.activePopup : activePopupName
@@ -71,6 +72,8 @@ Item {
             return dashboardComp;
         case "controlCenter":
             return controlCenterComp;
+        case "notificationsCenter":
+            return notificationsCenterComp;
         case "music":
             return musicComp;
         case "launcher":
@@ -96,6 +99,22 @@ Item {
         if (item && item.implicitWidth > 0)
             return item.implicitWidth + (pad * 2);
 
+        switch (popup) {
+        case "wallpaper":
+            return 1008 + (pad * 2);
+        case "launcher":
+            return 640 + (pad * 2);
+        case "clipboard":
+            return 520 + (pad * 2);
+        case "dashboard":
+            return 720 + (pad * 2);
+        case "controlCenter":
+            return 400 + (pad * 2);
+        case "notificationsCenter":
+            return 400 + (pad * 2);
+        case "music":
+            return 320 + (pad * 2);
+        }
         let w = Math.round(islandContent.implicitWidth) + 24;
         return (w % 2 === 0) ? w : (w + 1);
     }
@@ -105,6 +124,22 @@ Item {
         if (item && item.implicitHeight > 0)
             return item.implicitHeight + (pad * 2);
 
+        switch (popup) {
+        case "wallpaper":
+            return 216 + (pad * 2);
+        case "launcher":
+            return 400 + (pad * 2);
+        case "clipboard":
+            return 360 + (pad * 2);
+        case "dashboard":
+            return 500 + (pad * 2);
+        case "controlCenter":
+            return 440 + (pad * 2);
+        case "notificationsCenter":
+            return 440 + (pad * 2);
+        case "music":
+            return 180 + (pad * 2);
+        }
         return 36;
     }
 
@@ -140,7 +175,7 @@ Item {
             closeImmediately();
             return ;
         }
-        let isHost = (newPopup === "dashboard" || newPopup === "controlCenter" || newPopup === "music" || newPopup === "launcher" || newPopup === "clipboard" || newPopup === "wallpaper");
+        let isHost = (newPopup === "dashboard" || newPopup === "controlCenter" || newPopup === "notificationsCenter" || newPopup === "music" || newPopup === "launcher" || newPopup === "clipboard" || newPopup === "wallpaper");
         if (!isHost) {
             if (isOpen)
                 close();
@@ -865,7 +900,16 @@ Item {
         ControlCenterModule.ControlCenterContent {
             widget: islandBar
             notificationService: islandBar.notificationService
-            isHorizontal: true
+        }
+
+    }
+
+    Component {
+        id: notificationsCenterComp
+
+        NotificationCenterModule.NotificationCenter {
+            notificationService: islandBar.notificationService
+            controlCenterOpen: true
         }
 
     }

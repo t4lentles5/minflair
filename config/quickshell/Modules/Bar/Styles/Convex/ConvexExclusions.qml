@@ -8,7 +8,7 @@ Item {
     id: root
 
     property bool hasFullscreen: false
-    property int barHeight: 48
+    property int barHeight: 40
     property int bezelSize: 8
     property bool isExiting: false
     readonly property bool isExclusionActive: SettingsService.barConvexMode && !root.hasFullscreen && !root.isExiting

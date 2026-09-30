@@ -11,22 +11,19 @@ Rectangle {
     property string icon: ""
     property int iconSize: Constants.sizeLg
     property bool flat: false
-    property color bgColor: flat ? "transparent" : Theme.bgSecondary
-    property color iconColor: Theme.fg
-    property color hoverColor: "transparent"
     property bool isActive: false
+    property color bgColor: isActive ? Theme.accent : (flat ? "transparent" : Theme.bgSecondary)
+    property color iconColor: isActive ? Theme.fg : Theme.fg
+    property color hoverColor: "transparent"
     property alias hovered: mouseArea.containsMouse
     property string textIcon: ""
     property int textIconSize: 0
     property bool disabled: false
-    property bool useBorder: false
-    property color borderColor: Theme.muted
-    property real borderWidth: 1
     property bool useCustomWidth: false
     property bool useOriginalColors: false
     readonly property int scaledIconSize: Math.round(iconSize * SettingsService.fontScale)
     readonly property int scaledTextIconSize: Math.round(textIconSize * SettingsService.fontScale)
-    property int padding: scaledIconSize / 2
+    property int padding: Constants.sizeSm
     property int contentAlignment: Qt.AlignHCenter
 
     signal clicked(var mouse)
@@ -36,16 +33,14 @@ Rectangle {
             return flat ? "transparent" : Theme.bgSecondary;
 
         if (mouseArea.pressed || mouseArea.containsMouse)
-            return Theme.bgSecondary;
+            return isActive ? Qt.darker(Theme.accent, 1.1) : Theme.bgSecondary;
 
         return bgColor;
     }
     scale: disabled ? 1 : mouseArea.pressed ? 0.95 : 1
-    radius: scaledIconSize + scaledTextIconSize / 2
+    radius: height / 2
     implicitWidth: useCustomWidth ? container.width + Constants.sizeLg * 2 : scaledIconSize + padding * 2
-    implicitHeight: (scaledIconSize + scaledTextIconSize / 2) + padding * 2
-    border.width: useBorder ? borderWidth : 0
-    border.color: borderColor
+    implicitHeight: (scaledIconSize) + padding * 2
 
     RowLayout {
         id: container
@@ -150,13 +145,6 @@ Rectangle {
     Behavior on color {
         ColorAnimation {
             duration: Constants.animNormal
-        }
-
-    }
-
-    Behavior on border.color {
-        ColorAnimation {
-            duration: Constants.animFast
         }
 
     }

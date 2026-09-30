@@ -61,7 +61,7 @@ Item {
         else if (activeBarStyle === "convex")
             loadConvex = true;
     }
-    implicitWidth: currentStyleItem && currentStyleItem.implicitWidth > 0 ? currentStyleItem.implicitWidth : (BarStyleConfig.isCompact(activeBarStyle) ? 180 : 0)
+    implicitWidth: currentStyleItem && currentStyleItem.implicitWidth > 0 ? currentStyleItem.implicitWidth : (BarStyleConfig.isPill(activeBarStyle) ? 180 : 0)
 
     Loader {
         id: minflairLoader

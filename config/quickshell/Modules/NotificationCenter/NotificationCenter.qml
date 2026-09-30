@@ -8,9 +8,9 @@ import qs.Core
 import qs.Core.Components
 import qs.Core.Services
 import qs.Core.Windows
-import qs.Modules.ControlCenter.Widgets.NotificationCenter.Components
+import qs.Modules.NotificationCenter.Components
 
-Card {
+Item {
     id: root
 
     property var notificationService
@@ -35,10 +35,9 @@ Card {
     }
 
     implicitWidth: 400
+    implicitHeight: 450
 
     ColumnLayout {
-        id: mainCol
-
         anchors.fill: parent
         spacing: Constants.sizeLg
 
@@ -74,10 +73,11 @@ Card {
                 Layout.alignment: Qt.AlignVCenter
 
                 SvgIconButton {
-                    icon: (root.notificationService && root.notificationService.dndEnabled) ? "bell-off" : "bell"
-                    iconColor: (root.notificationService && root.notificationService.dndEnabled) ? Theme.muted : Theme.accent
+                    isActive: root.notificationService && root.notificationService.dndEnabled
+                    icon: isActive ? "bell-off" : "bell"
+                    iconColor: isActive ? Theme.fg : Theme.accent
                     iconSize: Constants.sizeSm
-                    textIcon: (root.notificationService && root.notificationService.dndEnabled) ? "Unmute" : "Mute"
+                    textIcon: isActive ? "Unmute" : "Mute"
                     textIconSize: Constants.sizeSm
                     useCustomWidth: true
                     onClicked: {

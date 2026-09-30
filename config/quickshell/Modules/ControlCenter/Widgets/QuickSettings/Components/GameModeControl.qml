@@ -4,12 +4,14 @@ import qs.Core
 import qs.Core.Components
 import qs.Core.Services
 
-SvgIconButton {
+QuickSettingsTile {
     id: root
 
-    icon: DisplayProfileService.gameModeActive ? "gamepad-filled" : "gamepad"
-    iconColor: DisplayProfileService.gameModeActive ? Theme.accent : Theme.muted
-    iconSize: Constants.sizeXl
+    isActive: DisplayProfileService.gameModeActive
+    icon: isActive ? "gamepad-filled" : "gamepad"
+    label: "Game Mode"
+    subtitle: isActive ? "Active" : "Off"
+    onMenuClicked: clicked()
     onClicked: {
         DisplayProfileService.gameModeActive = !DisplayProfileService.gameModeActive;
     }

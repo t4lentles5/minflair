@@ -7,7 +7,7 @@ import qs.Modules.Bar
 BarButton {
     id: root
 
-    property int iconSize: (SettingsService.isBarCompact || BarStyleConfig.isCompact(SettingsService.barStyle)) ? Constants.size2Xl : Constants.size3Xl
+    property int iconSize: Constants.size2Xl + 4
     property var customClickHandler: null
     property bool enableIntervalAnim: true
 

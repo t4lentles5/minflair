@@ -10,11 +10,12 @@ Item {
     id: lyricsPanel
 
     property bool isExpanded: false
+    readonly property bool shouldShow: isExpanded && LyricsService.hasLyrics
 
     Layout.fillHeight: true
-    Layout.preferredWidth: 320
-    visible: isExpanded
-    opacity: isExpanded ? 1 : 0
+    Layout.preferredWidth: shouldShow ? 320 : 0
+    visible: shouldShow
+    opacity: shouldShow ? 1 : 0
 
     Rectangle {
         anchors.fill: parent
@@ -69,15 +70,6 @@ Item {
             visible: LyricsService.loading
         }
 
-        // No Lyrics State
-        ThemedText {
-            anchors.centerIn: parent
-            text: "No lyrics found"
-            customSize: Constants.sizeMd
-            color: Theme.muted
-            visible: !LyricsService.loading && !LyricsService.hasLyrics
-        }
-
         // Synced Lyrics View
         ListView {
             id: lyricsList
@@ -87,6 +79,8 @@ Item {
             anchors.left: parent.left
             anchors.right: parent.right
             anchors.margins: Constants.sizeMd
+            topMargin: Constants.sizeSm
+            bottomMargin: Constants.sizeSm
             visible: !LyricsService.loading && LyricsService.hasLyrics && LyricsService.isSynced
             model: LyricsService.lines
             spacing: Constants.sizeSm
@@ -95,15 +89,38 @@ Item {
             highlightFollowsCurrentItem: true
             highlightMoveDuration: Constants.animSlow
             highlightMoveVelocity: -1
-            preferredHighlightBegin: 0
-            preferredHighlightEnd: Math.round(height * 0.35)
-            highlightRangeMode: ListView.ApplyRange
+            preferredHighlightBegin: Math.max(topMargin + 20, Math.round(lyricsList.height / 2 - 20))
+            preferredHighlightEnd: Math.max(topMargin + 60, Math.round(lyricsList.height / 2 + 20))
+            highlightRangeMode: LyricsService.currentLineIndex > 0 ? ListView.ApplyRange : ListView.NoHighlightRange
+            onVisibleChanged: {
+                if (visible) {
+                    if (LyricsService.currentLineIndex <= 0) {
+                        currentIndex = 0;
+                        contentY = -topMargin;
+                    } else {
+                        currentIndex = LyricsService.currentLineIndex;
+                    }
+                }
+            }
+            onModelChanged: {
+                if (LyricsService.currentLineIndex <= 0) {
+                    currentIndex = 0;
+                    contentY = -topMargin;
+                } else {
+                    currentIndex = LyricsService.currentLineIndex;
+                }
+            }
 
             Connections {
                 function onCurrentLineIndexChanged() {
-                    if (LyricsService.currentLineIndex >= 0 && !lyricsList.dragging && !lyricsMouse.pressed)
-                        lyricsList.currentIndex = LyricsService.currentLineIndex;
-
+                    if (!lyricsList.dragging && !lyricsMouse.pressed) {
+                        if (LyricsService.currentLineIndex <= 0) {
+                            lyricsList.currentIndex = 0;
+                            lyricsList.contentY = -lyricsList.topMargin;
+                        } else {
+                            lyricsList.currentIndex = LyricsService.currentLineIndex;
+                        }
+                    }
                 }
 
                 target: LyricsService
@@ -134,7 +151,7 @@ Item {
                 property bool isCurrent: LyricsService.currentLineIndex === index
 
                 width: ListView.view.width
-                height: lineText.implicitHeight
+                height: lineText.implicitHeight + Constants.size2Xs
 
                 ThemedText {
                     id: lineText
@@ -146,11 +163,19 @@ Item {
                     horizontalAlignment: Text.AlignLeft
                     wrapMode: Text.WordWrap
                     customSize: Constants.sizeMd + 1
-                    font.weight: Font.DemiBold
+                    font.weight: isCurrent ? Font.DemiBold : Font.Normal
                     color: isCurrent ? Theme.fg : Theme.muted
                     opacity: isCurrent ? 1 : 0.3
-                    x: isCurrent ? 6 : 0
+                    anchors.leftMargin: isCurrent ? 6 : 0
                     transformOrigin: Item.Left
+
+                    Behavior on anchors.leftMargin {
+                        NumberAnimation {
+                            duration: Constants.animSlow
+                            easing.type: Easing.OutCubic
+                        }
+
+                    }
 
                     Behavior on color {
                         ColorAnimation {
@@ -161,14 +186,6 @@ Item {
                     }
 
                     Behavior on opacity {
-                        NumberAnimation {
-                            duration: Constants.animSlow
-                            easing.type: Easing.OutCubic
-                        }
-
-                    }
-
-                    Behavior on x {
                         NumberAnimation {
                             duration: Constants.animSlow
                             easing.type: Easing.OutCubic
