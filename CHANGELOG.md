@@ -62,6 +62,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 
 - **Framed Bar Style**: Removed `FramedBar`, `FramedOverlayStyle`, and `FramedNotificationOverlay` in favor of the cleaner, unified `Convex` mode.
+- **Legacy Popup Fallback Dimensions**: Removed obsolete hardcoded switch dimensions in `PopupCrossfadeHost.qml` in favor of dynamic content-driven sizing.
 - **Redundant Quick Settings Tiles**: Removed `CaptureControl`, `MicControl`, and `VolumeControl` tiles in Quick Settings in favor of dedicated sliders and standalone modules.
 - **Repository Badge**: Removed obsolete repository badge from Package Manager details hero card.
 - **Bar Compatibility Legacy Code**: Removed deprecated bar compatibility properties and legacy UI elements.

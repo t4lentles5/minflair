@@ -59,22 +59,6 @@ Item {
         if (item && item.implicitWidth > 0)
             return item.implicitWidth + contentHorizontalPadding;
 
-        switch (popup) {
-        case "wallpaper":
-            return 1008 + contentHorizontalPadding;
-        case "launcher":
-            return 640 + contentHorizontalPadding;
-        case "clipboard":
-            return 520 + contentHorizontalPadding;
-        case "dashboard":
-            return 720 + contentHorizontalPadding;
-        case "controlCenter":
-            return 400 + contentHorizontalPadding;
-        case "notificationsCenter":
-            return 400 + contentHorizontalPadding;
-        case "music":
-            return 320 + contentHorizontalPadding;
-        }
         return defaultWidth;
     }
 
@@ -82,22 +66,6 @@ Item {
         if (item && item.implicitHeight > 0)
             return item.implicitHeight + contentVerticalPadding;
 
-        switch (popup) {
-        case "wallpaper":
-            return 216 + contentVerticalPadding;
-        case "launcher":
-            return 400 + contentVerticalPadding;
-        case "clipboard":
-            return 360 + contentVerticalPadding;
-        case "dashboard":
-            return 500 + contentVerticalPadding;
-        case "controlCenter":
-            return 440 + contentVerticalPadding;
-        case "notificationsCenter":
-            return 440 + contentVerticalPadding;
-        case "music":
-            return 180 + contentVerticalPadding;
-        }
         return defaultHeight;
     }
 
