@@ -28,6 +28,7 @@ SearchAppWindow {
     property alias resultsModel: resultsModel
     property string searchFieldText: ""
     property string selectedCategory: "all"
+    property string currentSearchQuery: ""
 
     function showPackageDetails(pkgName, installed) {
         root.currentDetailPkg = {
@@ -57,9 +58,11 @@ SearchAppWindow {
         if (root.actionMode === "install") {
             if (query.length === 0) {
                 searchProc.running = false;
+                startSearchTimer.targetQuery = "";
                 startSearchTimer.nextCommand = ["--featured", root.selectedCategory];
                 startSearchTimer.restart();
             } else if (query.length < 2) {
+                root.currentSearchQuery = "";
                 root.allResults = [];
                 root.updateModel();
                 root.isSearching = false;
@@ -67,15 +70,18 @@ SearchAppWindow {
                 return ;
             } else {
                 searchProc.running = false;
+                startSearchTimer.targetQuery = query;
                 startSearchTimer.nextCommand = [query];
                 startSearchTimer.restart();
             }
         } else if (root.actionMode === "remove") {
             searchProc.running = false;
+            startSearchTimer.targetQuery = "";
             startSearchTimer.nextCommand = ["--list-installed"];
             startSearchTimer.restart();
         } else if (root.actionMode === "update") {
             searchProc.running = false;
+            startSearchTimer.targetQuery = "";
             startSearchTimer.nextCommand = ["--list-updates"];
             startSearchTimer.restart();
         }
@@ -295,6 +301,15 @@ SearchAppWindow {
                 return ;
             }
         } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
+            if (fromSearch && (debounceTimer.running || (root.actionMode === "install" && root.searchText.length >= 2 && root.currentSearchQuery !== root.searchText))) {
+                debounceTimer.stop();
+                if (root.actionMode === "remove" || root.actionMode === "update")
+                    root.updateModel();
+                else
+                    root.doSearch(root.searchText);
+                event.accepted = true;
+                return ;
+            }
             let idx = listV.currentIndex >= 0 ? listV.currentIndex : 0;
             if (root.selectedPackages.length === 0 && resultsModel.count > idx) {
                 let pkg = resultsModel.get(idx);
@@ -374,12 +389,24 @@ SearchAppWindow {
     enableTabTransition: true
     onSearchRequested: (text) => {
         root.searchText = text;
+        startSearchTimer.stop();
+        if (searchProc.running)
+            searchProc.running = false;
+
+        root.isSearching = false;
         root.restartDebounceTimer();
     }
     onTabClicked: (val, index) => {
         if (root.actionMode === val)
             return ;
 
+        startSearchTimer.stop();
+        if (searchProc.running)
+            searchProc.running = false;
+
+        debounceTimer.stop();
+        root.isSearching = false;
+        root.currentSearchQuery = "";
         root.actionMode = val;
         root.selectedPackages = [];
         root.selectedPackageObjects = {
@@ -404,6 +431,13 @@ SearchAppWindow {
     windowTitle: "Minflair Package Manager"
     onIsOpenChanged: {
         if (isOpen) {
+            startSearchTimer.stop();
+            if (searchProc.running)
+                searchProc.running = false;
+
+            debounceTimer.stop();
+            root.isSearching = false;
+            root.currentSearchQuery = "";
             if (root.searchFieldRef)
                 root.searchFieldRef.textField.text = "";
 
@@ -415,6 +449,12 @@ SearchAppWindow {
             };
             root.doSearch("");
         } else {
+            startSearchTimer.stop();
+            if (searchProc.running)
+                searchProc.running = false;
+
+            debounceTimer.stop();
+            root.isSearching = false;
             SettingsService.packageManagerMode = "install";
         }
     }
@@ -435,12 +475,14 @@ SearchAppWindow {
         id: startSearchTimer
 
         property var nextCommand: []
+        property string targetQuery: ""
 
         interval: 10
         repeat: false
         onTriggered: {
             root.isSearching = true;
             root.accumulatedSearchOutput = "";
+            root.currentSearchQuery = targetQuery;
             let baseCmd = ["python3", Quickshell.shellDir + "/Modules/PackageManager/scripts/search_packages.py"];
             searchProc.command = baseCmd.concat(nextCommand);
             searchProc.running = true;
@@ -466,7 +508,7 @@ SearchAppWindow {
     Timer {
         id: debounceTimer
 
-        interval: 300
+        interval: 700
         repeat: false
         onTriggered: {
             if (root.actionMode === "remove" || root.actionMode === "update")
@@ -485,6 +527,10 @@ SearchAppWindow {
                 return ;
 
             root.isSearching = false;
+            if (root.actionMode === "install" && root.searchText !== "" && root.currentSearchQuery !== root.searchText) {
+                root.accumulatedSearchOutput = "";
+                return ;
+            }
             if (exitCode === 0) {
                 try {
                     root.allResults = JSON.parse(root.accumulatedSearchOutput);
