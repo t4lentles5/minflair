@@ -4,7 +4,7 @@
 
 **A modular, aesthetic Hyprland desktop environment for Arch Linux, powered by Quickshell and dynamic system-wide theming.**
 
-<img src="https://res.cloudinary.com/diu2godjy/image/upload/v1790370056/output_qn24n5.webp" alt="Preview" />
+<img src="https://res.cloudinary.com/diu2godjy/image/upload/v1790797262/output_xfx0s3.webp" alt="Preview" />
 
 </div>
 
@@ -12,11 +12,13 @@
 
 ## ✨ Features
 
-- 🎨 **Multi-Style Shell Architecture** — Seamlessly switch between 5 distinct visual styles: **Convex**, **Framed**, **Island**, **Notch**, and **Minflair**.
+- 🎨 **Multi-Style Shell Architecture** — Seamlessly switch between 4 distinct visual styles: **Convex**, **Island**, **Notch**, and **Minflair**.
 - 🌈 **Modular Dynamic Theming** — Generate and auto-apply harmonious color schemes from your current wallpaper across GTK, Qt, Neovim, Starship, Kitty, Hyprland, LazyGit, and Btop.
+- 🎛️ **Mouse & Touchpad Settings** — Configure pointer sensitivity (DPI), acceleration profile (`flat` raw 1:1 vs `adaptive`), natural scrolling, and touchpad tap/drag gestures natively from Settings.
 - 🔤 **Font & Cursor Management** — Easily customize and apply global system fonts, font sizes, and cursor themes directly from the Settings UI.
-- 🎵 **Dedicated Music & Visualizer** — Standalone music popup featuring a live Cava audio visualizer, synchronized lyrics, and media playback controls.
-- 📦 **Rich Package Manager** — Native graphical package manager with deep package inspection (dependencies, relations, specs, resources) and AUR support.
+- 🎵 **Dedicated Music & Visualizer** — Standalone music popup featuring a live Cava audio visualizer, synchronized auto-scrolling lyrics, and media playback controls.
+- 🔔 **Decoupled Notification Center** — Dedicated notification center and status bar trigger with unread badge counter and full notification history.
+- 📦 **Rich Package Manager** — Native graphical package manager with debounced instant search, deep package inspection (dependencies, relations, specs, resources) and AUR support.
 - 🖼️ **Wallpaper Selector** — Browse, search, and apply wallpapers directly from an interactive grid widget.
 - 🔒 **Lock Screen** — Custom Lock Screen built in Quickshell with IPC controller support and robust PAM authentication.
 - ⚡ **Zsh & Neovim** — Fully configured developer environment with Starship, fzf-tab, LazyGit, and Neovim (lazy.nvim) auto-synced with your theme.
@@ -106,48 +108,57 @@ The Sidebar Control Center includes a quick toggle to cap your battery charge (t
 
 ---
 
-## 🖥️ Quickshell Widgets
+## 🖥️ Quickshell Interface
 
-This rice features a collection of custom widgets built with Quickshell, designed to be fast, interactive, and completely integrated with the system's dynamic styling:
+This rice features a collection of custom widgets, standalone applications, and shell utilities built with Quickshell, designed to be fast, interactive, and completely integrated with the system's dynamic styling:
 
-- **Dashboard**: An integrated dashboard featuring your GitHub contributions graph, system statistics, package updates, and daily quotes.
-  <img src="https://res.cloudinary.com/diu2godjy/image/upload/v1790370208/Shot-2026-09-25-160258_jxwpzx.png" alt="Dashboard Widget" />
+### 📱 Applications
 
-- **Music & Lyrics Popup**: A standalone media interface with a real-time Cava audio visualizer, synchronized lyrics via `LyricsService`, progress wave, and full playback controls.
-  <img src="https://res.cloudinary.com/diu2godjy/image/upload/v1790370379/Shot-2026-09-25-160553_tjqvhh.png" alt="Music and Lyrics Popup Widget" />
+- **Settings App**: A modular graphical interface built on `SidebarAppWindow` to configure your rice, bar styles, mouse & touchpad preferences, credentials, and integrations effortlessly without manually editing files.
+  <img src="https://res.cloudinary.com/diu2godjy/image/upload/v1790798194/output_dcqjbq.webp" alt="Settings App Widget" width="650" />
 
-- **Settings App**: A modular graphical interface built on `SidebarAppWindow` to configure your rice, bar styles, credentials, and preferences effortlessly without manually editing files.
-  <img src="https://res.cloudinary.com/diu2godjy/image/upload/v1790370463/Shot-2026-09-25-160728_s57pwz.png" alt="Settings App Widget" />
-
-- **Lock Screen**: A fully functional custom lock screen with external IPC controller and PAM authentication, fully integrated with your dynamic theme.
-  <img src="https://res.cloudinary.com/diu2godjy/image/upload/v1790371434/Shot-2026-09-25-162333_vn5jwk.png" alt="Lock Screen Widget" />
+- **Package Manager**: A rich graphical utility with debounced instant search to view package details, dependencies, relations, install, update, and remove official Arch Linux and AUR packages.
+  <img src="https://res.cloudinary.com/diu2godjy/image/upload/v1790799689/output_dctpih.webp" alt="Package Manager Widget" width="650" />
 
 - **Keybinds Cheat Sheet**: A built-in, searchable overlay built on `SearchAppWindow` that displays all your configured shortcuts directly on your desktop.
-  <img src="https://res.cloudinary.com/diu2godjy/image/upload/v1790370703/Shot-2026-09-25-161127_z3d2da.png" alt="Keybinds Cheat Sheet Widget" />
+  <img src="https://res.cloudinary.com/diu2godjy/image/upload/v1790798490/output_jttms4.webp" alt="Keybinds Cheat Sheet Widget" width="650" />
 
-- **Wallpaper Selector**: An interactive grid browser that lets you preview and apply wallpapers from `~/Pictures/Wallpapers/` on the fly.
-  <img src="https://res.cloudinary.com/diu2godjy/image/upload/v1790370867/Shot-2026-09-25-161410_huws7s.png" alt="Wallpaper Selector Widget" />
+### 🎛️ Bar Widgets & Popups
 
-- **Sidebar (Control Center)**: A unified control center featuring quick toggles (Wifi, Bluetooth, Night Light, Game Mode, Caffeine, Battery Limit), brightness sliders, and desktop notifications.
-  <img src="https://res.cloudinary.com/diu2godjy/image/upload/v1790371044/Shot-2026-09-25-161627_wmeb7g.png" alt="Sidebar Control Center Widget" />
+- **Dashboard**: An integrated dashboard featuring your GitHub contributions graph, system statistics, package updates, and daily quotes.
+  <img src="https://res.cloudinary.com/diu2godjy/image/upload/v1790797606/output_q20adt.webp" alt="Dashboard Widget" />
+
+- **Control Center**: A unified control center featuring quick toggles (Wifi, Bluetooth, Night Light, Game Mode, Caffeine, Battery Limit), interactive network/bluetooth pickers, and dedicated volume and brightness slider cards.
+  <img src="https://res.cloudinary.com/diu2godjy/image/upload/v1790799108/output_dbypbk.webp" alt="Sidebar Control Center Widget" />
+
+- **Notification Center**: A dedicated notification panel decoupled from quick settings, featuring unread badge status bar synchronization, individual dismissals, and clear-all actions.
+  <img src="https://res.cloudinary.com/diu2godjy/image/upload/v1790798869/output_q7qoy8.webp" alt="Notification Center Widget" />
+
+- **Music & Lyrics**: A standalone media interface with a real-time Cava audio visualizer, synchronized auto-scrolling lyrics via `LyricsService`, progress wave, and full playback controls.
+  <img src="https://res.cloudinary.com/diu2godjy/image/upload/v1790797863/output_qpicjl.webp" alt="Music and Lyrics Popup Widget" />
 
 - **System Tray**: A minimalist system tray popup to manage active background applications and status indicators with styled context menus.
-  <img src="https://res.cloudinary.com/diu2godjy/image/upload/v1790371570/Shot-2026-09-25-162550_khyllq.png" alt="System Tray Widget" />
+  <img src="https://res.cloudinary.com/diu2godjy/image/upload/v1790799325/output_jrzdx2.webp" alt="System Tray Widget" />
+
+### 🚀 Shell Overlays & Utilities
 
 - **Application Launcher**: A clean, keyboard-navigable menu to search and run applications.
-  <img src="https://res.cloudinary.com/diu2godjy/image/upload/v1790371113/Shot-2026-09-25-161814_planwy.png" alt="Application Launcher Widget" />
+  <img src="https://res.cloudinary.com/diu2godjy/image/upload/v1790799502/output_zyufi5.webp" alt="Application Launcher Widget" />
 
-- **Package Manager**: A rich graphical utility to search, view package details, dependencies, relations, install, update, and remove official Arch Linux and AUR packages.
-  <img src="https://res.cloudinary.com/diu2godjy/image/upload/v1790371179/Shot-2026-09-25-161925_xky3ci.png" alt="Package Manager Widget" />
+- **Wallpaper Selector**: An interactive grid browser that lets you preview and apply wallpapers from `~/Pictures/Wallpapers/` on the fly.
+  <img src="https://res.cloudinary.com/diu2godjy/image/upload/v1790798652/output_pht25o.webp" alt="Wallpaper Selector Widget" />
 
 - **Clipboard History**: A handy widget to browse and paste from your clipboard history.
-  <img src="https://res.cloudinary.com/diu2godjy/image/upload/v1790371276/Shot-2026-09-25-162101_m9c1ej.png" alt="Clipboard History Widget" />
+  <img src="https://res.cloudinary.com/diu2godjy/image/upload/v1790799938/output_r3v0x7.webp" alt="Clipboard History Widget" />
 
-- **Screen Capture**: A dedicated tool for taking screenshots (full, area, window, delay, OCR text extraction) and recording your screen.
-  <img src="https://res.cloudinary.com/diu2godjy/image/upload/v1790371339/Shot-2026-09-25-162202_ciawww.png" alt="Screen Capture Widget" />
+- **Screen Capture**: A dedicated tool for taking screenshots (full, area, window, 3-second delay, OCR text extraction) and recording your screen with completion notifications.
+  <img src="https://res.cloudinary.com/diu2godjy/image/upload/v1790800109/output_j4y10n.webp" alt="Screen Capture Widget" />
 
 - **Power Menu**: A sleek menu for session management (shutdown, reboot, suspend, lock, logout).
-  <img src="https://res.cloudinary.com/diu2godjy/image/upload/v1790371393/Shot-2026-09-25-162259_fktls0.png" alt="Power Menu Widget" />
+  <img src="https://res.cloudinary.com/diu2godjy/image/upload/v1790800283/output_crspkb.webp" alt="Power Menu Widget" />
+
+- **Lock Screen**: A fully functional custom lock screen with external IPC controller and PAM authentication, fully integrated with your dynamic theme.
+  <img src="https://res.cloudinary.com/diu2godjy/image/upload/v1790798334/output_stk3db.webp" alt="Lock Screen Widget" />
 
 ## ⌨️ Keybinds
 
