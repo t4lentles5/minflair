@@ -8,10 +8,10 @@ Item {
     id: root
 
     property bool hasFullscreen: false
-    property int barHeight: 40
-    property int bezelSize: 8
+    property int barHeight: Constants.size4Xl
+    property int bezelSize: DisplayProfileService.gameModeActive ? 0 : Constants.sizeXs
     property bool isExiting: false
-    readonly property bool isExclusionActive: SettingsService.barConvexMode && !root.hasFullscreen && !root.isExiting
+    readonly property bool isExclusionActive: !DisplayProfileService.gameModeActive && SettingsService.barConvexMode && !root.hasFullscreen && !root.isExiting
 
     PanelWindow {
         id: bottomExclusion

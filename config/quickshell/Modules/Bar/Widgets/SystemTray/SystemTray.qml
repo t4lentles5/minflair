@@ -11,25 +11,21 @@ import qs.Core.Windows
 Item {
     id: root
 
-    property string popupId: ""
+    property string widgetId: ""
     property var currentTrayItem: null
     property bool isOpen: false
     property bool positionAtRight: true
-    readonly property int overshootHeadroom: 20
-    readonly property bool isMinflair: SettingsService.barMinflairMode
+    readonly property int overshootHeadroom: Constants.size2Xl
     readonly property bool _visible: contentLoader.item ? contentLoader.item._visible : false
 
-    signal popupOpened()
-    signal popupClosed()
+    signal widgetOpened()
+    signal widgetClosed()
     signal fullyClosed()
 
     implicitWidth: contentLoader.item ? contentLoader.item.implicitWidth : 0
     implicitHeight: contentLoader.item ? contentLoader.item.implicitHeight : 0
     visible: _visible
     onIsOpenChanged: {
-        if (!root.isOpen)
-            AppState.closePopup(root.popupId);
-
         if (contentLoader.item && contentLoader.item.isOpen !== root.isOpen)
             contentLoader.item.isOpen = root.isOpen;
 
@@ -39,7 +35,7 @@ Item {
         id: contentLoader
 
         anchors.fill: parent
-        sourceComponent: topPopupComponent
+        sourceComponent: sidebarComponent
         onStatusChanged: {
             if (status === Loader.Ready && item)
                 item.isOpen = root.isOpen;
@@ -54,12 +50,12 @@ Item {
 
         }
 
-        function onPopupOpened() {
-            root.popupOpened();
+        function onWidgetOpened() {
+            root.widgetOpened();
         }
 
-        function onPopupClosed() {
-            root.popupClosed();
+        function onWidgetClosed() {
+            root.widgetClosed();
         }
 
         function onFullyClosed() {
@@ -69,48 +65,31 @@ Item {
 
             }
             root.fullyClosed();
-            AppState.closePopup(root.popupId);
+            AppState.closeWidget(root.widgetId);
         }
 
         target: contentLoader.item
         ignoreUnknownSignals: true
     }
 
-    Connections {
-        function onTogglePopup(id) {
-            if (id === root.popupId)
-                root.isOpen = !root.isOpen;
-            else if (root.isOpen && id !== "" && AppState.getSlot(id) === AppState.getSlot(root.popupId))
-                root.isOpen = false;
-        }
-
-        function onOpenPopup(id) {
-            if (id === root.popupId)
-                root.isOpen = true;
-            else if (root.isOpen && id !== "" && AppState.getSlot(id) === AppState.getSlot(root.popupId))
-                root.isOpen = false;
-        }
-
-        enabled: root.enabled
-        target: AppState
-    }
-
     Component {
-        id: topPopupComponent
+        id: sidebarComponent
 
-        TopPopup {
-            popupId: root.popupId
-            positionAtRight: root.isMinflair ? false : root.positionAtRight
-            animateHeight: root.isMinflair
-            contentPadding: root.isMinflair ? Constants.sizeLg : 16
+        SidebarWindow {
+            widgetId: root.widgetId
+            isOpen: root.isOpen
+            alignTop: true
+            topOffset: SettingsService.barConvexMode ? 80 : Constants.size4Xl
+            positionAtLeft: false
             backgroundColor: Theme.bg
-            contentWidth: Math.max(250, Math.min(trayMenuTop.implicitWidth, 450))
-            contentHeight: Math.min(trayMenuTop.implicitHeight, 420)
+            contentWidth: 300
+            contentHeight: 340
 
             TrayMenu {
                 id: trayMenuTop
 
-                anchors.fill: parent
+                Layout.fillWidth: true
+                Layout.fillHeight: true
                 menuHandle: root.currentTrayItem ? root.currentTrayItem.menu : null
                 title: {
                     let item = root.currentTrayItem;
@@ -121,7 +100,7 @@ Item {
                     if (t !== "")
                         return t;
 
-                    let tt = item.toolTipTitle ? item.toolTipTitle.toString().trim() : "";
+                    let tt = item.tooltipTitle ? item.tooltipTitle.toString().trim() : (item.toolTipTitle ? item.toolTipTitle.toString().trim() : "");
                     if (tt !== "")
                         return tt;
 
@@ -136,12 +115,16 @@ Item {
                     }
                     return "Menu";
                 }
-                onBackRequested: root.isOpen = false
-                onCloseRequested: root.isOpen = false
+                onBackRequested: AppState.closeWidget(root.widgetId)
+                onCloseRequested: AppState.closeWidget(root.widgetId)
             }
 
         }
 
+    }
+
+    Binding on isOpen {
+        value: AppState.isWidgetOpen(root.widgetId)
     }
 
 }

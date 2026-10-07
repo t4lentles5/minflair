@@ -8,10 +8,10 @@ Rectangle {
     id: root
 
     property var notificationService: null
-    property var controlCenterWidget: null
+    property var notificationsCenterWidget: null
     property bool isHovered: mouseArea.containsMouse
     property bool isPressed: mouseArea.pressed
-    readonly property bool isActive: AppState.isWidgetOpen("controlCenter")
+    readonly property bool isActive: AppState.isWidgetOpen("notificationsCenter")
 
     implicitHeight: SettingsService.barWidgetHeight
     implicitWidth: height
@@ -25,14 +25,12 @@ Rectangle {
     visible: true
     scale: DisplayProfileService.gameModeActive ? 1 : (isPressed ? 0.92 : (isHovered ? 1.05 : 1))
 
-    SvgIcon {
-        id: tuneIcon
+    NotificationsIcon {
+        id: notifIcon
 
         anchors.centerIn: parent
-        icon: "tune"
-        iconColor: root.isActive ? Theme.accent : Theme.fg
-        iconSize: Constants.sizeLg
-        flat: true
+        notificationService: root.notificationService
+        iconColor: root.isActive ? Theme.accent : ((notificationService && notificationService.dndEnabled) ? Theme.muted : Theme.fg)
 
         Behavior on iconColor {
             ColorAnimation {
@@ -51,7 +49,7 @@ Rectangle {
         hoverEnabled: true
         cursorShape: Qt.PointingHandCursor
         onClicked: {
-            AppState.toggleWidget("controlCenter");
+            AppState.toggleWidget("notificationsCenter");
         }
     }
 

@@ -12,11 +12,11 @@ Item {
     property color color: Theme.bg
     property color borderColor: "transparent"
     property real borderWidth: 0
-    property real flareWidth: 18
-    property real flareHeight: 16
-    property real bottomRadius: 16
+    property real flareWidth: Constants.sizeLg + 2
+    property real flareHeight: Constants.sizeLg
+    property real bottomRadius: Constants.sizeLg
     property real centerBottomRadius: bottomRadius
-    property real topBezel: 8
+    property real topBezel: Constants.sizeXs
     property real baseHeight: 44
     property real leftW: 0
     property real centerX: 0
@@ -91,10 +91,10 @@ Item {
         }
 
         layer.effect: MultiEffect {
-            shadowEnabled: root.enableShadow && HyprlandService.hyprShadow && root.opacity > 0.001
-            shadowColor: Qt.alpha(Theme.shadow, 0.85)
-            blurMax: 16
-            shadowBlur: 3
+            shadowEnabled: root.enableShadow && HyprlandService.hyprShadow && !DisplayProfileService.gameModeActive && (SystemInfoService.powerProfile !== "power-saver") && root.opacity > 0.001
+            shadowColor: Qt.rgba(Theme.shadow.r, Theme.shadow.g, Theme.shadow.b, Theme.isDark ? 1 : Math.min(1, Theme.shadow.a * 1.6))
+            blurMax: HyprlandService.hyprShadowRange
+            shadowBlur: 1
             shadowVerticalOffset: 0
             shadowHorizontalOffset: 0
         }

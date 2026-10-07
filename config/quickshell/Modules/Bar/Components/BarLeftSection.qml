@@ -12,11 +12,12 @@ Rectangle {
     property var mainPanelWidget: null
     property var notificationService: null
     property QtObject mainBar: null
-    property real sidePadding: 32
+    property real sidePadding: Constants.size3Xl
     property real contentMargin: Constants.sizeLg
+    readonly property real targetWidth: contentRow.implicitWidth + root.sidePadding
 
     height: parent ? parent.height : implicitHeight
-    width: contentRow.implicitWidth + root.sidePadding
+    width: targetWidth
     color: "transparent"
 
     RowLayout {
@@ -30,29 +31,14 @@ Rectangle {
         MinflairButton {
             id: minflairBtn
 
-            widget: root.mainPanelWidget
             Layout.alignment: Qt.AlignVCenter
         }
 
-        BarWidgetLoader {
-            id: slotL1
+        Workspaces {
+            id: workspacesWidget
 
-            widgetType: SettingsService.barSlotL1
-            mainBar: root.mainBar
-        }
-
-        BarWidgetLoader {
-            id: slotL2
-
-            widgetType: SettingsService.barSlotL2
-            mainBar: root.mainBar
-        }
-
-        BarWidgetLoader {
-            id: slotL3
-
-            widgetType: SettingsService.barSlotL3
-            mainBar: root.mainBar
+            Layout.alignment: Qt.AlignVCenter
+            visible: true
         }
 
     }

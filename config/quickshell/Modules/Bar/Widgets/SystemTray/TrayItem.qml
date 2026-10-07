@@ -5,25 +5,40 @@ import Quickshell.Services.SystemTray
 import Quickshell.Widgets
 import qs.Core
 import qs.Core.Components
+import qs.Core.Services
 
-Item {
+Rectangle {
     id: itemRoot
 
     property var trayItem: null
+    property int itemIndex: -1
+    property int customHeight: SettingsService.barWidgetHeight
     property int iconSize: Constants.sizeSm
+    readonly property string widgetId: itemIndex >= 0 ? ("systemTray_" + itemIndex) : ""
+    readonly property bool isActive: (widgetId !== "" && AppState.isWidgetOpen(widgetId)) || (AppState.activeTrayItem === trayItem && AppState.activeWidget.startsWith("systemTray_"))
+    property bool isHovered: mouseArea.containsMouse
+    property bool isPressed: mouseArea.pressed
 
     signal clicked(var mouse)
 
-    implicitWidth: iconImage.implicitWidth
-    implicitHeight: iconImage.implicitHeight
+    implicitHeight: customHeight
+    implicitWidth: customHeight
+    width: implicitWidth
+    height: implicitHeight
+    Layout.preferredWidth: implicitWidth
+    Layout.preferredHeight: implicitHeight
+    Layout.alignment: Qt.AlignVCenter
+    color: isActive ? Theme.bgAccent : (isHovered ? Theme.bgSecondary : "transparent")
+    radius: height / 2
+    scale: isPressed ? 0.92 : (isHovered ? 1.05 : 1)
 
     SvgIcon {
         id: iconImage
 
         anchors.centerIn: parent
         iconSize: itemRoot.iconSize
-        width: implicitWidth
-        height: implicitHeight
+        width: itemRoot.iconSize
+        height: itemRoot.iconSize
         useOriginalColors: {
             if (!itemRoot.trayItem)
                 return true;
@@ -62,7 +77,7 @@ Item {
 
             return false;
         }
-        iconColor: Theme.fg
+        iconColor: itemRoot.isActive ? Theme.accent : Theme.fg
         flat: true
         icon: {
             if (!itemRoot.trayItem)
@@ -85,12 +100,10 @@ Item {
                 return "";
             }
         }
-        scale: mouseArea.pressed ? 0.9 : (mouseArea.containsMouse ? 1.1 : 1)
 
-        Behavior on scale {
-            NumberAnimation {
+        Behavior on iconColor {
+            ColorAnimation {
                 duration: Constants.animFast
-                easing.type: Easing.OutQuad
             }
 
         }
@@ -100,6 +113,7 @@ Item {
     MouseArea {
         id: mouseArea
 
+        z: 10
         anchors.fill: parent
         hoverEnabled: true
         cursorShape: Qt.PointingHandCursor
@@ -108,11 +122,26 @@ Item {
             if (!itemRoot.trayItem)
                 return ;
 
-            if (mouse.button === Qt.LeftButton)
+            if (mouse.button === Qt.LeftButton && !itemRoot.trayItem.onlyMenu)
                 itemRoot.trayItem.activate();
 
             itemRoot.clicked(mouse);
         }
+    }
+
+    Behavior on color {
+        ColorAnimation {
+            duration: Constants.animFast
+        }
+
+    }
+
+    Behavior on scale {
+        NumberAnimation {
+            duration: Constants.animFast
+            easing.type: Easing.OutBack
+        }
+
     }
 
 }

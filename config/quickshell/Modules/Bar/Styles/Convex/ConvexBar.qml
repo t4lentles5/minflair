@@ -10,6 +10,8 @@ Item {
 
     property var notificationService: null
     property var mainPanelWidget: null
+    property var controlCenterWidget: null
+    property var notificationsCenterWidget: null
     readonly property real baseBarHeight: BarStyleConfig.barHeight("convex")
     readonly property real leftWidth: leftSection.width
     readonly property real rightWidth: rightSection.width
@@ -60,10 +62,8 @@ Item {
         anchors.top: parent.top
         anchors.horizontalCenter: parent.horizontalCenter
         notificationService: root.notificationService
-        mainPanelWidget: root.mainPanelWidget
         mainBar: root
-        showNotchShape: false
-        extraPadding: 32
+        extraPadding: Constants.size3Xl
     }
 
     BarRightSection {
@@ -76,6 +76,8 @@ Item {
         sidePadding: 36
         mainBar: root
         contentMargin: Constants.sizeXs
+        controlCenterWidget: root.controlCenterWidget
+        notificationsCenterWidget: root.notificationsCenterWidget
     }
 
 }

@@ -24,15 +24,7 @@ PanelWindow {
     readonly property bool hasExpandableHost: styleData.hasExpandableHost
     readonly property bool usesFloatingPopups: styleData.usesFloatingPopups
     readonly property bool isPill: styleData.isPill
-    readonly property QtObject activeHost: {
-        if (SettingsService.barIslandMode || SettingsService.barNotchMode)
-            return barStrip;
-
-        if (SettingsService.barConvexMode)
-            return barPopups.convexHost;
-
-        return null;
-    }
+    readonly property QtObject activeHost: SettingsService.barIslandMode ? barStrip : null
     readonly property bool needsFocus: (activeHost && activeHost.isOpen && activeHost.needsFocus)
 
     function triggerStyleSwitch() {
@@ -161,7 +153,7 @@ PanelWindow {
             target: barStrip
             property: "opacity"
             to: 0
-            duration: 150
+            duration: Constants.animFast
             easing.type: Easing.OutCubic
         }
 
@@ -169,7 +161,7 @@ PanelWindow {
             target: barTranslate
             property: "y"
             to: -18
-            duration: 150
+            duration: Constants.animFast
             easing.type: Easing.OutQuad
         }
 
@@ -177,7 +169,7 @@ PanelWindow {
             target: barStrip
             property: "scale"
             to: 0.94
-            duration: 150
+            duration: Constants.animFast
             easing.type: Easing.OutQuad
         }
 
@@ -191,7 +183,7 @@ PanelWindow {
             property: "opacity"
             from: 0
             to: 1
-            duration: 250
+            duration: Constants.animNormal
             easing.type: Easing.OutCubic
         }
 
@@ -200,7 +192,7 @@ PanelWindow {
             property: "y"
             from: -18
             to: 0
-            duration: 350
+            duration: Constants.animSlow
             easing.type: Easing.OutExpo
         }
 
@@ -209,7 +201,7 @@ PanelWindow {
             property: "scale"
             from: 0.94
             to: 1
-            duration: 350
+            duration: Constants.animSlow
             easing.type: Easing.OutExpo
         }
 
@@ -223,7 +215,7 @@ PanelWindow {
                 target: barStrip
                 property: "opacity"
                 to: 0
-                duration: 150
+                duration: Constants.animFast
                 easing.type: Easing.OutCubic
             }
 
@@ -231,7 +223,7 @@ PanelWindow {
                 target: barTranslate
                 property: "y"
                 to: -18
-                duration: 150
+                duration: Constants.animFast
                 easing.type: Easing.OutQuad
             }
 
@@ -239,7 +231,7 @@ PanelWindow {
                 target: barStrip
                 property: "scale"
                 to: 0.94
-                duration: 150
+                duration: Constants.animFast
                 easing.type: Easing.OutQuad
             }
 
@@ -269,7 +261,7 @@ PanelWindow {
                 property: "opacity"
                 from: 0
                 to: 1
-                duration: 250
+                duration: Constants.animNormal
                 easing.type: Easing.OutCubic
             }
 
@@ -278,7 +270,7 @@ PanelWindow {
                 property: "y"
                 from: -18
                 to: 0
-                duration: 350
+                duration: Constants.animSlow
                 easing.type: Easing.OutExpo
             }
 
@@ -287,7 +279,7 @@ PanelWindow {
                 property: "scale"
                 from: 0.94
                 to: 1
-                duration: 350
+                duration: Constants.animSlow
                 easing.type: Easing.OutExpo
             }
 
@@ -322,19 +314,33 @@ PanelWindow {
         id: unifiedShadowGroup
 
         anchors.fill: parent
-        layer.enabled: HyprlandService.hyprShadow && root.activeBarStyle === "minflair"
+        layer.enabled: false
+
+        MouseArea {
+            id: dismissArea
+
+            anchors.fill: parent
+            acceptedButtons: Qt.AllButtons
+            enabled: root.hasExpandableHost && root.activeHost && root.activeHost.isOpen
+            onClicked: {
+                if (root.activeHost && typeof root.activeHost.close === "function")
+                    root.activeHost.close();
+
+                AppState.closeAllWidgets();
+            }
+        }
 
         Bar {
             id: barStrip
 
             activeBarStyle: root.activeBarStyle
-            z: root.activeHost === barStrip ? 5 : 1
+            z: (root.activeHost === barStrip && root.activeHost.isOpen) ? 30 : (root.activeHost === barStrip ? 5 : 1)
             notificationService: root.notificationService
-            mainPanelWidget: barPopups.dashboardLoader.item
-            x: root.isPill ? Math.round((root.width - barStrip.width) / 2) : root.currentBarMarginSide
+            mainPanelWidget: null
+            x: root.isPill ? 0 : root.currentBarMarginSide
             y: root.currentBarMarginTop
-            width: root.isPill ? (barStrip.implicitWidth > 0 ? barStrip.implicitWidth : 180) : (root.width - root.currentBarMarginSide * 2)
-            height: ((SettingsService.barIslandMode || SettingsService.barNotchMode) && barStrip.currentHeight > 0) ? barStrip.currentHeight : root.currentBarHeight
+            width: root.isPill ? root.width : (root.width - root.currentBarMarginSide * 2)
+            height: (SettingsService.barIslandMode && barStrip.currentHeight > 0) ? barStrip.currentHeight : root.currentBarHeight
             transformOrigin: Item.Top
             Component.onCompleted: {
                 root.isShellReady = true;
@@ -348,26 +354,9 @@ PanelWindow {
             ]
         }
 
-        BarPopups {
-            id: barPopups
-
-            z: (barPopups.notificationOverlay.isOpen || barPopups.isFloatingPopupVisible) ? 25 : 0
-            anchors.fill: parent
-            notificationService: root.notificationService
-            popupStartY: root.barSurface.popupStartY
-            activeBarStyle: root.activeBarStyle
-            isPill: root.isPill
-            usesFloatingPopups: root.usesFloatingPopups
-            hasExpandableHost: root.hasExpandableHost
-            activeHost: root.activeHost
-            barStripX: barStrip.x
-            barStripCenterX: barStrip.centerX
-            barStripCenterWidth: barStrip.centerWidth
-        }
-
         layer.effect: MultiEffect {
             shadowEnabled: true
-            shadowColor: Qt.alpha(Theme.shadow, 0.85)
+            shadowColor: Theme.shadow
             blurMax: HyprlandService.hyprShadowRange * 2
             shadowBlur: 1
             shadowVerticalOffset: 0
@@ -377,45 +366,12 @@ PanelWindow {
     }
 
     mask: Region {
-        Region {
-            x: root.activeBarStyle === "convex" ? barStrip.x : 0
-            y: root.activeBarStyle === "convex" ? barStrip.y : 0
-            width: root.activeBarStyle === "convex" ? barStrip.width : 0
-            height: root.activeBarStyle === "convex" ? 32 : 0
-        }
-
-        // Center (Island, Notch, Convex) or Full Width (Minflair)
+        // Center (Island)
         Region {
             x: root.isPill ? (barStrip.x + barStrip.centerX - 16) : (barStrip.x - 16)
             y: Math.max(0, barStrip.y - 24)
             width: root.isPill ? (barStrip.centerWidth + 32) : (barStrip.width + 32)
             height: barStrip.height + 40
-        }
-
-        // Left Section (Convex)
-        Region {
-            x: root.activeBarStyle === "convex" ? barStrip.x : 0
-            y: root.activeBarStyle === "convex" ? barStrip.y : 0
-            width: root.activeBarStyle === "convex" ? barStrip.leftWidth : 0
-            height: root.activeBarStyle === "convex" ? barStrip.height + 24 : 0
-        }
-
-        // Right Section (Convex)
-        Region {
-            x: root.activeBarStyle === "convex" ? (barStrip.x + barStrip.width - barStrip.rightWidth) : 0
-            y: root.activeBarStyle === "convex" ? barStrip.y : 0
-            width: root.activeBarStyle === "convex" ? (barStrip.rightWidth + 16) : 0
-            height: root.activeBarStyle === "convex" ? barStrip.height + 24 : 0
-        }
-
-        // Floating Popups Overlay
-        Region {
-            property bool isActive: barPopups.isFloatingPopupVisible
-
-            x: 0
-            y: 0
-            width: isActive ? root.width : 0
-            height: isActive ? root.height : 0
         }
 
         // Expandable Host Overlay
@@ -426,16 +382,6 @@ PanelWindow {
             y: isActive ? (root.activeHost.isOpen ? 0 : root.activeHost.blockY) : 0
             width: isActive ? (root.activeHost.isOpen ? root.width : root.activeHost.blockWidth) : 0
             height: isActive ? (root.activeHost.isOpen ? root.height : root.activeHost.blockHeight) : 0
-        }
-
-        // Notification Overlay
-        Region {
-            property var notif: barPopups.notificationOverlay
-
-            x: notif.blockX
-            y: notif.blockY
-            width: notif.blockWidth
-            height: notif.blockHeight
         }
 
     }

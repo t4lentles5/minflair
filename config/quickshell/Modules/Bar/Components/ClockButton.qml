@@ -22,7 +22,15 @@ Rectangle {
         ThemedText {
             id: baseTimeText
 
-            text: SettingsService.clock24h ? Qt.formatDateTime(SystemInfoService.currentTime, "HH:mm") : Qt.formatDateTime(SystemInfoService.currentTime, "h:mm AP").replace(" AM", "").replace(" PM", "")
+            text: {
+                const t = SystemInfoService.currentTime;
+                if (SettingsService.clock24h)
+                    return Qt.formatDateTime(t, "HH:mm");
+
+                const h = t.getHours() % 12 || 12;
+                const m = t.getMinutes().toString().padStart(2, "0");
+                return h + ":" + m;
+            }
             font.bold: true
         }
 
@@ -55,7 +63,7 @@ Rectangle {
         ThemedText {
             id: apText
 
-            text: Qt.formatDateTime(SystemInfoService.currentTime, " AP")
+            text: " " + (SystemInfoService.currentTime.getHours() >= 12 ? "PM" : "AM")
             font.bold: true
             visible: !SettingsService.clock24h
         }

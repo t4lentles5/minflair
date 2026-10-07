@@ -7,5 +7,5 @@ BarButton {
     iconSize: Constants.sizeLg
     iconColor: Theme.fg
     hasBackground: true
-    popupId: "powerMenu"
+    widgetId: "powerMenu"
 }

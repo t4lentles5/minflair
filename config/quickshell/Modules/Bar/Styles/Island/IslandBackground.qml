@@ -15,7 +15,8 @@ Item {
     ThemedShadow {
         anchors.fill: shape
         radius: shape.radius
-        visible: root.enableShadow && HyprlandService.hyprShadow && opacity > 0.001
+        active: root.enableShadow && !DisplayProfileService.gameModeActive && (SystemInfoService.powerProfile !== "power-saver")
+        visible: active && HyprlandService.hyprShadow && opacity > 0.001
     }
 
     Rectangle {

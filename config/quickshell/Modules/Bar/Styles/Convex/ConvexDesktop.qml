@@ -14,25 +14,18 @@ PanelWindow {
 
     required property var notificationService
     property bool isShellReady: false
-    property string activeBarStyle: ""
-    property string _currentStyle: activeBarStyle
+    property string activeBarStyle: "convex"
     readonly property bool isConvexMode: SettingsService.barConvexMode
     readonly property bool isExiting: !isConvexMode
     property int barHeight: BarStyleConfig.barHeight("convex")
     property real animatedBarHeight: barHeight
-    property int bezelSize: 8
+    property int bezelSize: DisplayProfileService.gameModeActive ? 0 : Constants.sizeXs
     property bool hasFullscreen: (Hyprland.focusedWorkspace && Hyprland.focusedWorkspace.hasFullscreen) ? HyprlandService.isTrueFullscreen : false
     property real fsTransitionProg: hasFullscreen ? 0 : 1
-    readonly property var styleData: BarStyleConfig.styleOf("convex")
-    readonly property bool hasExpandableHost: styleData.hasExpandableHost
-    readonly property bool usesFloatingPopups: styleData.usesFloatingPopups
-    readonly property bool isPill: styleData.isPill
-    readonly property bool needsFocus: AppState.isFocusPopupOpen && convexPanels.hasAnyDrawerOpen
-    property bool loadConvexBar: true
+    readonly property bool needsFocus: AppState.isFocusWidgetOpen && convexPanels.hasAnyDrawerOpen
 
     function triggerStyleSwitch() {
         root.activeBarStyle = SettingsService.barStyle;
-        root._currentStyle = SettingsService.barStyle;
     }
 
     WlrLayershell.layer: WlrLayer.Top
@@ -42,7 +35,6 @@ PanelWindow {
     color: "transparent"
     Component.onCompleted: {
         activeBarStyle = SettingsService.barStyle;
-        _currentStyle = SettingsService.barStyle;
         Qt.callLater(() => {
             isShellReady = true;
         });
@@ -51,7 +43,6 @@ PanelWindow {
         if (visible && SettingsService.barStyle === "convex") {
             shellFrameContainer.enableTransitionAnim = false;
             root.activeBarStyle = "convex";
-            root._currentStyle = "convex";
             barContainer.switchOpacity = 1;
             barContainer.scale = 1;
             convexBarTranslate.y = 0;
@@ -60,10 +51,9 @@ PanelWindow {
 
     Connections {
         function onSettingsLoadedChanged() {
-            if (SettingsService.settingsLoaded) {
+            if (SettingsService.settingsLoaded)
                 root.activeBarStyle = SettingsService.barStyle;
-                root._currentStyle = SettingsService.barStyle;
-            }
+
         }
 
         function onBarStyleChanged() {
@@ -79,8 +69,8 @@ PanelWindow {
         command: ["sh", "-c", "pidof slurp"]
         onExited: {
             if (exitCode !== 0) {
-                if (AppState.activePopup !== "")
-                    AppState.activePopup = "";
+                if (AppState.activeWidget !== "")
+                    AppState.activeWidget = "";
 
             }
         }
@@ -115,7 +105,7 @@ PanelWindow {
 
         anchors.fill: parent
         opacity: root.isConvexMode ? 1 : 0
-        layer.enabled: HyprlandService.hyprShadow
+        layer.enabled: HyprlandService.hyprShadow && !DisplayProfileService.gameModeActive && (SystemInfoService.powerProfile !== "power-saver")
 
         ConvexPanels {
             id: convexPanels
@@ -125,23 +115,6 @@ PanelWindow {
             barHeight: root.barHeight
             bezelSize: root.bezelSize
             notificationService: root.notificationService
-        }
-
-        BarPopups {
-            id: barPopups
-
-            z: (barPopups.notificationOverlay.isOpen || barPopups.isFloatingPopupVisible) ? 25 : 0
-            anchors.fill: parent
-            notificationService: root.notificationService
-            popupStartY: root.barHeight
-            activeBarStyle: root.activeBarStyle
-            isPill: false
-            usesFloatingPopups: true
-            hasExpandableHost: true
-            activeHost: null
-            barStripX: barContainer.activeItem ? (barContainer.activeItem.x || 0) : 0
-            barStripCenterX: barContainer.activeItem ? (barContainer.activeItem.centerX || 0) : 0
-            barStripCenterWidth: barContainer.activeItem ? (barContainer.activeItem.centerWidth || 0) : 0
         }
 
         ConvexFrameBezel {
@@ -182,14 +155,20 @@ PanelWindow {
                 id: convexLoader
 
                 anchors.fill: parent
-                active: root.loadConvexBar
+                active: true
                 visible: true
                 source: "ConvexBar.qml"
                 onLoaded: {
                     if (item) {
                         item.notificationService = root.notificationService;
                         item.mainPanelWidget = Qt.binding(() => {
-                            return barPopups.dashboardLoader.item;
+                            return convexPanels.dashboardWidget;
+                        });
+                        item.controlCenterWidget = Qt.binding(() => {
+                            return convexPanels.controlCenterWidget;
+                        });
+                        item.notificationsCenterWidget = Qt.binding(() => {
+                            return convexPanels.notificationsCenterWidget;
                         });
                     }
                 }
@@ -207,8 +186,8 @@ PanelWindow {
 
         layer.effect: MultiEffect {
             shadowEnabled: true
-            shadowColor: Qt.alpha(Theme.shadow, 0.85)
-            blurMax: HyprlandService.hyprShadowRange * 2
+            shadowColor: Qt.rgba(Theme.shadow.r, Theme.shadow.g, Theme.shadow.b, Theme.isDark ? 1 : Math.min(1, Theme.shadow.a * 1.6))
+            blurMax: HyprlandService.hyprShadowRange
             shadowBlur: 1
             shadowVerticalOffset: 0
             shadowHorizontalOffset: 0
@@ -257,28 +236,14 @@ PanelWindow {
             height: root.bezelSize * root.fsTransitionProg
         }
 
-        // Active Popups Overlay (Full Screen for Clicks/Focus)
+        // Active Panels Overlay (Full Screen for Clicks/Focus)
         Region {
-            property bool isActive: barPopups.isFloatingPopupVisible || convexPanels.hasAnyDrawerOpen || convexPanels.isConvexPopupOpen
+            property bool isActive: convexPanels.hasAnyPanelOpen || convexPanels.isConvexCenterOpen
 
             x: 0
             y: 0
             width: isActive ? root.width : 0
             height: isActive ? root.height : 0
-        }
-
-        // Notification Overlay
-        Region {
-            readonly property bool isNotifOpen: barPopups.notificationOverlay.isOpen
-            readonly property real notifX: barPopups.notificationOverlay.blockX
-            readonly property real notifY: barPopups.notificationOverlay.blockY
-            readonly property real notifW: barPopups.notificationOverlay.blockWidth
-            readonly property real notifH: barPopups.notificationOverlay.blockHeight
-
-            x: isNotifOpen ? (notifX - 24) : 0
-            y: isNotifOpen ? notifY : 0
-            width: isNotifOpen ? (notifW + 24) : 0
-            height: isNotifOpen ? (notifH + 24) : 0
         }
 
         // Convex Center Notch Expanded Region

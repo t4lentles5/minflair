@@ -10,13 +10,16 @@ Item {
     id: root
 
     property int animationDuration: HyprlandService.enableAnimations ? Constants.animExpressive : 0
+    property int customHeight: 0
+    readonly property int actualHeight: customHeight > 0 ? customHeight : SettingsService.barWidgetHeight
     readonly property var easeCurve: [0.25, 0.1, 0.25, 1, 1, 1]
     readonly property var overshotCurve: [0.13, 0.99, 0.29, 1.05, 1, 1]
 
     implicitWidth: contentRow.implicitWidth + 24
-    implicitHeight: SettingsService.barWidgetHeight
+    implicitHeight: actualHeight
     Layout.preferredWidth: implicitWidth
-    Layout.preferredHeight: SettingsService.barWidgetHeight
+    Layout.preferredHeight: actualHeight
+    visible: opacity > 0.001
     clip: true
     states: [
         State {
@@ -97,7 +100,7 @@ Item {
                 property bool isPressed: clickArea.pressed
 
                 width: contentRow.implicitWidth + 16
-                height: SettingsService.barWidgetHeight
+                height: root.actualHeight
                 color: (isHovered || isPressed) ? Theme.bgTertiary : Theme.bgSecondary
                 radius: height / 2
                 scale: isPressed ? 0.95 : (isHovered ? 1.02 : 1)
@@ -106,12 +109,12 @@ Item {
                     id: contentRow
 
                     anchors.centerIn: parent
-                    spacing: 8
+                    spacing: Constants.sizeXs
 
                     Rectangle {
-                        width: 8
-                        height: 8
-                        radius: 4
+                        width: Constants.sizeXs
+                        height: Constants.sizeXs
+                        radius: height / 2
                         color: Theme.accentComplementary
                         anchors.verticalCenter: parent.verticalCenter
 
@@ -121,18 +124,18 @@ Item {
 
                             NumberAnimation {
                                 to: 0.3
-                                duration: 200
+                                duration: Constants.animFast + 50
                                 easing.type: Easing.OutSine
                             }
 
                             NumberAnimation {
                                 to: 1
-                                duration: 200
+                                duration: Constants.animFast + 50
                                 easing.type: Easing.InSine
                             }
 
                             PauseAnimation {
-                                duration: 600
+                                duration: Constants.animExpressive + 100
                             }
 
                         }

@@ -8,7 +8,7 @@ Rectangle {
     id: root
 
     property var widget: null
-    property string popupId: ""
+    property string widgetId: ""
     property string icon: ""
     property int iconSize: Constants.sizeLg
     property int fontSize: Constants.sizeSm
@@ -21,9 +21,11 @@ Rectangle {
     implicitWidth: hasBackground ? height : (svgIcon.implicitWidth > 0 ? svgIcon.implicitWidth : iconSize)
     Layout.preferredHeight: hasBackground ? SettingsService.barWidgetHeight : implicitHeight
     Layout.preferredWidth: implicitWidth
-    radius: hasBackground ? height / 2 : Constants.sizeLg
+    radius: DisplayProfileService.gameModeActive ? 0 : (hasBackground ? height / 2 : Constants.sizeLg)
     color: hasBackground ? ((mouseArea.containsMouse || mouseArea.pressed) ? hoverBackgroundColor : backgroundColor) : "transparent"
-    scale: mouseArea.pressed ? 0.95 : (mouseArea.containsMouse ? 1.05 : 1)
+    border.width: (DisplayProfileService.gameModeActive && hasBackground) ? 1 : 0
+    border.color: (DisplayProfileService.gameModeActive && hasBackground) ? Theme.border : "transparent"
+    scale: DisplayProfileService.gameModeActive ? 1 : (mouseArea.pressed ? 0.95 : (mouseArea.containsMouse ? 1.05 : 1))
 
     SvgIcon {
         id: svgIcon
@@ -42,10 +44,10 @@ Rectangle {
         hoverEnabled: true
         cursorShape: Qt.PointingHandCursor
         onClicked: {
-            if (root.widget)
+            if (root.widgetId !== "")
+                AppState.toggleWidget(root.widgetId);
+            else if (root.widget)
                 root.widget.isOpen = !root.widget.isOpen;
-            else if (root.popupId !== "")
-                AppState.togglePopup(root.popupId);
         }
     }
 

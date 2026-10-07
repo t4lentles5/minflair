@@ -12,9 +12,9 @@ Item {
     property QtObject mainBar: null
     property bool isExpanded: mainBar && mainBar.isExpanded !== undefined ? mainBar.isExpanded : false
     property bool isCenterSlot: false
-    property bool islandOrNotchOnly: false
+    property bool islandOnly: false
     property bool animateTransitions: true
-    // Instead of passing isIsland/isNotch flags, use a generic 'visibleInSlot' logic based on the mainBar contract.
+    // visibleInSlot logic based on the mainBar contract.
     readonly property bool shouldShow: {
         if (widgetType === "none")
             return false;
@@ -34,19 +34,18 @@ Item {
         if (isCenterSlot)
             return true;
 
-        if (islandOrNotchOnly) {
-            // "islandOrNotchOnly" usually meant it should only show if we are in a compact, expandable style (like island/notch)
-            // If the bar style is not expandable (e.g. Minflair/Convex), return false
+        if (islandOnly) {
+            // "islandOnly" means it should only show if we are in an expandable style (Island)
             if (mainBar && mainBar.activeBarStyle && !BarStyleConfig.isExpandable(mainBar.activeBarStyle))
                 return false;
 
             return isExpanded;
         }
-        // If we are in an expandable bar (Island/Notch), and not islandOrNotchOnly, maybe we only show when expanded?
+        // If we are in an expandable bar (Island), and not islandOnly, show when expanded
         if (mainBar && mainBar.activeBarStyle && BarStyleConfig.isExpandable(mainBar.activeBarStyle))
             return isExpanded;
 
-        // Standard minflair/convex bar behavior
+        // Standard convex bar behavior
         return true;
     }
     readonly property real targetWidth: loader.item ? (loader.item.implicitWidth > 0 ? loader.item.implicitWidth : (loader.item.Layout && loader.item.Layout.preferredWidth !== undefined ? loader.item.Layout.preferredWidth : 0)) : 0

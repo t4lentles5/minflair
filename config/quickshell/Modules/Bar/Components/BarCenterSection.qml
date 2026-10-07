@@ -71,7 +71,7 @@ Item {
         BarWidgetLoader {
             id: slot1
 
-            widgetType: SettingsService.barSlotC1
+            widgetType: SettingsService.barConvexMode ? "clock" : SettingsService.barSlotC1
             mainBar: root.mainBar
             isCenterSlot: true
             animateTransitions: false
@@ -84,7 +84,7 @@ Item {
             visible: (slot1 && slot1.shouldShow) && (slot2 && slot2.shouldShow)
             opacity: visible ? 1 : 0
             Layout.fillHeight: false
-            Layout.preferredHeight: 16
+            Layout.preferredHeight: Constants.sizeLg
             Layout.preferredWidth: visible ? 1 : 0
             Layout.alignment: Qt.AlignVCenter
         }
@@ -92,7 +92,7 @@ Item {
         BarWidgetLoader {
             id: slot2
 
-            widgetType: SettingsService.barSlotC2
+            widgetType: SettingsService.barConvexMode ? "media" : SettingsService.barSlotC2
             mainBar: root.mainBar
             isCenterSlot: true
             animateTransitions: false

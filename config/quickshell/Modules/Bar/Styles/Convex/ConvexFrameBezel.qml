@@ -9,9 +9,9 @@ Item {
 
     property bool hasFrame: true
     property bool isShellReady: false
-    property int barHeight: 40
+    property int barHeight: Constants.size4Xl
     property string activeBarStyle: "convex"
-    property int bezelSize: 8
+    property int bezelSize: DisplayProfileService.gameModeActive ? 0 : Constants.sizeXs
     property int innerRadius: Constants.size4Xl
     property real fsTransitionProg: 1
     property bool enableTransitionAnim: false
@@ -62,7 +62,7 @@ Item {
 
     Behavior on expandOffset {
         NumberAnimation {
-            duration: 250
+            duration: Constants.animNormal
             easing.type: Easing.OutCubic
         }
 

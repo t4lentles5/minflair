@@ -6,8 +6,8 @@ QtObject {
     id: root
 
     property var _styles: ({
-        "minflair": {
-            "hasFrame": false,
+        "convex": {
+            "hasFrame": true,
             "hasExpandableHost": false,
             "usesFloatingPopups": true,
             "isPill": false
@@ -18,14 +18,8 @@ QtObject {
             "usesFloatingPopups": false,
             "isPill": true
         },
-        "notch": {
+        "gaming": {
             "hasFrame": false,
-            "hasExpandableHost": true,
-            "usesFloatingPopups": false,
-            "isPill": true
-        },
-        "convex": {
-            "hasFrame": true,
             "hasExpandableHost": false,
             "usesFloatingPopups": true,
             "isPill": false
@@ -33,39 +27,39 @@ QtObject {
     })
 
     function styleOf(style) {
-        return _styles[style] || _styles["minflair"];
+        return _styles[style] || _styles["convex"];
     }
 
     function barHeight(style) {
-        if (style === "convex")
-            return 40;
-
-        if (style === "island" || style === "notch")
+        if (style === "gaming")
             return 36;
 
-        return 44; // minflair
+        if (style === "island")
+            return 32;
+
+        return 40; // convex
     }
 
     function barMarginTop(style) {
-        if (style === "convex" || style === "notch")
+        if (style === "gaming")
             return 0;
 
-        return 8; // minflair, island
+        if (style === "convex")
+            return 0;
+
+        return 8; // island
     }
 
     function barMarginSide(style) {
-        if (style === "convex" || style === "notch" || style === "island")
-            return 0;
-
-        return 8; // minflair, island
+        return 0;
     }
 
     function isPill(style) {
-        return style === "island" || style === "notch";
+        return style === "island";
     }
 
     function isExpandable(style) {
-        return style === "island" || style === "notch";
+        return style === "island";
     }
 
 }

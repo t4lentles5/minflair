@@ -17,15 +17,12 @@ Rectangle {
     property bool hasMedia: rawHasMedia
     property string lastTrackTitle: ""
     property string lastTrackArtist: ""
-    readonly property string displayTitle: trackTitle !== "" ? trackTitle : ((hideDebounceTimer.running || collapseProgress > 0.001) ? lastTrackTitle : "")
-    readonly property string displayArtist: trackArtist !== "" ? trackArtist : ((hideDebounceTimer.running || collapseProgress > 0.001) ? lastTrackArtist : "")
-    property real collapseProgress: hasMedia ? 1 : 0
+    readonly property string displayTitle: trackTitle !== "" ? trackTitle : (hideDebounceTimer.running ? lastTrackTitle : "")
+    readonly property string displayArtist: trackArtist !== "" ? trackArtist : (hideDebounceTimer.running ? lastTrackArtist : "")
     property bool isHovered: mouseArea.containsMouse
     property bool isPressed: mouseArea.pressed
-    readonly property bool isCenteredBar: SettingsService.barIslandMode || SettingsService.barNotchMode
-    property real lastContentWidth: 0
-    readonly property real measuredWidth: contentRow.implicitWidth > 0 ? contentRow.implicitWidth : lastContentWidth
-    readonly property real fullWidth: Math.min(300, measuredWidth)
+    readonly property bool isCenteredBar: SettingsService.barIslandMode
+    readonly property real fullWidth: Math.min(300, contentRow.implicitWidth)
 
     onTrackTitleChanged: {
         if (trackTitle !== "")
@@ -45,20 +42,15 @@ Rectangle {
             hideDebounceTimer.restart();
         }
     }
-    onMeasuredWidthChanged: {
-        if (contentRow.implicitWidth > 0)
-            lastContentWidth = contentRow.implicitWidth;
-
-    }
     implicitHeight: SettingsService.barWidgetHeight
     height: parent && parent.height > 0 ? parent.height : implicitHeight
-    implicitWidth: Math.round(fullWidth * collapseProgress)
+    implicitWidth: hasMedia ? fullWidth : 0
     width: implicitWidth
-    opacity: collapseProgress
-    visible: collapseProgress > 0.001
-    clip: collapseProgress < 0.999
+    opacity: hasMedia ? 1 : 0
+    visible: hasMedia || opacity > 0.001
+    clip: true
     color: "transparent"
-    scale: isPressed ? 0.95 : (isHovered ? 1.02 : 1)
+    scale: DisplayProfileService.gameModeActive ? 1 : (isPressed ? 0.95 : (isHovered ? 1.02 : 1))
 
     Timer {
         id: hideDebounceTimer
@@ -86,7 +78,7 @@ Rectangle {
                 else
                     MprisService.launchPlayer();
             } else {
-                AppState.togglePopup("music");
+                AppState.toggleWidget("music");
             }
         }
     }
@@ -95,67 +87,31 @@ Rectangle {
         id: contentRow
 
         anchors.centerIn: parent
-        spacing: 4
+        spacing: Constants.size2Xs
 
-        Row {
+        MiniCavaBars {
             id: visualizerRow
 
-            readonly property var barIndices: [1, 3, 5, 9, 12, 16, 20, 25]
-
-            visible: root.hasMedia || root.collapseProgress > 0.001
-            spacing: 2
-            width: implicitWidth
-            height: 14
+            visible: root.hasMedia
             Layout.alignment: Qt.AlignVCenter
             Layout.preferredWidth: visible ? implicitWidth : 0
-            Layout.rightMargin: 4
+            Layout.rightMargin: Constants.size2Xs
+            opacity: MprisService.isPlaying ? 1 : 0.45
 
-            Repeater {
-                model: visualizerRow.barIndices
-
-                Item {
-                    required property int modelData
-                    required property int index
-
-                    width: 2
-                    height: 14
-
-                    Rectangle {
-                        y: (parent.height - height) / 2
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        width: 2
-                        height: {
-                            if (!MprisService.isPlaying)
-                                return 3;
-
-                            if (CavaService.cavaData && CavaService.cavaData.length > modelData)
-                                return Math.max(3, Math.min(14, 3 + (CavaService.cavaData[modelData] / 100) * 11));
-
-                            return 3;
-                        }
-                        radius: 1
-                        color: Theme.accent
-
-                        Behavior on height {
-                            NumberAnimation {
-                                duration: 150
-                                easing.type: Easing.OutCubic
-                            }
-
-                        }
-
-                    }
-
+            Behavior on opacity {
+                NumberAnimation {
+                    duration: Constants.animFast
+                    easing.type: Easing.OutCubic
                 }
 
             }
 
         }
 
-        SlideText {
+        ThemedText {
             id: artistText
 
-            visible: (root.hasMedia || root.collapseProgress > 0.001) && root.displayArtist !== ""
+            visible: root.hasMedia && root.displayArtist !== ""
             text: root.displayArtist
             elide: Text.ElideRight
             Layout.maximumWidth: root.displayTitle !== "" ? 100 : 200
@@ -165,17 +121,17 @@ Rectangle {
         ThemedText {
             id: separatorText
 
-            visible: (root.hasMedia || root.collapseProgress > 0.001) && root.displayArtist !== "" && root.displayTitle !== ""
+            visible: root.hasMedia && root.displayArtist !== "" && root.displayTitle !== ""
             text: "-"
             customSize: Constants.sizeMd
             font.bold: false
             color: Theme.accent
         }
 
-        SlideText {
+        ThemedText {
             id: titleText
 
-            visible: (root.hasMedia || root.collapseProgress > 0.001) && root.displayTitle !== ""
+            visible: root.hasMedia && root.displayTitle !== ""
             text: root.displayTitle
             elide: Text.ElideRight
             Layout.maximumWidth: root.displayArtist !== "" ? 120 : 200
@@ -184,11 +140,11 @@ Rectangle {
 
     }
 
-    Behavior on collapseProgress {
+    Behavior on opacity {
         enabled: HyprlandService.enableAnimations
 
         NumberAnimation {
-            duration: Constants.animNormal
+            duration: Constants.animFast
             easing.type: Easing.OutCubic
         }
 
@@ -197,7 +153,7 @@ Rectangle {
     Behavior on scale {
         NumberAnimation {
             duration: Constants.animFast
-            easing.type: Easing.OutQuad
+            easing.type: Easing.OutBack
         }
 
     }

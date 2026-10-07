@@ -19,40 +19,28 @@ RowLayout {
     spacing: 6
 
     MinflairButton {
-        widget: root.widget
         enableIntervalAnim: root.animateTransitions
         Layout.alignment: Qt.AlignVCenter
-        customClickHandler: (mouse) => {
-            if (mouse.button === Qt.RightButton) {
-                // In an expandable bar, right click toggles expansion
-                if (root.mainBar && root.mainBar.activeBarStyle === "island")
-                    SettingsService.barIslandExpanded = !SettingsService.barIslandExpanded;
-                else if (root.mainBar && root.mainBar.activeBarStyle === "notch")
-                    SettingsService.barNotchExpanded = !SettingsService.barNotchExpanded;
-            } else {
-                AppState.togglePopup("dashboard");
-            }
-        }
     }
 
     BarWidgetLoader {
         widgetType: SettingsService.barSlotL1
         mainBar: root.mainBar
-        islandOrNotchOnly: true
+        islandOnly: true
         animateTransitions: root.animateTransitions
     }
 
     BarWidgetLoader {
         widgetType: SettingsService.barSlotL2
         mainBar: root.mainBar
-        islandOrNotchOnly: true
+        islandOnly: true
         animateTransitions: root.animateTransitions
     }
 
     BarWidgetLoader {
         widgetType: SettingsService.barSlotL3
         mainBar: root.mainBar
-        islandOrNotchOnly: true
+        islandOnly: true
         animateTransitions: root.animateTransitions
     }
 
@@ -64,21 +52,21 @@ RowLayout {
     BarWidgetLoader {
         widgetType: SettingsService.barSlotR1
         mainBar: root.mainBar
-        islandOrNotchOnly: true
+        islandOnly: true
         animateTransitions: root.animateTransitions
     }
 
     BarWidgetLoader {
         widgetType: SettingsService.barSlotR2
         mainBar: root.mainBar
-        islandOrNotchOnly: true
+        islandOnly: true
         animateTransitions: root.animateTransitions
     }
 
     BarWidgetLoader {
         widgetType: SettingsService.barSlotR3
         mainBar: root.mainBar
-        islandOrNotchOnly: true
+        islandOnly: true
         animateTransitions: root.animateTransitions
     }
 
@@ -95,7 +83,7 @@ RowLayout {
         PowerButton {
             id: powerBtn
 
-            popupId: "powerMenu"
+            widgetId: "powerMenu"
             anchors.centerIn: parent
         }
 
