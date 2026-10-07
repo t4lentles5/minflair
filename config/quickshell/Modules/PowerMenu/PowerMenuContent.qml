@@ -45,7 +45,7 @@ Item {
     property int pendingActionIndex: -1
     property alias initialFocusItem: menuView
     readonly property int buttonWidth: 64
-    readonly property int buttonHeight: 48
+    readonly property int buttonHeight: Constants.size5Xl
 
     function closeWidget() {
         if (root.widget && typeof root.widget.close === "function")
@@ -54,7 +54,7 @@ Item {
             root.widget.close();
         else if (root.widget && root.widget.isOpen !== undefined)
             root.widget.isOpen = false;
-        AppState.activePopup = "";
+        AppState.activeWidget = "";
     }
 
     function runAction(index) {
