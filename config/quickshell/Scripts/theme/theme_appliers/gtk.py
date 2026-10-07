@@ -9,6 +9,12 @@ def apply(home, colors):
     bg = colors["bg"]
     fg = colors["fg"]
     bgSecondary = colors["bgSecondary"]
+    bgTertiary = colors.get("bgTertiary", bgSecondary)
+    bgAccent = colors.get("bgAccent", colors["accent"])
+    bgAccentComplementary = colors.get(
+        "bgAccentComplementary", colors["accentComplementary"]
+    )
+    overlayBase = colors.get("overlayBase", colors["accent"])
     accent = colors["accent"]
     accentComplementary = colors["accentComplementary"]
     muted = colors["muted"]
@@ -19,7 +25,7 @@ def apply(home, colors):
     mapping = {
         "primary": accent,
         "on_primary": bg,
-        "primary_container": bgSecondary,
+        "primary_container": bgAccent,
         "on_primary_container": accent,
         "inverse_primary": bg,
         "primary_fixed": accent,
@@ -36,7 +42,7 @@ def apply(home, colors):
         "on_secondary_fixed_variant": fg,
         "tertiary": accentComplementary,
         "on_tertiary": bg,
-        "tertiary_container": bgSecondary,
+        "tertiary_container": bgAccentComplementary,
         "on_tertiary_container": accentComplementary,
         "tertiary_fixed": accentComplementary,
         "tertiary_fixed_dim": accentComplementary,
@@ -53,10 +59,10 @@ def apply(home, colors):
         "surface_dim": bg,
         "surface_bright": bgSecondary,
         "surface_container_lowest": bg,
-        "surface_container_low": bgSecondary,
+        "surface_container_low": bgTertiary,
         "surface_container": bgSecondary,
         "surface_container_high": bgSecondary,
-        "surface_container_highest": bgSecondary,
+        "surface_container_highest": bgAccent,
         "surface_variant": bgSecondary,
         "on_surface_variant": muted,
         "surface_tint": bg,
@@ -68,6 +74,13 @@ def apply(home, colors):
         "scrim": shadow,
         "source_color": accent,
         "accent": accent,
+        "accent_complementary": accentComplementary,
+        "bg_secondary": bgSecondary,
+        "bg_tertiary": bgTertiary,
+        "bg_accent": bgAccent,
+        "bg_accent_complementary": bgAccentComplementary,
+        "overlay_base": overlayBase,
+        "muted": muted,
     }
 
     gtk4_colors = ":root {\n"
@@ -181,6 +194,6 @@ def apply(home, colors):
             except Exception:
                 pass
     os.system(
-        f"sed -i 's/^Net\/ThemeName.*/Net\/ThemeName \"Material-Gnome\"/' '{home}/.config/xsettingsd/xsettingsd.conf' 2>/dev/null"
+        rf"sed -i 's/^Net\/ThemeName.*/Net\/ThemeName \"Material-Gnome\"/' '{home}/.config/xsettingsd/xsettingsd.conf' 2>/dev/null"
     )
     os.system("killall -HUP xsettingsd 2>/dev/null || true")

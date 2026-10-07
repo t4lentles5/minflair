@@ -20,6 +20,9 @@ def apply(home, colors):
             return f"#{alpha}{s[1:]}"
         return s
 
+    bgTertiary = colors.get("bgTertiary", bgSecondary)
+    bgAccent = colors.get("bgAccent", accent)
+
     qt_colors = [
         to_argb(fg),
         to_argb(bgSecondary),
@@ -37,7 +40,7 @@ def apply(home, colors):
         to_argb(bg),
         to_argb(accent),
         to_argb(accentComplementary),
-        to_argb(bgSecondary),
+        to_argb(bgTertiary),
         "#ffffffff",
         to_argb(bgSecondary),
         to_argb(fg),

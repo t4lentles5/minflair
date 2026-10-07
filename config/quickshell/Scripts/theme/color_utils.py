@@ -131,3 +131,25 @@ def color_distance(c1, c2):
     r1, g1, b1 = int(c1[1:3], 16), int(c1[3:5], 16), int(c1[5:7], 16)
     r2, g2, b2 = int(c2[1:3], 16), int(c2[3:5], 16), int(c2[5:7], 16)
     return (r1 - r2) ** 2 + (g1 - g2) ** 2 + (b1 - b2) ** 2
+
+
+def resolve_color(c, bg_color="#000000", fallback=None):
+    if not c:
+        return fallback if fallback is not None else sanitize_color(bg_color)
+    s = str(c).strip()
+    bg_clean = sanitize_color(bg_color)
+    if s.startswith("#"):
+        if len(s) == 9:  # Qt ARGB format: #AARRGGBB
+            try:
+                alpha = int(s[1:3], 16) / 255.0
+                rgb = "#" + s[3:9]
+                return blend_hex(rgb, bg_clean, alpha)
+            except ValueError:
+                return fallback if fallback is not None else bg_clean
+        elif len(s) == 7:
+            return s
+        elif len(s) == 4:
+            return "#" + "".join(ch * 2 for ch in s[1:4])
+    if fallback is not None:
+        return fallback
+    return sanitize_color(s)

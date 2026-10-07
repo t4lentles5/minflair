@@ -6,7 +6,7 @@ sys.dont_write_bytecode = True
 import json
 import os
 
-from color_utils import blend_hex, get_brightness
+from color_utils import blend_hex, get_brightness, resolve_color, sanitize_color
 from theme_appliers import (
     btop,
     gtk,
@@ -31,32 +31,56 @@ def main():
     with open(cache_file, "r") as f:
         data = json.load(f)
 
-    bg = data.get("bg", "#000000")
-    fg = data.get("fg", "#ffffff")
-
-    bgSecondary = data.get("bgSecondary", blend_hex(fg, bg, 0.05))
-    if len(str(bgSecondary)) > 7:
-        bgSecondary = blend_hex(fg, bg, 0.05)
-
-    muted = data.get("muted", blend_hex(fg, bg, 0.65))
-    if len(str(muted)) > 7:
-        muted = blend_hex(fg, bg, 0.65)
-
-    border = data.get("border", blend_hex(fg, bg, 0.15))
-    if len(str(border)) > 7:
-        border = blend_hex(fg, bg, 0.15)
-
-    accent = data.get("accent", "#a77ef5")
-    accentComplementary = data.get("accentComplementary", "#f57eb6")
-    shadow = data.get("shadow", "#000000")
+    bg = sanitize_color(data.get("bg", "#000000"))
+    opaqueBg = sanitize_color(data.get("opaqueBg", bg))
+    fg = sanitize_color(data.get("fg", "#ffffff"))
+    accent = sanitize_color(data.get("accent", "#a77ef5"))
+    accentComplementary = sanitize_color(data.get("accentComplementary", "#f57eb6"))
+    shadow = sanitize_color(data.get("shadow", "#000000"))
 
     brightness = get_brightness(bg)
     is_dark = brightness <= 0.5
 
+    # Derive overlayBase and all alpha/blended surfaces
+    overlay_fallback = blend_hex(accent, fg, 0.7 if is_dark else 1.0)
+    overlayBase = resolve_color(data.get("overlayBase"), bg, fallback=overlay_fallback)
+
+    bgSecondary = resolve_color(
+        data.get("bgSecondary"),
+        bg,
+        fallback=blend_hex(overlayBase, bg, 0.06 if is_dark else 0.10),
+    )
+    bgTertiary = resolve_color(
+        data.get("bgTertiary"),
+        bg,
+        fallback=blend_hex(overlayBase, bg, 0.02 if is_dark else 0.04),
+    )
+    bgAccent = resolve_color(
+        data.get("bgAccent"),
+        bg,
+        fallback=blend_hex(accent, bg, 0.15 if is_dark else 0.30),
+    )
+    bgAccentComplementary = resolve_color(
+        data.get("bgAccentComplementary"),
+        bg,
+        fallback=blend_hex(accentComplementary, bg, 0.15 if is_dark else 0.30),
+    )
+    muted = resolve_color(data.get("muted"), bg, fallback=blend_hex(fg, bg, 0.40))
+    border = resolve_color(
+        data.get("border"),
+        bg,
+        fallback=blend_hex(fg, bg, 0.10 if is_dark else 0.20),
+    )
+
     colors = {
         "bg": bg,
+        "opaqueBg": opaqueBg,
         "fg": fg,
+        "overlayBase": overlayBase,
         "bgSecondary": bgSecondary,
+        "bgTertiary": bgTertiary,
+        "bgAccent": bgAccent,
+        "bgAccentComplementary": bgAccentComplementary,
         "muted": muted,
         "border": border,
         "accent": accent,

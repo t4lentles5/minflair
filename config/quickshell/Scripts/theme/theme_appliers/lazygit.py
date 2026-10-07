@@ -7,6 +7,10 @@ def apply(home, colors):
     fg = colors["fg"]
     bg = colors["bg"]
     bgSecondary = colors["bgSecondary"]
+    bgAccent = colors.get("bgAccent", bgSecondary)
+    bgAccentComplementary = colors.get(
+        "bgAccentComplementary", colors["accentComplementary"]
+    )
     accent = colors["accent"]
     accentComplementary = colors["accentComplementary"]
     border = colors["border"]
@@ -27,11 +31,11 @@ gui:
     inactiveBorderColor:
       - '{sanitize_color(border)}'
     optionsTextColor:
-      - '{sanitize_color(accent)}'
+      - '{sanitize_color(accentComplementary)}'
     selectedLineBgColor:
-      - '{sanitize_color(bgSecondary)}'
+      - '{sanitize_color(bgAccent)}'
     cherryPickedCommitBgColor:
-      - '{sanitize_color(accent)}'
+      - '{sanitize_color(bgAccentComplementary)}'
     cherryPickedCommitFgColor:
       - '{sanitize_color(bg)}'
     unstagedChangesColor:
