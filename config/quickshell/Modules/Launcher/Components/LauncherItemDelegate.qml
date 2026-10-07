@@ -135,9 +135,10 @@ Item {
             visible: delegateRoot.hasActions
             iconColor: delegateRoot.isExpanded ? Theme.fg : Theme.muted
             anchors.right: parent.right
-            anchors.rightMargin: Constants.sizeLg
+            anchors.rightMargin: Constants.sizeXs
             anchors.verticalCenter: mainContent.verticalCenter
             rotation: delegateRoot.isExpanded ? 90 : 0
+            flat: true
             onClicked: {
                 delegateRoot.toggleExpanded();
             }
@@ -165,7 +166,7 @@ Item {
         Rectangle {
             x: Constants.sizeLg + 11
             y: -Constants.sizeXs / 2
-            width: 2
+            width: Constants.size3Xs
             height: parent.height - 12
             color: Theme.muted
             radius: width / 2
@@ -177,8 +178,8 @@ Item {
             Rectangle {
                 x: Constants.sizeLg + 11
                 y: index * (34 + actionsColumn.spacing) + 16
-                width: 16
-                height: 2
+                width: Constants.sizeLg
+                height: Constants.size3Xs
                 color: Theme.muted
                 radius: height / 2
             }
@@ -192,7 +193,7 @@ Item {
 
         y: 44 + Constants.sizeXs / 2
         width: parent.width
-        spacing: 4
+        spacing: Constants.size2Xs
         visible: delegateRoot.isExpanded
 
         Repeater {
@@ -212,8 +213,8 @@ Item {
                     spacing: Constants.sizeXs
 
                     Item {
-                        Layout.preferredWidth: 8
-                        Layout.preferredHeight: 8
+                        Layout.preferredWidth: Constants.sizeXs
+                        Layout.preferredHeight: Constants.sizeXs
                         Layout.alignment: Qt.AlignVCenter
 
                         Rectangle {

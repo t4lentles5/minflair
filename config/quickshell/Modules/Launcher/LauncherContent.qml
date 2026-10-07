@@ -18,13 +18,47 @@ Item {
     property var allApps: []
     property var filteredApps: []
     property alias initialFocusItem: searchField
-    property int visibleItems: 8
+    property int maxVisibleItems: 8
+    readonly property bool isSearching: searchField.text.trim() !== ""
+    readonly property int currentResultsCount: root.filteredApps ? root.filteredApps.length : 0
+    readonly property int targetVisibleItems: {
+        if (!isSearching)
+            return maxVisibleItems;
+
+        if (currentResultsCount === 0)
+            return maxVisibleItems;
+
+        return Math.min(currentResultsCount, maxVisibleItems);
+    }
+    property int visibleItems: targetVisibleItems
     property int preferredContentWidth: 700
-    readonly property int searchBarHeight: 40
+    readonly property int searchBarHeight: Constants.size4Xl
     readonly property int itemHeight: 44
     readonly property int listSpacing: Constants.sizeXs
     readonly property int layoutSpacing: Constants.sizeSm
-    readonly property int visibleListHeight: (visibleItems * itemHeight) + Math.max(0, (visibleItems - 1) * listSpacing)
+    readonly property int maxListHeight: (maxVisibleItems * itemHeight) + Math.max(0, (maxVisibleItems - 1) * listSpacing)
+    readonly property int baseListHeight: (targetVisibleItems * itemHeight) + Math.max(0, (targetVisibleItems - 1) * listSpacing)
+    readonly property int expandedExtraHeight: {
+        if (typeof appsView !== "undefined" && appsView && appsView.expandedIndex >= 0 && root.filteredApps && appsView.expandedIndex < root.filteredApps.length) {
+            let app = root.filteredApps[appsView.expandedIndex];
+            if (app && app.actions && app.actions.length > 0) {
+                let n = app.actions.length;
+                return (n * 34) + Math.max(0, (n - 1) * 4) + Constants.sizeXs;
+            }
+        }
+        return 0;
+    }
+    readonly property int visibleListHeight: {
+        if (!isSearching)
+            return maxListHeight + Math.min(expandedExtraHeight, 200);
+
+        if (currentResultsCount === 0)
+            return maxListHeight;
+
+        let needed = baseListHeight + expandedExtraHeight;
+        let maxAllowed = maxListHeight + Math.min(expandedExtraHeight, 200);
+        return Math.min(needed, maxAllowed);
+    }
 
     function filterApps(query) {
         query = query.toLowerCase();
@@ -94,7 +128,7 @@ Item {
             else if (root.widget && root.widget.isOpen !== undefined)
                 root.widget.isOpen = false;
             else
-                AppState.activePopup = "";
+                AppState.activeWidget = "";
             event.accepted = true;
         }
     }
@@ -115,7 +149,7 @@ Item {
         appLauncher.running = false;
         appLauncher.command = command;
         appLauncher.startDetached();
-        AppState.closeAllPopups();
+        AppState.closeAllWidgets();
         if (root.widget && root.widget.close !== undefined)
             root.widget.close();
         else if (root.widget && root.widget.isOpen !== undefined)
@@ -138,8 +172,8 @@ Item {
 
     implicitWidth: preferredContentWidth
     implicitHeight: searchBarHeight + layoutSpacing + visibleListHeight
-    width: implicitWidth
-    height: implicitHeight
+    width: parent && parent.width > 0 ? parent.width : implicitWidth
+    height: parent && parent.height > 0 ? parent.height : implicitHeight
     Component.onCompleted: {
         resetLauncher();
     }
@@ -175,20 +209,31 @@ Item {
             id: topSearchContainer
 
             Layout.fillWidth: true
-            Layout.preferredHeight: SettingsService.barConvexMode ? 0 : 40
+            Layout.preferredHeight: SettingsService.barConvexMode ? 0 : Constants.size4Xl
             visible: !SettingsService.barConvexMode
         }
 
         Item {
             Layout.fillWidth: true
+            Layout.fillHeight: true
             Layout.preferredHeight: root.visibleListHeight
-            Layout.fillHeight: false
+            clip: true
 
             GhostEmptyState {
                 anchors.centerIn: parent
-                visible: root.filteredApps.length === 0 && searchField.text !== ""
+                visible: opacity > 0.001
+                opacity: (root.filteredApps.length === 0 && root.isSearching) ? 1 : 0
                 text: "No applications found"
                 isAnimating: visible
+
+                Behavior on opacity {
+                    NumberAnimation {
+                        duration: Constants.animFast
+                        easing.type: Easing.OutCubic
+                    }
+
+                }
+
             }
 
             ListView {
@@ -196,6 +241,13 @@ Item {
 
                 property int expandedIndex: -1
 
+                onExpandedIndexChanged: {
+                    if (expandedIndex >= 0)
+                        Qt.callLater(function() {
+                        appsView.positionViewAtIndex(expandedIndex, ListView.Contain);
+                    });
+
+                }
                 anchors.fill: parent
                 clip: true
                 boundsBehavior: Flickable.StopAtBounds
@@ -203,7 +255,7 @@ Item {
                 spacing: root.listSpacing
                 currentIndex: -1
                 highlightResizeDuration: 0
-                highlightMoveDuration: Constants.animNormal
+                highlightMoveDuration: Constants.animFast
                 highlightFollowsCurrentItem: true
                 visible: root.filteredApps.length > 0
                 Keys.onPressed: function(event) {
@@ -228,7 +280,7 @@ Item {
                         properties: "opacity"
                         from: 0
                         to: 1
-                        duration: Constants.animNormal
+                        duration: root.isSearching ? 0 : Constants.animFast
                         easing.type: Easing.OutQuint
                     }
 
@@ -239,7 +291,7 @@ Item {
                         properties: "opacity"
                         from: 0
                         to: 1
-                        duration: Constants.animNormal
+                        duration: root.isSearching ? 0 : Constants.animFast
                         easing.type: Easing.OutQuint
                     }
 
@@ -286,7 +338,7 @@ Item {
 
         parent: SettingsService.barConvexMode ? bottomSearchContainer : topSearchContainer
         anchors.fill: parent
-        preferredHeight: 40
+        preferredHeight: Constants.size4Xl
         placeholderText: "Search applications..."
         onSearchRequested: (text) => {
             return root.filterApps(text);
