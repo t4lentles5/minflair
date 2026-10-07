@@ -70,7 +70,7 @@ Item {
     }
     property alias initialFocusItem: shotView
     readonly property int buttonWidth: 64
-    readonly property int buttonHeight: 48
+    readonly property int buttonHeight: Constants.size5Xl
 
     function hideWidget() {
         if (root.widget && typeof root.widget.close === "function")
@@ -79,7 +79,7 @@ Item {
             root.widget.close();
         else if (root.widget && root.widget.isOpen !== undefined)
             root.widget.isOpen = false;
-        AppState.activePopup = "";
+        AppState.activeWidget = "";
     }
 
     function runShot(mode) {
