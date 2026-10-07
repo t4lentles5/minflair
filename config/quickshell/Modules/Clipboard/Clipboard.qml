@@ -5,12 +5,12 @@ import qs.Core.Windows
 OverlayWindow {
     id: root
 
-    popupId: "clipboard"
+    widgetId: "clipboard"
     enableShadow: true
     preferredWidth: content.implicitWidth + (contentPadding * 2)
     preferredHeight: content.implicitHeight + (contentPadding * 2)
     initialFocusItem: content.initialFocusItem
-    onPopupOpened: {
+    onWidgetOpened: {
         content.resetClipboard();
     }
 
@@ -18,6 +18,7 @@ OverlayWindow {
         id: content
 
         widget: root
+        anchors.fill: parent
     }
 
 }

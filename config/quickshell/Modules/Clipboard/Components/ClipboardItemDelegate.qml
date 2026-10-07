@@ -12,94 +12,156 @@ Item {
     property string itemFullLine: ""
     property bool isImg: false
     property bool isCurrent: false
+    property bool isDeletingAnim: false
+    readonly property real baseHeight: isImg ? 108 : 44
 
     signal copyRequested(string itemId)
     signal deleteRequested(string fullLine)
 
+    function startDeleteAnimation() {
+        if (isDeletingAnim)
+            return ;
+
+        isDeletingAnim = true;
+    }
+
     width: ListView.view ? ListView.view.width : 400
-    height: isImg ? 108 : 44
-    z: 2
+    height: isDeletingAnim ? 0 : baseHeight
+    z: isDeletingAnim ? 1 : 2
+    clip: true
+    opacity: isDeletingAnim ? 0 : 1
 
-    Rectangle {
+    Item {
+        id: delegateContent
+
         anchors.fill: parent
-        radius: Constants.sizeLg
-        color: Theme.bgSecondary
-        visible: hoverHandler.hovered && !delegateRoot.isCurrent
-    }
+        x: delegateRoot.isDeletingAnim ? 36 : 0
+        scale: delegateRoot.isDeletingAnim ? 0.94 : 1
+        transformOrigin: Item.Center
 
-    RowLayout {
-        anchors.fill: parent
-        anchors.leftMargin: Constants.sizeLg
-        anchors.rightMargin: Constants.sizeLg
-        spacing: Constants.sizeLg
+        Rectangle {
+            anchors.fill: parent
+            radius: Constants.sizeLg
+            color: Theme.bgSecondary
+            visible: hoverHandler.hovered && !delegateRoot.isCurrent && !delegateRoot.isDeletingAnim
+        }
 
-        ThemedText {
-            text: delegateRoot.itemText
-            color: delegateRoot.isCurrent ? Theme.accent : Theme.fg
-            font.bold: delegateRoot.isCurrent
-            customSize: Constants.sizeMd
-            Layout.fillWidth: true
-            Layout.alignment: Qt.AlignVCenter
-            elide: Text.ElideRight
-            visible: !delegateRoot.isImg
-            scale: delegateRoot.isCurrent ? 1.02 : 1
-            transformOrigin: Item.Left
+        RowLayout {
+            anchors.fill: parent
+            anchors.leftMargin: Constants.sizeLg
+            anchors.rightMargin: Constants.sizeLg
+            spacing: Constants.sizeLg
 
-            Behavior on color {
-                ColorAnimation {
-                    duration: Constants.animNormal
+            ThemedText {
+                text: delegateRoot.itemText
+                color: delegateRoot.isCurrent ? Theme.accent : Theme.fg
+                font.bold: delegateRoot.isCurrent
+                customSize: Constants.sizeMd
+                Layout.fillWidth: true
+                Layout.alignment: Qt.AlignVCenter
+                elide: Text.ElideRight
+                visible: !delegateRoot.isImg
+                scale: delegateRoot.isCurrent ? 1.02 : 1
+                transformOrigin: Item.Left
+
+                Behavior on color {
+                    ColorAnimation {
+                        duration: Constants.animNormal
+                    }
+
+                }
+
+                Behavior on scale {
+                    NumberAnimation {
+                        duration: Constants.animNormal
+                        easing.type: Easing.OutQuint
+                    }
+
                 }
 
             }
 
-            Behavior on scale {
-                NumberAnimation {
-                    duration: Constants.animNormal
-                    easing.type: Easing.OutQuint
+            Item {
+                Layout.fillWidth: true
+                Layout.preferredHeight: 88
+                Layout.alignment: Qt.AlignVCenter
+                visible: delegateRoot.isImg
+
+                Image {
+                    id: clipThumb
+
+                    anchors.fill: parent
+                    fillMode: Image.PreserveAspectFit
+                    horizontalAlignment: Image.AlignLeft
+                    source: delegateRoot.isImg && delegateRoot.itemId ? ("file:///tmp/quickshell-clipboard/" + delegateRoot.itemId + ".png") : ""
+                    asynchronous: true
+                    cache: true
+                    smooth: true
+                    mipmap: true
                 }
 
             }
 
-        }
-
-        Item {
-            Layout.fillWidth: true
-            Layout.preferredHeight: 88
-            Layout.alignment: Qt.AlignVCenter
-            visible: delegateRoot.isImg
-
-            Image {
-                id: clipThumb
-
-                anchors.fill: parent
-                fillMode: Image.PreserveAspectFit
-                horizontalAlignment: Image.AlignLeft
-                source: delegateRoot.isImg && delegateRoot.itemId ? ("file:///tmp/quickshell-clipboard/" + delegateRoot.itemId + ".png") : ""
-                asynchronous: true
-                cache: true
-                smooth: true
-                mipmap: true
+            SvgIconButton {
+                icon: "trash"
+                iconColor: Theme.muted
+                iconSize: Constants.sizeMd
+                flat: true
+                Layout.alignment: Qt.AlignVCenter
+                enabled: !delegateRoot.isDeletingAnim
+                onClicked: delegateRoot.startDeleteAnimation()
             }
 
         }
 
-        SvgIconButton {
-            icon: "trash"
-            iconColor: Theme.muted
-            iconSize: Constants.sizeMd
-            flat: true
-            Layout.alignment: Qt.AlignVCenter
-            onClicked: delegateRoot.deleteRequested(delegateRoot.itemFullLine)
+        HoverHandler {
+            id: hoverHandler
+
+            enabled: !delegateRoot.isDeletingAnim
+        }
+
+        TapHandler {
+            enabled: !delegateRoot.isDeletingAnim
+            onTapped: delegateRoot.copyRequested(delegateRoot.itemId)
+        }
+
+        Behavior on x {
+            NumberAnimation {
+                duration: Constants.animFast
+                easing.type: Easing.OutCubic
+            }
+
+        }
+
+        Behavior on scale {
+            NumberAnimation {
+                duration: Constants.animFast
+                easing.type: Easing.OutCubic
+            }
+
         }
 
     }
 
-    HoverHandler {
-        id: hoverHandler
+    Behavior on height {
+        NumberAnimation {
+            duration: Constants.animFast + 30
+            easing.type: Easing.InOutCubic
+            onRunningChanged: {
+                if (!running && delegateRoot.isDeletingAnim)
+                    delegateRoot.deleteRequested(delegateRoot.itemFullLine);
+
+            }
+        }
+
     }
 
-    TapHandler {
-        onTapped: delegateRoot.copyRequested(delegateRoot.itemId)
+    Behavior on opacity {
+        NumberAnimation {
+            duration: Constants.animFast
+            easing.type: Easing.OutQuad
+        }
+
     }
 
 }
