@@ -51,6 +51,7 @@ Item {
 
             anchors.fill: parent
             fillMode: Image.PreserveAspectCrop
+            horizontalAlignment: Image.AlignLeft
             source: {
                 if (!root.notifData)
                     return "";

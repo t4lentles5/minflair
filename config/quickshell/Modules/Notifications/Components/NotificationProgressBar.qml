@@ -7,7 +7,7 @@ Rectangle {
 
     property var notifData
 
-    height: 2
+    height: Constants.size3Xs
     radius: height / 2
     color: Theme.bgSecondary
     visible: notifData && notifData.summary !== "Volume" && notifData.summary !== "Brightness" && notifData.summary !== "Microphone"

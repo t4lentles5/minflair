@@ -16,24 +16,20 @@ Item {
     property var notificationService
     property var currentTime: SystemInfoService.currentTime
     property bool controlCenterOpen: false
+    property bool isClearingAll: false
 
-    function timeAgo(date, now) {
-        if (!date || isNaN(date.getTime()) || !now || isNaN(now.getTime()))
-            return "...";
+    function startClearAllAnimation() {
+        if (isClearingAll || !notificationService || historyView.count === 0)
+            return ;
 
-        let diff = Math.floor((now.getTime() - date.getTime()) / 1000);
-        if (diff < 60)
-            return "Just now";
-
-        if (diff < 3600)
-            return Math.floor(diff / 60) + "m ago";
-
-        if (diff < 86400)
-            return Math.floor(diff / 3600) + "h ago";
-
-        return Math.floor(diff / 86400) + "d ago";
+        isClearingAll = true;
     }
 
+    onVisibleChanged: {
+        if (!visible)
+            isClearingAll = false;
+
+    }
     implicitWidth: 400
     implicitHeight: 450
 
@@ -47,7 +43,7 @@ Item {
 
             ColumnLayout {
                 Layout.fillWidth: true
-                spacing: 2
+                spacing: Constants.size3Xs
 
                 ThemedText {
                     text: "Notifications"
@@ -57,7 +53,7 @@ Item {
                 }
 
                 ThemedText {
-                    text: historyView.count > 0 ? (historyView.count + (historyView.count === 1 ? " active notification" : " active notifications")) : "All caught up"
+                    text: (historyView.count > 0 && !root.isClearingAll) ? (historyView.count + (historyView.count === 1 ? " active notification" : " active notifications")) : "All caught up"
                     customSize: Constants.sizeXs + 2
                     color: Theme.muted
                 }
@@ -95,11 +91,11 @@ Item {
                     textIconSize: Constants.sizeSm
                     onClicked: {
                         if (notificationService && historyView.count > 0)
-                            notificationService.clearHistory();
+                            root.startClearAllAnimation();
 
                     }
                     useCustomWidth: true
-                    disabled: historyView.count === 0
+                    disabled: historyView.count === 0 || root.isClearingAll
                 }
 
             }
@@ -121,7 +117,8 @@ Item {
 
                     anchors.centerIn: parent
                     spacing: Constants.sizeSm
-                    visible: historyView.count === 0
+                    visible: opacity > 0
+                    opacity: (historyView.count === 0 && !root.isClearingAll) ? 1 : 0
 
                     SvgIcon {
                         icon: "bell"
@@ -145,53 +142,82 @@ Item {
                         Layout.alignment: Qt.AlignHCenter
                     }
 
+                    Behavior on opacity {
+                        NumberAnimation {
+                            duration: Constants.animNormal
+                            easing.type: Easing.OutCubic
+                        }
+
+                    }
+
                 }
 
-                ListView {
-                    id: historyView
+                Item {
+                    id: listContainer
 
                     anchors.fill: parent
-                    interactive: true
-                    model: notificationService ? notificationService.historyList : null
-                    spacing: Constants.sizeXs
+                    visible: historyView.count > 0 || root.isClearingAll
+                    opacity: root.isClearingAll ? 0 : 1
+                    x: root.isClearingAll ? 40 : 0
+                    scale: root.isClearingAll ? 0.94 : 1
+                    transformOrigin: Item.Center
 
-                    remove: Transition {
-                        NumberAnimation {
-                            property: "x"
-                            to: historyView.width
-                            duration: Constants.animSlow
-                            easing.type: Easing.InExpo
-                        }
+                    ListView {
+                        id: historyView
 
-                        NumberAnimation {
-                            property: "opacity"
-                            to: 0
-                            duration: Constants.animSlow
-                        }
+                        anchors.fill: parent
+                        interactive: true
+                        model: notificationService ? notificationService.historyList : null
+                        spacing: Constants.sizeXs
 
-                    }
-
-                    removeDisplaced: Transition {
-                        SequentialAnimation {
-                            PauseAnimation {
-                                duration: Constants.animSlow
-                            }
-
+                        displaced: Transition {
                             NumberAnimation {
                                 properties: "y"
-                                duration: Constants.animSlow
-                                easing.type: Easing.OutExpo
+                                duration: Constants.animNormal
+                                easing.type: Easing.OutQuint
                             }
 
                         }
 
+                        delegate: NotificationItemDelegate {
+                            notifData: model.notifData
+                            notificationService: root.notificationService
+                            itemIndex: index
+                            currentTime: root.currentTime
+                        }
+
                     }
 
-                    delegate: NotificationItemDelegate {
-                        notifData: model.notifData
-                        notificationService: root.notificationService
-                        itemIndex: index
-                        currentTime: root.currentTime
+                    Behavior on opacity {
+                        NumberAnimation {
+                            duration: Constants.animFast
+                            easing.type: Easing.OutQuad
+                        }
+
+                    }
+
+                    Behavior on x {
+                        NumberAnimation {
+                            duration: Constants.animFast
+                            easing.type: Easing.OutCubic
+                        }
+
+                    }
+
+                    Behavior on scale {
+                        NumberAnimation {
+                            duration: Constants.animFast
+                            easing.type: Easing.OutCubic
+                            onRunningChanged: {
+                                if (!running && root.isClearingAll) {
+                                    if (root.notificationService)
+                                        root.notificationService.clearHistory();
+
+                                    root.isClearingAll = false;
+                                }
+                            }
+                        }
+
                     }
 
                 }

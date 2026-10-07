@@ -7,8 +7,8 @@ Rectangle {
 
     property var notifData
 
-    height: 6
-    radius: 3
+    height: Constants.size2Xs + 2
+    radius: height / 2
     color: Theme.bgSecondary
     visible: notifData && (notifData.summary === "Volume" || notifData.summary === "Brightness")
 
