@@ -14,7 +14,7 @@ RowLayout {
     property bool isShuffleActive: false
 
     Layout.fillWidth: true
-    Layout.topMargin: Constants.sizeXs
+    Layout.topMargin: 0
     spacing: 0
 
     SvgIconButton {
@@ -51,9 +51,9 @@ RowLayout {
 
     // PROMINENT PLAY/PAUSE
     Rectangle {
-        width: 48
-        height: 48
-        radius: 24
+        width: Constants.size3Xl
+        height: Constants.size3Xl
+        radius: Constants.size2Xl
         color: Theme.accent
         scale: playHover.hovered ? 1.05 : 1
         layer.enabled: true
@@ -61,7 +61,7 @@ RowLayout {
         SvgIcon {
             anchors.centerIn: parent
             icon: MprisService.isPlaying ? "player-pause" : "player-play"
-            iconSize: 22
+            iconSize: Constants.sizeLg
             iconColor: Theme.bg
             flat: true
         }
@@ -94,7 +94,7 @@ RowLayout {
         layer.effect: DropShadow {
             transparentBorder: true
             color: Theme.accent
-            radius: 14
+            radius: Constants.sizeMd
             samples: 25
             opacity: 0.5
         }
