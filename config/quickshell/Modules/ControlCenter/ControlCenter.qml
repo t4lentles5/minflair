@@ -7,13 +7,15 @@ Item {
     id: root
 
     property var notificationService: null
-    property int popupStartY: 0
     property bool isOpen: false
+    readonly property bool _visible: internalLoader.item ? internalLoader.item._visible : false
 
+    signal widgetOpened()
+    signal widgetClosed()
     signal fullyClosed()
 
     onIsOpenChanged: {
-        if (internalLoader.item)
+        if (internalLoader.item && internalLoader.item.isOpen !== root.isOpen)
             internalLoader.item.isOpen = root.isOpen;
 
     }
@@ -22,14 +24,20 @@ Item {
         id: internalLoader
 
         anchors.fill: parent
-        sourceComponent: SettingsService.barMinflairMode ? topPopupComponent : sidebarComponent
-        onLoaded: {
-            if (item)
+        sourceComponent: sidebarComponent
+        onStatusChanged: {
+            if (status === Loader.Ready && item)
                 item.isOpen = root.isOpen;
 
         }
 
         Connections {
+            function onIsOpenChanged() {
+                if (internalLoader.item && root.isOpen !== internalLoader.item.isOpen)
+                    root.isOpen = internalLoader.item.isOpen;
+
+            }
+
             function onFullyClosed() {
                 root.fullyClosed();
             }
@@ -44,7 +52,9 @@ Item {
         id: sidebarComponent
 
         SidebarWindow {
-            popupId: "controlCenter"
+            widgetId: "controlCenter"
+            isOpen: root.isOpen
+            anchors.fill: parent
             preferredHeight: 0
             backgroundColor: Theme.bg
             preferredWidth: content.implicitWidth + (Constants.sizeLg * 2)
@@ -60,50 +70,8 @@ Item {
 
     }
 
-    Component {
-        id: topPopupComponent
-
-        Item {
-            id: topItem
-
-            property bool isOpen: false
-
-            signal fullyClosed()
-
-            TopPopup {
-                id: thePopup
-
-                popupId: "controlCenter"
-                isOpen: topItem.isOpen
-                positionAtRight: false
-                animateHeight: true
-                contentPadding: Constants.sizeLg
-                backgroundColor: Theme.bg
-                contentWidth: contentTop.implicitWidth
-                contentHeight: contentTop.implicitHeight
-                // Position exactly on the right, like SystemTray
-                x: root.width - implicitWidth - 8
-                y: root.popupStartY
-
-                ControlCenterContent {
-                    id: contentTop
-
-                    widget: thePopup
-                    notificationService: root.notificationService
-                }
-
-                Connections {
-                    function onFullyClosed() {
-                        topItem.fullyClosed();
-                    }
-
-                    target: thePopup
-                }
-
-            }
-
-        }
-
+    Binding on isOpen {
+        value: AppState.isWidgetOpen("controlCenter")
     }
 
 }

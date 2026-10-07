@@ -3,14 +3,14 @@ import QtQuick.Layouts
 import qs.Core
 import qs.Core.Components
 
-Item {
+Rectangle {
     id: root
 
     property string titleText: ""
     property string subtitleText: ""
     property string iconName: ""
     property bool isActive: false
-    property bool showLock: false
+    property bool canForget: false
 
     signal clicked()
     signal actionClicked()
@@ -18,185 +18,136 @@ Item {
     signal forgetClicked()
 
     Layout.fillWidth: true
-    implicitHeight: isActive ? contentCol.implicitHeight + Constants.sizeSm * 2 : 36
+    width: parent ? parent.width : 280
+    implicitHeight: 52
+    radius: Constants.sizeSm
+    color: Theme.bgTertiary
+    border.width: 1
+    border.color: Theme.border
 
-    Rectangle {
+    RowLayout {
         anchors.fill: parent
-        radius: Constants.sizeLg
-        color: bgHover.containsMouse ? Theme.bgTertiary : Theme.bgSecondary
-
-        MouseArea {
-            id: bgHover
-
-            anchors.fill: parent
-            hoverEnabled: true
-            cursorShape: Qt.PointingHandCursor
-            onClicked: root.clicked()
-        }
-
-        Behavior on color {
-            ColorAnimation {
-                duration: Constants.animFast
-            }
-
-        }
-
-    }
-
-    ColumnLayout {
-        id: contentCol
-
-        anchors.left: parent.left
-        anchors.right: parent.right
-        anchors.top: parent.top
-        anchors.margins: Constants.sizeSm
+        anchors.leftMargin: Constants.sizeSm
+        anchors.rightMargin: Constants.sizeSm
         spacing: Constants.sizeSm
 
-        RowLayout {
-            Layout.fillWidth: true
-            spacing: Constants.sizeSm
+        Rectangle {
+            width: Constants.size3Xl - 2
+            height: Constants.size3Xl - 2
+            radius: height / 2
+            color: root.isActive ? Theme.accent : Theme.bgSecondary
+            Layout.alignment: Qt.AlignVCenter
 
             SvgIcon {
+                anchors.centerIn: parent
                 icon: root.iconName
-                iconColor: root.isActive ? Theme.accent : Theme.fg
+                iconColor: root.isActive ? Theme.bg : Theme.fg
                 iconSize: Constants.sizeLg
                 flat: true
-                opacity: root.isActive ? 1 : 0.7
             }
 
-            ColumnLayout {
-                Layout.fillWidth: true
-                spacing: 0
-
-                ThemedText {
-                    text: root.titleText
-                    color: root.isActive ? Theme.accent : Theme.fg
-                    font.bold: root.isActive
-                    Layout.fillWidth: true
-                    elide: Text.ElideRight
+            Behavior on color {
+                ColorAnimation {
+                    duration: Constants.animFast
                 }
 
-                ThemedText {
-                    visible: root.isActive && root.subtitleText !== ""
-                    text: root.subtitleText
-                    color: Theme.muted
-                    customSize: Constants.sizeXs + 2
-                    Layout.fillWidth: true
-                    elide: Text.ElideRight
-                }
-
-            }
-
-            SvgIcon {
-                visible: root.showLock && !root.isActive
-                icon: "lock"
-                iconColor: Theme.muted
-                iconSize: Constants.sizeSm
-                flat: true
-                opacity: 0.5
-            }
-
-            SvgIconButton {
-                visible: root.isActive
-                iconColor: Theme.accent
-                iconSize: Constants.sizeSm
-                flat: true
-                onClicked: root.actionClicked()
-            }
-
-            SvgIcon {
-                visible: root.isActive
-                icon: "check"
-                iconColor: Theme.accent
-                iconSize: Constants.sizeSm
-                flat: true
             }
 
         }
 
-        RowLayout {
-            visible: root.isActive
+        ColumnLayout {
             Layout.fillWidth: true
-            spacing: Constants.sizeSm
-            Layout.topMargin: Constants.sizeXs
+            Layout.alignment: Qt.AlignVCenter
+            spacing: 1
 
-            Rectangle {
-                id: disconnectBtn
-
+            ThemedText {
+                text: root.titleText
+                color: Theme.fg
+                font.bold: root.isActive
+                customSize: Constants.sizeSm
                 Layout.fillWidth: true
-                Layout.preferredHeight: 32
-                color: discHover.containsMouse ? Theme.bgTertiary : Theme.bgSecondary
-                radius: Constants.sizeMd
-
-                RowLayout {
-                    anchors.centerIn: parent
-                    spacing: Constants.sizeXs
-
-                    SvgIcon {
-                        icon: root.iconName === "bluetooth" ? "bluetooth-off" : "wifi-off"
-                        iconColor: Theme.fg
-                        iconSize: Constants.sizeSm
-                        flat: true
-                    }
-
-                    ThemedText {
-                        text: "Disconnect"
-                        color: Theme.fg
-                        customSize: Constants.sizeSm
-                    }
-
-                }
-
-                MouseArea {
-                    id: discHover
-
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: root.disconnectClicked()
-                }
-
+                elide: Text.ElideRight
             }
 
-            Rectangle {
-                id: forgetBtn
-
+            ThemedText {
+                visible: root.subtitleText !== ""
+                text: root.subtitleText
+                color: root.isActive ? Theme.accent : Theme.muted
+                customSize: Constants.sizeXs + 2
                 Layout.fillWidth: true
-                Layout.preferredHeight: 32
-                color: forgetHover.containsMouse ? Theme.bgTertiary : Theme.bgSecondary
-                radius: Constants.sizeMd
-
-                RowLayout {
-                    anchors.centerIn: parent
-                    spacing: Constants.sizeXs
-
-                    ThemedText {
-                        text: "Forget"
-                        color: Theme.fg
-                        customSize: Constants.sizeSm
-                    }
-
-                }
-
-                MouseArea {
-                    id: forgetHover
-
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: root.forgetClicked()
-                }
-
+                elide: Text.ElideRight
             }
 
         }
 
-    }
+        Rectangle {
+            id: forgetBtn
 
-    Behavior on implicitHeight {
-        NumberAnimation {
-            duration: Constants.animFast
-            easing.type: Easing.OutCubic
+            visible: root.canForget
+            Layout.alignment: Qt.AlignVCenter
+            implicitWidth: Constants.size2Xl + 4
+            implicitHeight: Constants.size2Xl + 4
+            radius: Constants.sizeSm
+            color: forgetHover.hovered ? Theme.bgSecondary : "transparent"
+            border.width: 1
+            border.color: forgetHover.hovered ? Theme.border : "transparent"
+
+            SvgIcon {
+                anchors.centerIn: parent
+                icon: "trash"
+                iconColor: forgetHover.hovered ? Theme.accentComplementary : Theme.muted
+                iconSize: Constants.sizeSm + 2
+                flat: true
+            }
+
+            HoverHandler {
+                id: forgetHover
+
+                cursorShape: Qt.PointingHandCursor
+            }
+
+            TapHandler {
+                onTapped: root.forgetClicked()
+            }
+
+        }
+
+        Rectangle {
+            id: actionBtn
+
+            Layout.alignment: Qt.AlignVCenter
+            implicitWidth: btnText.implicitWidth + Constants.sizeXs * 2
+            implicitHeight: Constants.size2Xl + 4
+            radius: Constants.sizeSm
+            color: btnHover.hovered ? Theme.bgSecondary : Theme.bgTertiary
+            border.width: 1
+            border.color: Theme.border
+
+            ThemedText {
+                id: btnText
+
+                text: root.isActive ? "Disconnect" : "Connect"
+                color: root.isActive ? Theme.accentComplementary : Theme.fg
+                customSize: Constants.sizeXs + 2
+                font.bold: true
+                anchors.centerIn: parent
+            }
+
+            HoverHandler {
+                id: btnHover
+
+                cursorShape: Qt.PointingHandCursor
+            }
+
+            TapHandler {
+                onTapped: {
+                    if (root.isActive)
+                        root.disconnectClicked();
+                    else
+                        root.clicked();
+                }
+            }
+
         }
 
     }

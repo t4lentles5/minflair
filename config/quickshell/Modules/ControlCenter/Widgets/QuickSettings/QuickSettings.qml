@@ -15,9 +15,34 @@ Item {
     property bool quickSettingsOpen: false
     property var notificationService
     property int activePageIndex: 0
+    property real extraExpandedHeight: 0
 
+    function resetView() {
+        root.activePageIndex = 0;
+    }
+
+    onQuickSettingsOpenChanged: {
+        if (!quickSettingsOpen) {
+            resetPageTimer.restart();
+        } else {
+            resetPageTimer.stop();
+            root.resetView();
+        }
+    }
     implicitWidth: mainPage.implicitWidth
-    implicitHeight: mainPage.implicitHeight
+    implicitHeight: mainPage.implicitHeight + (activePageIndex !== 0 ? extraExpandedHeight : 0)
+
+    Timer {
+        id: resetPageTimer
+
+        interval: Constants.animNormal + 50
+        repeat: false
+        onTriggered: {
+            if (!root.quickSettingsOpen)
+                root.resetView();
+
+        }
+    }
 
     Item {
         id: stackContainer
@@ -41,8 +66,8 @@ Item {
 
                     Layout.fillWidth: true
                     columns: 2
-                    rowSpacing: Constants.sizeLg
-                    columnSpacing: Constants.sizeLg
+                    rowSpacing: Constants.sizeMd
+                    columnSpacing: Constants.sizeMd
 
                     WifiControl {
                         id: wifiControl
@@ -87,8 +112,8 @@ Item {
 
                     Layout.fillWidth: true
                     columns: 2
-                    rowSpacing: Constants.sizeLg
-                    columnSpacing: Constants.sizeLg
+                    rowSpacing: Constants.sizeMd
+                    columnSpacing: Constants.sizeMd
 
                     NightLightControl {
                         id: nightLightBtn
@@ -119,12 +144,16 @@ Item {
 
                 Card {
                     Layout.fillWidth: true
+                    cardRadius: Constants.sizeSm
+                    useBorder: false
+                    backgroundColor: Theme.bgSecondary
+                    contentPadding: Constants.sizeLg
 
                     ColumnLayout {
                         id: sliderCol
 
                         anchors.fill: parent
-                        spacing: Constants.sizeLg
+                        spacing: Constants.sizeMd
 
                         BrightnessSlider {
                             Layout.fillWidth: true
@@ -201,7 +230,7 @@ Item {
                     RotationAnimation on rotation {
                         from: 0
                         to: 360
-                        duration: 1000
+                        duration: Constants.animExpressive * 2
                         loops: Animation.Infinite
                         running: wifiControl.isScanning
                     }
@@ -212,6 +241,7 @@ Item {
 
             WifiList {
                 Layout.fillWidth: true
+                Layout.fillHeight: true
                 isVisible: root.quickSettingsOpen
                 expanded: root.activePageIndex === 1
                 isActive: wifiControl.isActive
@@ -219,6 +249,9 @@ Item {
                 isScanning: wifiControl.isScanning
                 onConnect: (ssid) => {
                     return wifiControl.connect(ssid);
+                }
+                onRefreshRequested: {
+                    wifiControl.scan(true);
                 }
             }
 
@@ -237,7 +270,7 @@ Item {
         ColumnLayout {
             id: bluetoothPage
 
-            spacing: Constants.sizeLg
+            spacing: Constants.sizeSm
             width: parent.width
             height: parent.height
             x: root.activePageIndex === 2 ? 0 : parent.width
@@ -255,7 +288,7 @@ Item {
 
                 ThemedText {
                     text: "Bluetooth Devices"
-                    customSize: Constants.sizeLg
+                    customSize: Constants.sizeMd
                     font.bold: true
                     Layout.fillWidth: true
                 }
@@ -270,7 +303,7 @@ Item {
                     RotationAnimation on rotation {
                         from: 0
                         to: 360
-                        duration: 1000
+                        duration: Constants.animExpressive * 2
                         loops: Animation.Infinite
                         running: btControl.isScanning
                     }
@@ -281,6 +314,7 @@ Item {
 
             BluetoothList {
                 Layout.fillWidth: true
+                Layout.fillHeight: true
                 isVisible: root.quickSettingsOpen
                 expanded: root.activePageIndex === 2
                 isActive: btControl.isActive
@@ -288,6 +322,9 @@ Item {
                 isScanning: btControl.isScanning
                 onConnect: (mac) => {
                     return btControl.connect(mac);
+                }
+                onRefreshRequested: {
+                    btControl.scan();
                 }
             }
 

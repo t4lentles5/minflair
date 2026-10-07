@@ -10,28 +10,34 @@ Rectangle {
     property string icon: ""
     property string label: ""
     property string subtitle: ""
+    property bool hasMenu: false
 
     signal clicked()
     signal menuClicked()
 
-    implicitHeight: Constants.size4Xl + (Constants.sizeXs * 2)
+    implicitHeight: 52
     implicitWidth: 200
     radius: root.implicitHeight / 2
     color: Theme.bgSecondary
-    scale: iconMouseArea.pressed || textMouseArea.pressed ? 0.95 : 1
+    scale: iconMouseArea.pressed || textMouseArea.pressed ? 0.98 : 1
+
+    HoverHandler {
+        id: tileHover
+    }
 
     RowLayout {
         anchors.fill: parent
         anchors.leftMargin: Constants.sizeXs
         anchors.rightMargin: Constants.sizeXs
-        spacing: Constants.sizeMd
+        spacing: Constants.sizeSm
 
+        // Icon Circle (Interactive toggle button)
         Rectangle {
             id: iconBg
 
-            implicitWidth: Constants.size4Xl
-            implicitHeight: Constants.size4Xl
-            radius: iconBg.height / 2
+            width: Constants.size3Xl + 6
+            height: Constants.size3Xl + 6
+            radius: width / 2
             color: root.isActive ? Theme.accent : Theme.bgSecondary
             Layout.alignment: Qt.AlignVCenter
 
@@ -39,12 +45,11 @@ Rectangle {
                 id: tileIcon
 
                 icon: root.icon
-                iconSize: Constants.sizeLg
+                iconSize: 18
                 flat: true
-                iconColor: root.isActive ? Theme.bg : Theme.fg
-                bgColor: "transparent"
+                iconColor: root.isActive ? Theme.bg : (iconMouseArea.containsMouse ? Theme.fg : Theme.muted)
                 anchors.centerIn: parent
-                scale: iconMouseArea.containsMouse ? 1.05 : 1
+                scale: iconMouseArea.containsMouse ? 1.08 : 1
 
                 Behavior on scale {
                     NumberAnimation {
@@ -72,8 +77,16 @@ Rectangle {
                 onClicked: root.clicked()
             }
 
+            Behavior on color {
+                ColorAnimation {
+                    duration: Constants.animFast
+                }
+
+            }
+
         }
 
+        // Text & Menu Area (Clickable to open sub-menu)
         Item {
             Layout.fillWidth: true
             Layout.fillHeight: true
@@ -82,7 +95,7 @@ Rectangle {
                 anchors.left: parent.left
                 anchors.right: parent.right
                 anchors.verticalCenter: parent.verticalCenter
-                spacing: 0
+                spacing: 1
 
                 ThemedText {
                     text: root.label
@@ -96,7 +109,7 @@ Rectangle {
                 ThemedText {
                     text: root.subtitle
                     color: Theme.muted
-                    customSize: Constants.sizeSm
+                    customSize: Constants.sizeXs + 2
                     elide: Text.ElideRight
                     Layout.fillWidth: true
                     visible: text !== ""
@@ -109,16 +122,15 @@ Rectangle {
 
                 anchors.fill: parent
                 cursorShape: Qt.PointingHandCursor
-                onClicked: root.menuClicked()
+                hoverEnabled: true
+                onClicked: {
+                    if (root.hasMenu)
+                        root.menuClicked();
+                    else
+                        root.clicked();
+                }
             }
 
-        }
-
-    }
-
-    Behavior on color {
-        ColorAnimation {
-            duration: Constants.animNormal
         }
 
     }
@@ -126,7 +138,7 @@ Rectangle {
     Behavior on scale {
         NumberAnimation {
             duration: Constants.animFast
-            easing.type: Easing.OutBack
+            easing.type: Easing.OutQuad
         }
 
     }

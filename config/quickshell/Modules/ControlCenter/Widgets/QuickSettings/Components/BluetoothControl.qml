@@ -33,6 +33,7 @@ QuickSettingsTile {
         btConnectProc.running = true;
     }
 
+    hasMenu: true
     icon: root.isActive ? "bluetooth" : "bluetooth-off"
     label: "Bluetooth"
     subtitle: {

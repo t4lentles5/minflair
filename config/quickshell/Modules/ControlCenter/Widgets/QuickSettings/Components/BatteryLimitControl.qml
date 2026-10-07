@@ -12,14 +12,26 @@ QuickSettingsTile {
     property bool isLimitActive: false
     property bool isVisible: true
     property bool disabled: false
+    readonly property string batteryStateText: {
+        if (!SystemInfoService.hasBattery)
+            return "No battery";
+
+        let status = SystemInfoService.batteryStatus;
+        if (!status || status === "Unknown")
+            return SystemInfoService.batteryPercentage;
+
+        return SystemInfoService.batteryPercentage + " • " + status;
+    }
 
     isActive: root.isLimitActive
-    icon: isActive ? "charger-filled" : "charger"
-    label: "Battery Limit"
-    subtitle: root.disabled ? "Unsupported" : (root.isLimitActive ? "80% Limit" : "100%")
+    icon: (SystemInfoService.batteryStatus === "Charging" || root.isActive) ? "charger-filled" : "charger"
+    label: "Battery"
+    subtitle: root.batteryStateText
     onMenuClicked: clicked()
     onClicked: {
-        toggleProcess.running = true;
+        if (!root.disabled)
+            toggleProcess.running = true;
+
     }
 
     Timer {
@@ -49,15 +61,12 @@ QuickSettingsTile {
                 if (val === "1") {
                     root.isLimitActive = true;
                     root.disabled = false;
-                    root.opacity = 1;
                 } else if (val === "0") {
                     root.isLimitActive = false;
                     root.disabled = false;
-                    root.opacity = 1;
                 } else if (val === "unsupported") {
                     root.disabled = true;
                     root.isLimitActive = false;
-                    root.opacity = 0.4;
                 }
             }
         }

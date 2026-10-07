@@ -10,9 +10,10 @@ QuickSettingsTile {
     isActive: DisplayProfileService.gameModeActive
     icon: isActive ? "gamepad-filled" : "gamepad"
     label: "Game Mode"
-    subtitle: isActive ? "Active" : "Off"
+    subtitle: DisplayProfileService.gameModeSubtitle
     onMenuClicked: clicked()
     onClicked: {
+        DisplayProfileService.autoActivatedByDaemon = false;
         DisplayProfileService.gameModeActive = !DisplayProfileService.gameModeActive;
     }
 }

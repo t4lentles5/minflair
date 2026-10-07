@@ -19,6 +19,11 @@ Card {
         return m;
     }
 
+    cardRadius: Constants.sizeSm
+    useBorder: false
+    backgroundColor: Theme.bgSecondary
+    contentPadding: Constants.sizeLg
+
     ColumnLayout {
         anchors.fill: parent
         spacing: Constants.sizeLg
