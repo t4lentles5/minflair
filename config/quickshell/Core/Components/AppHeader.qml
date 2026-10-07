@@ -17,14 +17,13 @@ ColumnLayout {
 
     Item {
         Layout.fillWidth: true
-        Layout.preferredHeight: 52
-        Layout.leftMargin: Constants.sizeLg
-        Layout.rightMargin: Constants.sizeLg
-        Layout.topMargin: Constants.sizeLg
-        Layout.bottomMargin: Constants.sizeLg
+        implicitHeight: headerRow.implicitHeight + Constants.sizeLg * 2
 
         RowLayout {
+            id: headerRow
+
             anchors.fill: parent
+            anchors.margins: Constants.sizeLg
             spacing: Constants.sizeMd
 
             ColumnLayout {

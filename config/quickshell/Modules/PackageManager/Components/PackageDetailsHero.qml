@@ -22,40 +22,40 @@ Card {
 
     Layout.fillWidth: true
     cardRadius: Constants.sizeMd
-    useBorder: false
+    useBorder: true
+    borderColor: Theme.border
+    backgroundColor: Theme.bgSecondary
+    contentPadding: Constants.sizeXl
 
     RowLayout {
         id: heroLayout
 
-        anchors.left: parent.left
-        anchors.right: parent.right
-        anchors.top: parent.top
-        spacing: Constants.sizeLg
+        anchors.fill: parent
+        spacing: Constants.sizeXl
 
-        // Icon Container
+        // Large App Icon
         Rectangle {
-            width: 52
-            height: 52
+            width: 64
+            height: 64
             radius: Constants.sizeSm
             color: Theme.bgTertiary
             border.color: Theme.border
             border.width: 1
-            Layout.alignment: Qt.AlignVCenter
+            Layout.alignment: Qt.AlignTop
 
             Image {
                 id: pkgIcon
 
-                anchors.fill: parent
-                anchors.margins: Constants.sizeXs
+                anchors.centerIn: parent
                 source: heroRoot.pkgName !== "" ? (Quickshell.iconPath(heroRoot.pkgName, true) || "") : ""
-                sourceSize.width: 36
-                sourceSize.height: 36
+                sourceSize.width: Constants.size4Xl
+                sourceSize.height: Constants.size4Xl
                 visible: source.toString() !== ""
             }
 
             SvgIcon {
                 icon: "box"
-                iconSize: 24
+                iconSize: 30
                 iconColor: Theme.muted
                 anchors.centerIn: parent
                 visible: !pkgIcon.visible
@@ -64,21 +64,44 @@ Card {
 
         }
 
-        // Title, badges, and quick description
+        // Details Column
         ColumnLayout {
             Layout.fillWidth: true
-            spacing: Constants.sizeXs
-            Layout.alignment: Qt.AlignVCenter
+            spacing: Constants.sizeSm
+            Layout.alignment: Qt.AlignTop
 
+            // Top Header: Title + Badges + Action Buttons
             RowLayout {
-                spacing: Constants.sizeSm
                 Layout.fillWidth: true
+                spacing: Constants.sizeSm
 
                 ThemedText {
                     text: heroRoot.pkgName
                     font.bold: true
-                    customSize: Constants.sizeXl
+                    customSize: 22
                     color: Theme.fg
+                }
+
+                // Version Badge
+                Rectangle {
+                    visible: heroRoot.getValue("Version", "") !== ""
+                    radius: Constants.sizeXs
+                    implicitHeight: Constants.size2Xl
+                    implicitWidth: versionText.implicitWidth + Constants.sizeMd
+                    color: Theme.bgSecondary
+                    border.color: Theme.border
+                    border.width: 1
+                    Layout.alignment: Qt.AlignVCenter
+
+                    ThemedText {
+                        id: versionText
+
+                        anchors.centerIn: parent
+                        text: heroRoot.getValue("Version", "")
+                        customSize: Constants.sizeXs
+                        color: Theme.fg
+                    }
+
                 }
 
                 // Status Badge (Installed / Not Installed / Out-of-date)
@@ -86,20 +109,34 @@ Card {
                     readonly property bool isOutOfDate: !heroRoot.isInstalled && heroRoot.getValue("Out-of-date", "No") !== "No"
 
                     radius: Constants.sizeXs
-                    implicitHeight: statusText.implicitHeight + 6
-                    implicitWidth: statusText.implicitWidth + 14
-                    color: heroRoot.isInstalled ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.15) : (isOutOfDate ? Qt.rgba(Theme.accentComplementary.r, Theme.accentComplementary.g, Theme.accentComplementary.b, 0.15) : "transparent")
-                    border.color: heroRoot.isInstalled ? Theme.accent : (isOutOfDate ? Theme.accentComplementary : Theme.border)
+                    implicitHeight: Constants.size2Xl
+                    implicitWidth: statusLayout.implicitWidth + 14
+                    color: heroRoot.isInstalled ? Theme.bgAccent : (isOutOfDate ? Theme.bgAccentComplementary : Theme.bgSecondary)
+                    border.color: heroRoot.isInstalled ? "transparent" : (isOutOfDate ? "transparent" : Theme.border)
                     border.width: 1
+                    Layout.alignment: Qt.AlignVCenter
 
-                    ThemedText {
-                        id: statusText
+                    RowLayout {
+                        id: statusLayout
 
                         anchors.centerIn: parent
-                        text: heroRoot.isInstalled ? "Installed" : (parent.isOutOfDate ? "Out-of-date" : "Not Installed")
-                        customSize: Constants.sizeSm - 2
-                        color: heroRoot.isInstalled ? Theme.accent : (parent.isOutOfDate ? Theme.accentComplementary : Theme.muted)
-                        font.bold: true
+                        spacing: 5
+
+                        Rectangle {
+                            width: 6
+                            height: 6
+                            radius: height / 2
+                            color: heroRoot.isInstalled ? Theme.accent : (parent.parent.isOutOfDate ? Theme.accentComplementary : Theme.fg)
+                            visible: heroRoot.isInstalled || parent.parent.isOutOfDate
+                        }
+
+                        ThemedText {
+                            text: heroRoot.isInstalled ? "Installed" : (parent.parent.isOutOfDate ? "Out-of-date" : "Not Installed")
+                            customSize: Constants.sizeXs
+                            color: heroRoot.isInstalled ? Theme.accent : (parent.parent.isOutOfDate ? Theme.accentComplementary : Theme.fg)
+                            font.bold: heroRoot.isInstalled
+                        }
+
                     }
 
                 }
@@ -108,16 +145,150 @@ Card {
                     Layout.fillWidth: true
                 }
 
+                // Batch Selection Button
+                Rectangle {
+                    visible: heroRoot.managerRoot !== null
+                    width: Constants.size2Xl + 6
+                    height: Constants.size2Xl + 6
+                    radius: Constants.sizeXs
+                    color: heroRoot.isSelected ? Theme.accent : (batchHover.hovered ? Theme.bgSecondary : "transparent")
+                    border.width: heroRoot.isSelected ? 0 : 1
+                    border.color: heroRoot.isSelected ? Theme.accent : Theme.border
+                    Layout.alignment: Qt.AlignVCenter
+
+                    SvgIcon {
+                        anchors.centerIn: parent
+                        icon: "check"
+                        iconSize: Constants.sizeMd
+                        iconColor: heroRoot.isSelected ? Theme.bg : Theme.muted
+                        flat: true
+                    }
+
+                    HoverHandler {
+                        id: batchHover
+
+                        cursorShape: Qt.PointingHandCursor
+                    }
+
+                    TapHandler {
+                        onTapped: {
+                            if (heroRoot.managerRoot)
+                                heroRoot.managerRoot.toggleSelect(heroRoot.pkgName);
+
+                        }
+                    }
+
+                }
+
             }
 
+            // Description
             ThemedText {
                 text: heroRoot.getValue("Description", "No description available")
                 customSize: Constants.sizeSm
-                color: Theme.muted
+                color: Theme.fg
+                opacity: 0.85
                 wrapMode: Text.Wrap
                 Layout.fillWidth: true
                 maximumLineCount: 2
                 elide: Text.ElideRight
+            }
+
+            // Quick Metadata Pills Row
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: Constants.sizeXs
+                Layout.topMargin: Constants.size3Xs
+
+                // Repository / Source Tag
+                Rectangle {
+                    visible: heroRoot.getValue("Repository", "") !== ""
+                    implicitHeight: Constants.size2Xl
+                    implicitWidth: repoTagText.implicitWidth + 14
+                    radius: Constants.sizeXs
+                    color: Theme.bgAccentComplementary
+                    border.color: Theme.border
+                    border.width: 1
+
+                    ThemedText {
+                        id: repoTagText
+
+                        anchors.centerIn: parent
+                        text: heroRoot.getValue("Repository", "").toUpperCase()
+                        customSize: Constants.sizeXs
+                        font.bold: true
+                        color: Theme.muted
+                    }
+
+                }
+
+                // Size Tag
+                Rectangle {
+                    visible: heroRoot.getValue("Installed Size", heroRoot.getValue("Download Size", "")) !== ""
+                    implicitHeight: Constants.size2Xl
+                    implicitWidth: sizeTagText.implicitWidth + 14
+                    radius: Constants.sizeXs
+                    color: Theme.bgSecondary
+                    border.color: Theme.border
+                    border.width: 1
+
+                    ThemedText {
+                        id: sizeTagText
+
+                        anchors.centerIn: parent
+                        text: heroRoot.getValue("Installed Size", heroRoot.getValue("Download Size", ""))
+                        customSize: Constants.sizeXs
+                        color: Theme.muted
+                    }
+
+                }
+
+                // License Tag
+                Rectangle {
+                    visible: heroRoot.getValue("Licenses", "") !== ""
+                    implicitHeight: Constants.size2Xl
+                    implicitWidth: licenseTagText.implicitWidth + 14
+                    radius: Constants.sizeXs
+                    color: Theme.bgSecondary
+                    border.color: Theme.border
+                    border.width: 1
+
+                    ThemedText {
+                        id: licenseTagText
+
+                        anchors.centerIn: parent
+                        text: heroRoot.getValue("Licenses", "")
+                        customSize: Constants.sizeXs
+                        color: Theme.muted
+                    }
+
+                }
+
+                // Architecture Tag
+                Rectangle {
+                    visible: heroRoot.getValue("Architecture", "") !== ""
+                    implicitHeight: Constants.size2Xl
+                    implicitWidth: archTagText.implicitWidth + Constants.sizeMd
+                    radius: Constants.sizeXs
+                    color: Theme.bgSecondary
+                    border.color: Theme.border
+                    border.width: 1
+
+                    ThemedText {
+                        id: archTagText
+
+                        anchors.centerIn: parent
+                        text: heroRoot.getValue("Architecture", "")
+                        customSize: Constants.sizeXs
+                        color: Theme.muted
+                    }
+
+                }
+
+                Item {
+                    Layout.fillWidth: true
+                }
+
             }
 
         }

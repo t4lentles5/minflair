@@ -66,7 +66,7 @@ ColumnLayout {
                         RotationAnimation on rotation {
                             from: 0
                             to: 360
-                            duration: 1000
+                            duration: Constants.animExpressive * 2
                             loops: Animation.Infinite
                             running: managerRoot.isSearching
                         }
@@ -186,8 +186,8 @@ ColumnLayout {
                     anchors.right: parent.right
                     anchors.margins: Constants.sizeLg
                     width: actionLayout.implicitWidth + Constants.size3Xl
-                    height: 48
-                    radius: 24
+                    height: Constants.size5Xl
+                    radius: height / 2
                     color: Theme.accent
                     visible: managerRoot.selectedPackages.length > 0
                     opacity: visible ? 1 : 0
@@ -208,19 +208,19 @@ ColumnLayout {
                         }
 
                         Rectangle {
-                            Layout.preferredWidth: 2
-                            Layout.preferredHeight: 12
+                            Layout.preferredWidth: Constants.size3Xs
+                            Layout.preferredHeight: Constants.sizeSm
                             color: Theme.bg
                             opacity: 0.3
-                            radius: 1
+                            radius: width / 2
                         }
 
                         RowLayout {
-                            spacing: 4
+                            spacing: Constants.size2Xs
 
                             SvgIcon {
                                 icon: managerRoot.actionMode === "install" ? "download" : managerRoot.actionMode === "update" ? "update" : "trash"
-                                iconSize: 16
+                                iconSize: Constants.sizeLg
                                 iconColor: Theme.bg
                                 flat: true
                             }

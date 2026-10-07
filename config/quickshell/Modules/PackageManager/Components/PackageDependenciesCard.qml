@@ -15,22 +15,36 @@ Card {
     }
 
     Layout.fillWidth: true
-    cardRadius: Constants.sizeMd
-    useBorder: false
+    cardRadius: Constants.sizeSm
+    useBorder: true
+    borderColor: Theme.border
+    backgroundColor: Theme.bgSecondary
+    contentPadding: Constants.sizeLg
 
     ColumnLayout {
         id: depsCol
 
-        anchors.left: parent.left
-        anchors.right: parent.right
-        anchors.top: parent.top
+        anchors.fill: parent
         spacing: Constants.sizeMd
 
-        ThemedText {
-            text: "Dependencies"
-            font.bold: true
-            customSize: Constants.sizeMd
-            color: Theme.fg
+        RowLayout {
+            spacing: Constants.sizeXs
+
+            SvgIcon {
+                icon: "box"
+                iconSize: Constants.sizeMd
+                iconColor: Theme.muted
+                flat: true
+            }
+
+            ThemedText {
+                text: "DEPENDENCIES"
+                font.bold: true
+                font.letterSpacing: 0.8
+                customSize: 10
+                color: Theme.muted
+            }
+
         }
 
         // Depends On (Runtime)
@@ -59,7 +73,7 @@ Card {
                         implicitWidth: depRow.implicitWidth + Constants.sizeSm * 2
                         implicitHeight: depRow.implicitHeight + Constants.sizeXs * 2
                         radius: Constants.sizeXs
-                        color: Theme.bgTertiary
+                        color: Theme.bgSecondary
                         border.width: 1
                         border.color: Theme.border
 
@@ -71,7 +85,7 @@ Card {
 
                             SvgIcon {
                                 icon: "box"
-                                iconSize: 12
+                                iconSize: Constants.sizeSm
                                 iconColor: Theme.muted
                                 flat: true
                             }
@@ -118,7 +132,7 @@ Card {
                         implicitWidth: makeRow.implicitWidth + Constants.sizeSm * 2
                         implicitHeight: makeRow.implicitHeight + Constants.sizeXs * 2
                         radius: Constants.sizeXs
-                        color: Theme.bgTertiary
+                        color: Theme.bgSecondary
                         border.width: 1
                         border.color: Theme.border
 
@@ -170,7 +184,7 @@ Card {
                         implicitWidth: optRow.implicitWidth + Constants.sizeSm * 2
                         implicitHeight: optRow.implicitHeight + Constants.sizeXs * 2
                         radius: Constants.sizeXs
-                        color: Theme.bgTertiary
+                        color: Theme.bgSecondary
                         border.width: 1
                         border.color: Theme.border
 

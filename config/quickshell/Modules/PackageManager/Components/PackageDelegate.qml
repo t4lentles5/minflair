@@ -79,213 +79,219 @@ Item {
 
     }
 
-    // Card Background
-    Rectangle {
+    // Card Container
+    Card {
+        id: cardBg
+
         anchors.fill: parent
-        radius: Constants.sizeMd
-        color: Theme.bgSecondary
-        border.color: delegateRoot.isCurrent ? Theme.accent : (delegateHover.hovered ? Theme.border : "transparent")
-        border.width: 1
+        contentPadding: Constants.sizeLg
+        cardRadius: Constants.sizeSm
+        useBorder: true
+        backgroundColor: delegateHover.hovered ? Theme.bgSecondary : Theme.bgTertiary
+        borderColor: delegateRoot.isCurrent || delegateRoot.isSelected ? Theme.accent : Theme.border
 
-        Behavior on border.color {
-            ColorAnimation {
-                duration: Constants.animFast
-            }
+        ColumnLayout {
+            anchors.fill: parent
+            spacing: Constants.sizeSm
 
-        }
-
-    }
-
-    ColumnLayout {
-        anchors.fill: parent
-        anchors.margins: Constants.sizeLg
-        spacing: Constants.sizeLg
-
-        // Top Row: Icon container + Text + Checkbox
-        RowLayout {
-            Layout.fillWidth: true
-            spacing: Constants.sizeLg
-
-            // Icon container
-            Rectangle {
-                width: 40
-                height: 40
-                radius: Constants.sizeSm
-                color: Theme.bgTertiary
-                Layout.alignment: Qt.AlignTop
-
-                Image {
-                    id: pkgIcon
-
-                    anchors.centerIn: parent
-                    source: Quickshell.iconPath(delegateRoot.name, true) || ""
-                    sourceSize.width: 24
-                    sourceSize.height: 24
-                    visible: source.toString() !== ""
-                }
-
-                SvgIcon {
-                    icon: "box"
-                    iconSize: 20
-                    iconColor: Theme.muted
-                    anchors.centerIn: parent
-                    visible: !pkgIcon.visible
-                    flat: true
-                }
-
-            }
-
-            // Name, Repo, Version column
-            ColumnLayout {
+            // Top Row: Icon container + Text + Checkbox
+            RowLayout {
                 Layout.fillWidth: true
-                spacing: 4
-                Layout.alignment: Qt.AlignTop
+                spacing: Constants.sizeMd
 
-                RowLayout {
-                    Layout.maximumWidth: parent.width
-                    spacing: Constants.sizeSm
+                // Icon container
+                Rectangle {
+                    width: 42
+                    height: 42
+                    radius: Constants.sizeXs
+                    color: Theme.bgTertiary
+                    border.color: Theme.border
+                    border.width: 1
+                    Layout.alignment: Qt.AlignTop
+
+                    Image {
+                        id: pkgIcon
+
+                        anchors.centerIn: parent
+                        source: Quickshell.iconPath(delegateRoot.name, true) || ""
+                        sourceSize.width: 26
+                        sourceSize.height: 26
+                        visible: source.toString() !== ""
+                    }
+
+                    SvgIcon {
+                        icon: "box"
+                        iconSize: 22
+                        iconColor: Theme.muted
+                        anchors.centerIn: parent
+                        visible: !pkgIcon.visible
+                        flat: true
+                    }
+
+                }
+
+                // Name, Repo, Version column
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    spacing: 3
+                    Layout.alignment: Qt.AlignTop
+
+                    RowLayout {
+                        Layout.maximumWidth: parent.width
+                        spacing: Constants.sizeSm
+
+                        ThemedText {
+                            text: delegateRoot.name
+                            font.bold: true
+                            customSize: Constants.sizeMd
+                            color: delegateRoot.isCurrent ? Theme.accent : Theme.fg
+                            Layout.fillWidth: true
+                            elide: Text.ElideRight
+                        }
+
+                        Rectangle {
+                            implicitWidth: repoLabel.implicitWidth + 14
+                            implicitHeight: Constants.size2Xl
+                            radius: height / 2 + Constants.size2Xs
+                            color: delegateRoot.installed ? Theme.bgAccent : Theme.bgTertiary
+                            border.color: delegateRoot.installed ? "transparent" : Theme.border
+                            border.width: 1
+
+                            ThemedText {
+                                id: repoLabel
+
+                                anchors.centerIn: parent
+                                text: {
+                                    if (delegateRoot.installed)
+                                        return "Installed";
+
+                                    let r = (delegateRoot.source === "AUR" ? "aur" : delegateRoot.repo).toLowerCase();
+                                    if (r === "aur")
+                                        return "AUR";
+
+                                    return delegateRoot.repo.charAt(0).toUpperCase() + delegateRoot.repo.slice(1);
+                                }
+                                customSize: Constants.sizeXs
+                                font.bold: delegateRoot.installed
+                                color: delegateRoot.installed ? Theme.accent : Theme.fg
+                            }
+
+                        }
+
+                    }
 
                     ThemedText {
-                        text: delegateRoot.name
-                        font.bold: true
-                        customSize: Constants.sizeMd
-                        color: delegateRoot.isCurrent ? Theme.accent : Theme.fg
+                        text: delegateRoot.version
+                        customSize: Constants.sizeSm - 1
+                        color: Theme.muted
                         Layout.fillWidth: true
                         elide: Text.ElideRight
                     }
 
-                    Rectangle {
-                        implicitWidth: repoLabel.implicitWidth + 16
-                        implicitHeight: repoLabel.implicitHeight + 6
-                        radius: 6
-                        color: "transparent"
-                        border.color: Theme.border
-                        border.width: 1
+                }
 
-                        ThemedText {
-                            id: repoLabel
+                // Checkbox
+                Rectangle {
+                    width: Constants.size2Xl
+                    height: Constants.size2Xl
+                    radius: Constants.size2Xs + 2
+                    color: delegateRoot.isSelected ? Theme.accent : (delegateHover.hovered ? Theme.border : "transparent")
+                    border.width: delegateRoot.isSelected ? 0 : 1.5
+                    border.color: delegateRoot.isSelected ? Theme.accent : Theme.border
+                    Layout.alignment: Qt.AlignTop
 
-                            anchors.centerIn: parent
-                            text: {
-                                if (delegateRoot.installed)
-                                    return "Installed";
+                    SvgIcon {
+                        anchors.centerIn: parent
+                        icon: "check"
+                        iconSize: Constants.sizeSm
+                        iconColor: Theme.bg
+                        visible: delegateRoot.isSelected
+                        flat: true
+                    }
 
-                                let r = (delegateRoot.source === "AUR" ? "aur" : delegateRoot.repo).toLowerCase();
-                                if (r === "aur")
-                                    return "AUR";
-
-                                return delegateRoot.repo.charAt(0).toUpperCase() + delegateRoot.repo.slice(1);
-                            }
-                            customSize: Constants.sizeXs
-                            color: Theme.muted
-                        }
-
+                    TapHandler {
+                        onTapped: rootRef.toggleSelect(delegateRoot.name)
                     }
 
                 }
 
-                ThemedText {
-                    text: delegateRoot.version
-                    customSize: Constants.sizeSm
-                    color: Theme.muted
-                    Layout.fillWidth: true
-                    elide: Text.ElideRight
-                }
-
             }
 
-            // Checkbox (custom designed)
-            Rectangle {
-                width: 18
-                height: 18
-                radius: 4
-                color: delegateRoot.isSelected ? Theme.accent : "transparent"
-                border.width: delegateRoot.isSelected ? 0 : 2
-                border.color: Theme.border
-                Layout.alignment: Qt.AlignTop
-
-                SvgIcon {
-                    anchors.centerIn: parent
-                    icon: "check"
-                    iconSize: 12
-                    iconColor: Theme.bg
-                    visible: delegateRoot.isSelected
-                    flat: true
-                }
-
-                TapHandler {
-                    onTapped: rootRef.toggleSelect(delegateRoot.name)
-                }
-
-            }
-
-        }
-
-        // Description
-        ThemedText {
-            text: delegateRoot.description
-            customSize: Constants.sizeSm
-            color: Theme.fg
-            opacity: 0.9
-            wrapMode: Text.Wrap
-            maximumLineCount: 2
-            elide: Text.ElideRight
-            Layout.fillWidth: true
-            Layout.fillHeight: true
-            verticalAlignment: Text.AlignTop
-        }
-
-        // Footer: Size & More Info
-        RowLayout {
-            Layout.fillWidth: true
-            spacing: Constants.sizeXs
-
+            // Description
             ThemedText {
-                text: delegateRoot.isDetailLoading ? "···" : delegateRoot.pkgSize
+                text: delegateRoot.description
                 customSize: Constants.sizeSm
-                color: Theme.muted
-            }
-
-            Item {
+                color: Theme.fg
+                opacity: 0.85
+                wrapMode: Text.Wrap
+                maximumLineCount: 2
+                elide: Text.ElideRight
                 Layout.fillWidth: true
+                Layout.fillHeight: true
+                verticalAlignment: Text.AlignTop
             }
 
-            Rectangle {
-                Layout.alignment: Qt.AlignVCenter
-                width: moreInfoText.implicitWidth + 24
-                height: 28
-                radius: Constants.sizeXs
-                color: "transparent"
-                border.width: 1
-                border.color: moreInfoHover.hovered ? Theme.accent : Theme.border
+            // Footer: Size & Details Button
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: Constants.sizeXs
 
                 ThemedText {
-                    id: moreInfoText
+                    text: delegateRoot.isDetailLoading ? "···" : delegateRoot.pkgSize
+                    customSize: Constants.sizeSm - 1
+                    color: Theme.muted
+                }
 
-                    anchors.centerIn: parent
-                    text: "Details"
-                    customSize: Constants.sizeSm
-                    color: moreInfoHover.hovered ? Theme.accent : Theme.fg
+                Item {
+                    Layout.fillWidth: true
+                }
 
-                    Behavior on color {
-                        ColorAnimation {
-                            duration: Constants.animFast
+                Rectangle {
+                    Layout.alignment: Qt.AlignVCenter
+                    width: moreInfoText.implicitWidth + Constants.size2Xl
+                    height: Constants.size2Xl
+                    radius: Constants.sizeXs
+                    color: moreInfoHover.hovered ? Theme.bgTertiary : "transparent"
+                    border.width: 1
+                    border.color: moreInfoHover.hovered ? Theme.accent : Theme.border
+
+                    ThemedText {
+                        id: moreInfoText
+
+                        anchors.centerIn: parent
+                        text: "Details"
+                        customSize: Constants.sizeSm
+                        font.bold: moreInfoHover.hovered
+                        color: moreInfoHover.hovered ? Theme.accent : Theme.fg
+
+                        Behavior on color {
+                            ColorAnimation {
+                                duration: Constants.animFast
+                            }
+
                         }
 
                     }
 
+                    HoverHandler {
+                        id: moreInfoHover
+
+                        cursorShape: Qt.PointingHandCursor
+                    }
+
+                    TapHandler {
+                        onTapped: rootRef.showPackageDetails(delegateRoot.name, delegateRoot.installed)
+                    }
+
                 }
 
-                HoverHandler {
-                    id: moreInfoHover
+            }
 
-                    cursorShape: Qt.PointingHandCursor
-                }
+        }
 
-                TapHandler {
-                    onTapped: rootRef.showPackageDetails(delegateRoot.name, delegateRoot.installed)
-                }
-
+        Behavior on borderColor {
+            ColorAnimation {
+                duration: Constants.animFast
             }
 
         }

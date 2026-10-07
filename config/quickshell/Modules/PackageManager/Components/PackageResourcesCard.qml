@@ -22,31 +22,46 @@ Card {
     }
 
     Layout.fillWidth: true
-    cardRadius: Constants.sizeMd
-    useBorder: false
+    cardRadius: Constants.sizeSm
+    useBorder: true
+    borderColor: Theme.border
+    backgroundColor: Theme.bgSecondary
+    contentPadding: Constants.sizeLg
     visible: resRoot.getValue("URL", "") !== "" || resRoot.getValue("AUR URL", "") !== ""
 
     ColumnLayout {
         id: linksCol
 
-        anchors.left: parent.left
-        anchors.right: parent.right
-        anchors.top: parent.top
+        anchors.fill: parent
         spacing: Constants.sizeSm
 
-        ThemedText {
-            text: "Resources"
-            font.bold: true
-            customSize: Constants.sizeMd
-            color: Theme.fg
+        RowLayout {
+            spacing: Constants.sizeXs
+            Layout.bottomMargin: Constants.size3Xs
+
+            SvgIcon {
+                icon: "code"
+                iconSize: Constants.sizeMd
+                iconColor: Theme.muted
+                flat: true
+            }
+
+            ThemedText {
+                text: "RESOURCES"
+                font.bold: true
+                font.letterSpacing: 0.8
+                customSize: 10
+                color: Theme.muted
+            }
+
         }
 
         // Project Homepage
         Rectangle {
             Layout.fillWidth: true
-            implicitHeight: 52
-            radius: Constants.sizeSm
-            color: projectHover.hovered ? Theme.bgTertiary : "transparent"
+            implicitHeight: Constants.size5Xl
+            radius: Constants.sizeXs
+            color: projectHover.hovered ? Theme.bgSecondary : Theme.bgTertiary
             border.width: 1
             border.color: projectHover.hovered ? Theme.accent : Theme.border
             visible: resRoot.getValue("URL", "") !== ""
@@ -58,16 +73,24 @@ Card {
                 spacing: Constants.sizeSm
 
                 Item {
-                    Layout.preferredWidth: 24
-                    Layout.preferredHeight: 24
+                    Layout.preferredWidth: Constants.size2Xl
+                    Layout.preferredHeight: Constants.size2Xl
                     Layout.alignment: Qt.AlignVCenter
 
                     SvgIcon {
                         icon: "code"
-                        iconSize: 16
-                        iconColor: Theme.accent
+                        iconSize: Constants.sizeLg
+                        iconColor: projectHover.hovered ? Theme.accent : Theme.muted
                         flat: true
                         anchors.centerIn: parent
+
+                        Behavior on iconColor {
+                            ColorAnimation {
+                                duration: Constants.animFast
+                            }
+
+                        }
+
                     }
 
                 }
@@ -80,12 +103,20 @@ Card {
                         text: "Project Website"
                         font.bold: true
                         customSize: Constants.sizeSm
-                        color: Theme.fg
+                        color: projectHover.hovered ? Theme.accent : Theme.fg
+
+                        Behavior on color {
+                            ColorAnimation {
+                                duration: Constants.animFast
+                            }
+
+                        }
+
                     }
 
                     ThemedText {
                         text: resRoot.cleanUrl(resRoot.getValue("URL", ""))
-                        customSize: Constants.sizeXs + 2
+                        customSize: Constants.sizeXs + 1
                         color: Theme.muted
                         elide: Text.ElideRight
                         Layout.fillWidth: true
@@ -95,9 +126,17 @@ Card {
 
                 SvgIcon {
                     icon: "chevron-right"
-                    iconSize: 14
-                    iconColor: Theme.muted
+                    iconSize: Constants.sizeMd
+                    iconColor: projectHover.hovered ? Theme.accent : Theme.muted
                     flat: true
+
+                    Behavior on iconColor {
+                        ColorAnimation {
+                            duration: Constants.animFast
+                        }
+
+                    }
+
                 }
 
             }
@@ -112,14 +151,28 @@ Card {
                 onTapped: Qt.openUrlExternally(resRoot.getValue("URL", ""))
             }
 
+            Behavior on color {
+                ColorAnimation {
+                    duration: Constants.animFast
+                }
+
+            }
+
+            Behavior on border.color {
+                ColorAnimation {
+                    duration: Constants.animFast
+                }
+
+            }
+
         }
 
         // AUR Package Page
         Rectangle {
             Layout.fillWidth: true
-            implicitHeight: 52
-            radius: Constants.sizeSm
-            color: aurHover.hovered ? Theme.bgTertiary : "transparent"
+            implicitHeight: Constants.size5Xl
+            radius: Constants.sizeXs
+            color: aurHover.hovered ? Theme.bgSecondary : Theme.bgTertiary
             border.width: 1
             border.color: aurHover.hovered ? Theme.accent : Theme.border
             visible: resRoot.getValue("AUR URL", "") !== ""
@@ -131,16 +184,24 @@ Card {
                 spacing: Constants.sizeSm
 
                 Item {
-                    Layout.preferredWidth: 24
-                    Layout.preferredHeight: 24
+                    Layout.preferredWidth: Constants.size2Xl
+                    Layout.preferredHeight: Constants.size2Xl
                     Layout.alignment: Qt.AlignVCenter
 
                     SvgIcon {
                         icon: "box"
-                        iconSize: 16
-                        iconColor: Theme.accent
+                        iconSize: Constants.sizeLg
+                        iconColor: aurHover.hovered ? Theme.accent : Theme.muted
                         flat: true
                         anchors.centerIn: parent
+
+                        Behavior on iconColor {
+                            ColorAnimation {
+                                duration: Constants.animFast
+                            }
+
+                        }
+
                     }
 
                 }
@@ -153,12 +214,20 @@ Card {
                         text: "AUR Package Page"
                         font.bold: true
                         customSize: Constants.sizeSm
-                        color: Theme.fg
+                        color: aurHover.hovered ? Theme.accent : Theme.fg
+
+                        Behavior on color {
+                            ColorAnimation {
+                                duration: Constants.animFast
+                            }
+
+                        }
+
                     }
 
                     ThemedText {
                         text: "aur.archlinux.org"
-                        customSize: Constants.sizeXs + 2
+                        customSize: Constants.sizeXs + 1
                         color: Theme.muted
                         elide: Text.ElideRight
                         Layout.fillWidth: true
@@ -168,9 +237,17 @@ Card {
 
                 SvgIcon {
                     icon: "chevron-right"
-                    iconSize: 14
-                    iconColor: Theme.muted
+                    iconSize: Constants.sizeMd
+                    iconColor: aurHover.hovered ? Theme.accent : Theme.muted
                     flat: true
+
+                    Behavior on iconColor {
+                        ColorAnimation {
+                            duration: Constants.animFast
+                        }
+
+                    }
+
                 }
 
             }
@@ -183,6 +260,20 @@ Card {
 
             TapHandler {
                 onTapped: Qt.openUrlExternally(resRoot.getValue("AUR URL", ""))
+            }
+
+            Behavior on color {
+                ColorAnimation {
+                    duration: Constants.animFast
+                }
+
+            }
+
+            Behavior on border.color {
+                ColorAnimation {
+                    duration: Constants.animFast
+                }
+
             }
 
         }

@@ -15,23 +15,38 @@ Card {
     }
 
     Layout.fillWidth: true
-    cardRadius: Constants.sizeMd
-    useBorder: false
+    cardRadius: Constants.sizeSm
+    useBorder: true
+    borderColor: Theme.border
+    backgroundColor: Theme.bgSecondary
+    contentPadding: Constants.sizeLg
     visible: (relRoot.getValue("Provides", "None") !== "None") || (relRoot.getValue("Conflicts With", "None") !== "None") || (relRoot.getValue("Replaces", "None") !== "None")
 
     ColumnLayout {
         id: relCol
 
-        anchors.left: parent.left
-        anchors.right: parent.right
-        anchors.top: parent.top
+        anchors.fill: parent
         spacing: Constants.sizeSm
 
-        ThemedText {
-            text: "Package Relations"
-            font.bold: true
-            customSize: Constants.sizeMd
-            color: Theme.fg
+        RowLayout {
+            spacing: Constants.sizeXs
+            Layout.bottomMargin: Constants.size3Xs
+
+            SvgIcon {
+                icon: "commit"
+                iconSize: Constants.sizeMd
+                iconColor: Theme.muted
+                flat: true
+            }
+
+            ThemedText {
+                text: "PACKAGE RELATIONS"
+                font.bold: true
+                font.letterSpacing: 0.8
+                customSize: 10
+                color: Theme.muted
+            }
+
         }
 
         // Provides

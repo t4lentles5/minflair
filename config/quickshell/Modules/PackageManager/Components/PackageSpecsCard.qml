@@ -26,22 +26,37 @@ Card {
     }
 
     Layout.fillWidth: true
-    cardRadius: Constants.sizeMd
-    useBorder: false
+    cardRadius: Constants.sizeSm
+    useBorder: true
+    borderColor: Theme.border
+    backgroundColor: Theme.bgSecondary
+    contentPadding: Constants.sizeLg
 
     ColumnLayout {
         id: specsCol
 
-        anchors.left: parent.left
-        anchors.right: parent.right
-        anchors.top: parent.top
+        anchors.fill: parent
         spacing: Constants.sizeSm
 
-        ThemedText {
-            text: "Information"
-            font.bold: true
-            customSize: Constants.sizeMd
-            color: Theme.fg
+        RowLayout {
+            spacing: Constants.sizeXs
+            Layout.bottomMargin: Constants.size3Xs
+
+            SvgIcon {
+                icon: "tune"
+                iconSize: Constants.sizeMd
+                iconColor: Theme.muted
+                flat: true
+            }
+
+            ThemedText {
+                text: "SPECIFICATIONS"
+                font.bold: true
+                font.letterSpacing: 0.8
+                customSize: 10
+                color: Theme.muted
+            }
+
         }
 
         // Spec Rows
@@ -98,6 +113,7 @@ Card {
                     Layout.fillWidth: true
                     wrapMode: Text.Wrap
                     horizontalAlignment: Text.AlignRight
+                    font.bold: modelData.key === "Version"
                 }
 
             }
@@ -109,6 +125,7 @@ Card {
             Layout.fillWidth: true
             visible: specsRoot.parsedInfo["Votes"] !== undefined || specsRoot.parsedInfo["Popularity"] !== undefined
             spacing: Constants.sizeSm
+            Layout.topMargin: Constants.size2Xs
 
             ThemedText {
                 text: "AUR Stats"
@@ -128,12 +145,12 @@ Card {
 
                 // Votes
                 RowLayout {
-                    spacing: 4
+                    spacing: Constants.size2Xs
                     visible: specsRoot.parsedInfo["Votes"] !== undefined
 
                     SvgIcon {
                         icon: "star-filled"
-                        iconSize: 12
+                        iconSize: Constants.sizeSm
                         iconColor: Theme.accent
                         flat: true
                     }

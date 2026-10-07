@@ -54,14 +54,14 @@ FloatingWindow {
     ColumnLayout {
         anchors.fill: parent
         anchors.margins: root.contentPadding
-        spacing: Constants.sizeLg
+        spacing: root.contentPadding > 0 ? Constants.sizeLg : 0
 
         ColumnLayout {
             id: innerLayout
 
             Layout.fillWidth: true
             Layout.fillHeight: true
-            spacing: Constants.sizeLg
+            spacing: root.contentPadding > 0 ? Constants.sizeLg : 0
         }
 
     }

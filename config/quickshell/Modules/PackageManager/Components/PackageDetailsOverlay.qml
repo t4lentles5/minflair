@@ -81,22 +81,31 @@ Rectangle {
             spacing: Constants.sizeSm
 
             Rectangle {
-                width: Constants.sizeXl
-                height: Constants.sizeXl
+                implicitHeight: Constants.size3Xl
+                implicitWidth: backRow.implicitWidth + 20
                 radius: Constants.sizeXs
                 color: backHover.hovered ? Theme.bgSecondary : "transparent"
+                border.width: 1
+                border.color: Theme.border
 
-                SvgIcon {
-                    icon: "chevron-left"
-                    iconSize: Constants.sizeLg
-                    iconColor: backHover.hovered ? Theme.fg : Theme.muted
+                RowLayout {
+                    id: backRow
+
                     anchors.centerIn: parent
+                    spacing: 6
 
-                    Behavior on iconColor {
-                        ColorAnimation {
-                            duration: Constants.animFast
-                        }
+                    SvgIcon {
+                        icon: "chevron-left"
+                        iconSize: Constants.sizeMd
+                        iconColor: backHover.hovered ? Theme.fg : Theme.muted
+                        flat: true
+                    }
 
+                    ThemedText {
+                        text: "Back to Packages"
+                        customSize: Constants.sizeSm
+                        font.bold: true
+                        color: backHover.hovered ? Theme.fg : Theme.muted
                     }
 
                 }
@@ -192,22 +201,36 @@ Rectangle {
                         // Card: About
                         Card {
                             Layout.fillWidth: true
-                            cardRadius: Constants.sizeMd
-                            useBorder: false
+                            cardRadius: Constants.sizeSm
+                            useBorder: true
+                            borderColor: Theme.border
+                            backgroundColor: Theme.bgSecondary
+                            contentPadding: Constants.sizeLg
 
                             ColumnLayout {
                                 id: aboutCol
 
-                                anchors.left: parent.left
-                                anchors.right: parent.right
-                                anchors.top: parent.top
+                                anchors.fill: parent
                                 spacing: Constants.sizeSm
 
-                                ThemedText {
-                                    text: "About"
-                                    font.bold: true
-                                    customSize: Constants.sizeMd
-                                    color: Theme.fg
+                                RowLayout {
+                                    spacing: Constants.sizeXs
+
+                                    SvgIcon {
+                                        icon: "info"
+                                        iconSize: Constants.sizeMd
+                                        iconColor: Theme.muted
+                                        flat: true
+                                    }
+
+                                    ThemedText {
+                                        text: "ABOUT"
+                                        font.bold: true
+                                        font.letterSpacing: 0.8
+                                        customSize: 10
+                                        color: Theme.muted
+                                    }
+
                                 }
 
                                 ThemedText {
@@ -263,7 +286,7 @@ Rectangle {
 
     Behavior on opacity {
         NumberAnimation {
-            duration: 150
+            duration: Constants.animFast
         }
 
     }
