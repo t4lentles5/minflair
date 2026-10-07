@@ -59,13 +59,15 @@ Item {
         for (let i = 0; i < clipboardModel.count; i++) {
             let item = clipboardModel.get(i);
             let isImage = item.isImage !== undefined ? item.isImage : false;
-            if (item.text.toLowerCase().includes(queryLower) || (isImage && queryLower === ""))
+            let textMatches = !isImage && item.text && item.text.toLowerCase().includes(queryLower);
+            let imageMatches = isImage && queryLower === "";
+            if (textMatches || imageMatches)
                 matchedItems.push({
-                    "itemId": item.itemId,
-                    "text": item.text,
-                    "fullLine": item.fullLine,
-                    "isImage": isImage
-                });
+                "itemId": item.itemId,
+                "text": item.text,
+                "fullLine": item.fullLine,
+                "isImage": isImage
+            });
 
         }
         syncModel(filteredModel, matchedItems);

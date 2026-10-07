@@ -30,11 +30,13 @@ Item {
             ThemedText {
                 text: root.label
                 customSize: root.labelSize
+                font.weight: Font.Medium
                 color: root.enabled ? Theme.fg : Theme.muted
             }
 
             ThemedText {
                 text: root.description
+                customSize: 11
                 color: Theme.muted
                 visible: root.description !== ""
             }

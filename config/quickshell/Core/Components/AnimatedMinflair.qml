@@ -7,7 +7,7 @@ import qs.Core.Services
 Item {
     id: root
 
-    property int iconSize: 32
+    property int iconSize: Constants.size3Xl
     property color iconColor: Theme.accent
     property string plusStarPath: "M 11.6 2.5 Q 12 1.2 12.4 2.5 L 14 10 L 21.5 11.6 Q 22.8 12 21.5 12.4 L 14 14 L 12.4 21.5 Q 12 22.8 11.6 21.5 L 10 14 L 2.5 12.4 Q 1.2 12 2.5 11.6 L 10 10 Z"
     readonly property int scaledIconSize: Math.round(iconSize * SettingsService.fontScale)
@@ -18,14 +18,14 @@ Item {
     height: scaledIconSize
     implicitWidth: scaledIconSize
     implicitHeight: scaledIconSize
-    layer.enabled: true
+    layer.enabled: HyprlandService.hyprShadow && !DisplayProfileService.gameModeActive && (SystemInfoService.powerProfile !== "power-saver")
 
     Item {
         id: starContainer
 
-        width: 24
-        height: 24
-        scale: root.scaledIconSize / 24
+        width: Constants.size2Xl
+        height: Constants.size2Xl
+        scale: root.scaledIconSize / Constants.size2Xl
         rotation: 45
         anchors.centerIn: parent
         enabled: false
@@ -33,14 +33,14 @@ Item {
         Item {
             id: mainStarShape
 
-            width: 24
-            height: 24
+            width: Constants.size2Xl
+            height: Constants.size2Xl
             transformOrigin: Item.Center
             rotation: 0
 
             Shape {
-                width: 24
-                height: 24
+                width: Constants.size2Xl
+                height: Constants.size2Xl
                 preferredRendererType: Shape.CurveRenderer
                 opacity: 0.4
 
@@ -62,15 +62,15 @@ Item {
         Item {
             id: xStarShape
 
-            width: 24
-            height: 24
+            width: Constants.size2Xl
+            height: Constants.size2Xl
             transformOrigin: Item.Center
             rotation: 45
             scale: 1
 
             Shape {
-                width: 24
-                height: 24
+                width: Constants.size2Xl
+                height: Constants.size2Xl
                 preferredRendererType: Shape.CurveRenderer
                 opacity: 1
 
@@ -119,7 +119,7 @@ Item {
             }
 
             PauseAnimation {
-                duration: 200
+                duration: Constants.animNormal - 50
             }
 
             ParallelAnimation {
@@ -128,7 +128,7 @@ Item {
                         target: mainStarShape
                         property: "scale"
                         to: 1
-                        duration: 900
+                        duration: Constants.animExpressive + 400
                         easing.type: Easing.OutBack
                         easing.overshoot: 1.2
                     }
@@ -137,7 +137,7 @@ Item {
                         target: mainStarShape
                         property: "rotation"
                         to: 0
-                        duration: 900
+                        duration: Constants.animExpressive + 400
                         easing.type: Easing.OutBack
                         easing.overshoot: 1.2
                     }
@@ -146,7 +146,7 @@ Item {
 
                 SequentialAnimation {
                     PauseAnimation {
-                        duration: 150
+                        duration: Constants.animFast
                     }
 
                     ParallelAnimation {
@@ -154,7 +154,7 @@ Item {
                             target: xStarShape
                             property: "scale"
                             to: 1
-                            duration: 900
+                            duration: Constants.animExpressive + 400
                             easing.type: Easing.OutBack
                             easing.overshoot: 1.2
                         }
@@ -163,7 +163,7 @@ Item {
                             target: xStarShape
                             property: "rotation"
                             to: 45
-                            duration: 900
+                            duration: Constants.animExpressive + 400
                             easing.type: Easing.OutBack
                             easing.overshoot: 1.2
                         }
@@ -183,7 +183,7 @@ Item {
             loops: Animation.Infinite
 
             PauseAnimation {
-                duration: 5000
+                duration: Constants.animExpressive * 10
             }
 
             ParallelAnimation {
@@ -192,7 +192,7 @@ Item {
                     property: "rotation"
                     from: 0
                     to: 90
-                    duration: 1200
+                    duration: Constants.animUltraSlow * 3
                     easing.type: Easing.InOutBack
                     easing.overshoot: 1.2
                 }
@@ -202,7 +202,7 @@ Item {
                     property: "rotation"
                     from: 45
                     to: -45
-                    duration: 1200
+                    duration: Constants.animUltraSlow * 3
                     easing.type: Easing.InOutBack
                     easing.overshoot: 1.2
                 }
@@ -230,7 +230,7 @@ Item {
 
         transparentBorder: true
         color: root.iconColor
-        radius: 8
+        radius: Constants.sizeXs
         samples: 17
         spread: 0.1
     }

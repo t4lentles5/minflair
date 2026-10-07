@@ -10,7 +10,7 @@ Item {
     property string value: ""
     property color labelColor: Theme.fg
 
-    implicitHeight: 28
+    implicitHeight: Constants.size2Xl + 4
     Layout.fillWidth: true
 
     HoverHandler {
@@ -25,7 +25,7 @@ Item {
             icon: root.icon
             flat: true
             iconColor: Theme.accent
-            iconSize: 14
+            iconSize: Constants.sizeMd
             visible: root.icon !== ""
         }
 

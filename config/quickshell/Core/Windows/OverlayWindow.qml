@@ -14,7 +14,7 @@ PanelWindow {
     id: root
 
     property var notificationService: null
-    property string popupId: ""
+    property string widgetId: ""
     property bool isOpen: false
     property Item initialFocusItem: null
     property bool exclusive: true
@@ -29,11 +29,6 @@ PanelWindow {
     property real smoothPreferredWidth: preferredWidth
     property real smoothPreferredHeight: preferredHeight
     property bool positionAtBottom: false
-    property bool enableBottomNotch: true
-    property int notchFlareWidth: 18
-    property int notchFlareHeight: 16
-    property int notchSidePadding: 0
-    property int notchBottomPadding: 0
     property bool _windowVisible: false
     property bool forceVisible: false
     property int contentPadding: Constants.sizeLg
@@ -49,20 +44,13 @@ PanelWindow {
         if (SettingsService.barIslandMode && !positionAtBottom)
             return "island";
 
-        if (SettingsService.barNotchMode && positionAtBottom && enableBottomNotch)
-            return "notch";
-
-        if (SettingsService.barConvexMode)
-            return "convex";
-
-        return "minflair";
+        return "floating";
     }
     readonly property bool isIsland: activeStyle === "island"
-    readonly property bool isBottomNotch: activeStyle === "notch"
-    readonly property bool isConvex: activeStyle === "convex"
+    readonly property bool isFloating: activeStyle === "floating"
 
-    signal popupOpened()
-    signal popupClosed()
+    signal widgetOpened()
+    signal widgetClosed()
     signal fullyClosed()
 
     function finishClosing() {
@@ -84,29 +72,29 @@ PanelWindow {
     exclusionMode: ExclusionMode.Ignore
     visible: _windowVisible || forceVisible || (styleLoader.item && styleLoader.item.isHandover)
     onIsOpenChanged: {
-        if (popupId === "")
+        if (widgetId === "")
             return ;
 
         if (isOpen) {
             closeDelayTimer.stop();
-            if (exclusive && !AppState.isPopupOpen(popupId))
-                AppState.openPopup(popupId);
+            if (exclusive && !AppState.isWidgetOpen(widgetId))
+                AppState.openWidget(widgetId);
 
             _windowVisible = true;
-            root.popupOpened();
+            root.widgetOpened();
             if (root.initialFocusItem)
                 initialFocusTimer.start();
 
         } else {
-            let anotherFocusOpen = AppState.isFocusPopupOpen && !AppState.isPopupOpen(popupId);
+            let anotherFocusOpen = AppState.isFocusWidgetOpen && !AppState.isWidgetOpen(widgetId);
             if (exclusive && anotherFocusOpen) {
                 closeDelayTimer.stop();
                 _windowVisible = false;
-                root.popupClosed();
+                root.widgetClosed();
                 root.fullyClosed();
             } else {
                 closeDelayTimer.start();
-                root.popupClosed();
+                root.widgetClosed();
             }
         }
     }
@@ -130,6 +118,7 @@ PanelWindow {
 
     MouseArea {
         anchors.fill: parent
+        acceptedButtons: Qt.AllButtons
         enabled: root.isOpen
         onClicked: root.isOpen = false
     }
@@ -140,8 +129,8 @@ PanelWindow {
         interval: HyprlandService.enableAnimations ? (root.isIsland ? (Constants.animNormal + 80) : (Constants.animSlow + 150)) : 10
         repeat: false
         onTriggered: {
-            if (exclusive && AppState.isPopupOpen(popupId))
-                AppState.closePopup(popupId);
+            if (exclusive && AppState.isWidgetOpen(widgetId))
+                AppState.closeWidget(widgetId);
 
             root.finishClosing();
         }
@@ -170,12 +159,9 @@ PanelWindow {
             switch (root.activeStyle) {
             case "island":
                 return islandComponent;
-            case "notch":
-                return notchComponent;
-            case "convex":
-                return convexComponent;
+            case "floating":
             default:
-                return minflairComponent;
+                return floatingComponent;
             }
         }
         onStatusChanged: {
@@ -203,27 +189,9 @@ PanelWindow {
     }
 
     Component {
-        id: minflairComponent
+        id: floatingComponent
 
-        MinflairOverlayStyle {
-            widget: root
-        }
-
-    }
-
-    Component {
-        id: convexComponent
-
-        ConvexOverlayStyle {
-            widget: root
-        }
-
-    }
-
-    Component {
-        id: notchComponent
-
-        NotchOverlayStyle {
+        FloatingOverlayStyle {
             widget: root
         }
 
@@ -294,7 +262,7 @@ PanelWindow {
     }
 
     Behavior on openProgress {
-        enabled: HyprlandService.enableAnimations && (root.isConvex || root.isBottomNotch)
+        enabled: HyprlandService.enableAnimations
 
         NumberAnimation {
             duration: root.isOpen ? root.fadeDuration : root.closeDuration
@@ -307,18 +275,8 @@ PanelWindow {
         enabled: HyprlandService.enableAnimations
 
         NumberAnimation {
-            duration: root.isOpen ? ((root.isIsland && AppState.hasActiveNotification) ? Constants.animSlow : (root.isIsland ? Constants.animExpressive : root.isConvex ? Constants.animSlow : Constants.animNormal)) : Constants.animNormal
-            easing.type: {
-                if (root.isIsland)
-                    return root.isOpen ? Easing.OutQuint : Easing.OutCubic;
-                else if (root.isConvex)
-                    return root.isOpen ? Easing.OutCubic : Easing.InCubic;
-                else if (root.isBottomNotch)
-                    return root.isOpen ? Easing.OutQuint : Easing.InCubic;
-                else
-                    return root.isOpen ? Easing.OutBack : Easing.InCubic;
-            }
-            easing.overshoot: (!root.isConvex && !root.isIsland && !root.isBottomNotch && root.isOpen) ? 1.04 : 0
+            duration: root.isOpen ? ((root.isIsland && AppState.hasActiveNotification) ? Constants.animSlow : (root.isIsland ? Constants.animExpressive : Constants.animNormal)) : Constants.animNormal
+            easing.type: root.isIsland ? (root.isOpen ? Easing.OutQuint : Easing.OutCubic) : (root.isOpen ? Easing.OutCubic : Easing.InCubic)
         }
 
     }

@@ -33,7 +33,7 @@ Rectangle {
             return flat ? "transparent" : Theme.bgSecondary;
 
         if (mouseArea.pressed || mouseArea.containsMouse)
-            return isActive ? Qt.darker(Theme.accent, 1.1) : Theme.bgSecondary;
+            return isActive ? Theme.accent : Theme.bgSecondary;
 
         return bgColor;
     }
@@ -49,7 +49,7 @@ Rectangle {
         anchors.left: root.contentAlignment === Qt.AlignLeft ? parent.left : undefined
         anchors.leftMargin: root.contentAlignment === Qt.AlignLeft ? Constants.sizeLg : 0
         anchors.horizontalCenter: root.contentAlignment === Qt.AlignHCenter ? parent.horizontalCenter : undefined
-        spacing: 4
+        spacing: Constants.size2Xs
 
         Item {
             implicitWidth: root.scaledIconSize

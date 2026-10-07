@@ -8,15 +8,16 @@ Item {
     id: root
 
     property var cavaData: []
+    readonly property bool isCavaActive: MprisService.isPlaying && SystemInfoService.powerProfile !== "power-saver"
 
     Timer {
         id: watchdog
 
         interval: 1000
         repeat: true
-        running: MprisService.isPlaying
+        running: root.isCavaActive
         onTriggered: {
-            if (MprisService.isPlaying && !cavaProc.running)
+            if (root.isCavaActive && !cavaProc.running)
                 cavaProc.running = true;
 
         }
@@ -25,8 +26,8 @@ Item {
     Process {
         id: cavaProc
 
-        command: ["sh", "-c", "exec cava -p " + Quickshell.shellDir + "/Modules/MusicPopup/cava.conf"]
-        running: MprisService.isPlaying
+        command: ["sh", "-c", "exec cava -p " + Quickshell.shellDir + "/Modules/Music/cava.conf"]
+        running: root.isCavaActive
         onRunningChanged: {
             if (!running)
                 root.cavaData = [];

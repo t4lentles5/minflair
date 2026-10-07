@@ -24,14 +24,12 @@ Item {
     property bool clockSeconds: false
     property bool clockShowDate: true
     property string cursorTheme: "Bibata-Modern-Classic"
-    property int cursorSize: 24
-    property string barStyle: "minflair"
-    property bool barMinflairMode: barStyle === "minflair"
+    property int cursorSize: Constants.size2Xl
+    property string barStyle: "convex"
     property bool barIslandMode: barStyle === "island"
-    property bool barNotchMode: barStyle === "notch"
     property bool barConvexMode: barStyle === "convex"
     property bool barIslandExpanded: false
-    property bool barNotchExpanded: false
+    property string islandRightMode: "auto"
     property string barSlotL1: "workspaces"
     property string barSlotL2: "none"
     property string barSlotL3: "none"
@@ -40,7 +38,7 @@ Item {
     property string barSlotR1: "recording"
     property string barSlotR2: "control_center"
     property string barSlotR3: "tray"
-    readonly property int barWidgetHeight: (barIslandMode || barNotchMode || barConvexMode) ? 28 : 32
+    readonly property int barWidgetHeight: 28
 
     function saveSettings() {
         saveTimer.restart();
@@ -160,7 +158,7 @@ Item {
             saveSettings();
 
     }
-    onBarNotchExpandedChanged: {
+    onIslandRightModeChanged: {
         if (settingsLoaded)
             saveSettings();
 
@@ -237,6 +235,8 @@ Item {
                 "wpTransitionStep": HyprlandService.wpTransitionStep,
                 "wpTransitionFps": HyprlandService.wpTransitionFps,
                 "wpTransitionAngle": HyprlandService.wpTransitionAngle,
+                "wpResizeMode": HyprlandService.wpResizeMode,
+                "wpCropGravity": HyprlandService.wpCropGravity,
                 "micMuted": AudioService.micMuted,
                 "micVolume": AudioService.micVolume,
                 "quoteCategory": settingsService.quoteCategory,
@@ -250,7 +250,7 @@ Item {
                 "cursorSize": settingsService.cursorSize,
                 "barStyle": settingsService.barStyle,
                 "barIslandExpanded": settingsService.barIslandExpanded,
-                "barNotchExpanded": settingsService.barNotchExpanded,
+                "islandRightMode": settingsService.islandRightMode,
                 "barSlotL1": settingsService.barSlotL1,
                 "barSlotL2": settingsService.barSlotL2,
                 "barSlotL3": settingsService.barSlotL3,
@@ -360,6 +360,12 @@ Item {
                         if (prefs.wpTransitionAngle !== undefined)
                             HyprlandService.wpTransitionAngle = prefs.wpTransitionAngle;
 
+                        if (prefs.wpResizeMode !== undefined)
+                            HyprlandService.wpResizeMode = prefs.wpResizeMode;
+
+                        if (prefs.wpCropGravity !== undefined)
+                            HyprlandService.wpCropGravity = prefs.wpCropGravity;
+
                         if (prefs.micVolume !== undefined) {
                             AudioService.micVolume = AudioService.hasPhysicalMic ? prefs.micVolume : 0;
                             if (AudioService.hasPhysicalMic)
@@ -402,14 +408,17 @@ Item {
 
                         applyCursor(settingsService.cursorTheme, settingsService.cursorSize);
                         applyFont(settingsService.fontFamily, Math.round(11 * settingsService.fontScale));
-                        if (prefs.barStyle !== undefined)
-                            settingsService.barStyle = prefs.barStyle;
-
+                        if (prefs.barStyle !== undefined) {
+                            if (prefs.barStyle === "island")
+                                settingsService.barStyle = "island";
+                            else
+                                settingsService.barStyle = "convex";
+                        }
                         if (prefs.barIslandExpanded !== undefined)
                             settingsService.barIslandExpanded = prefs.barIslandExpanded;
 
-                        if (prefs.barNotchExpanded !== undefined)
-                            settingsService.barNotchExpanded = prefs.barNotchExpanded;
+                        if (prefs.islandRightMode !== undefined)
+                            settingsService.islandRightMode = prefs.islandRightMode;
 
                         if (prefs.barSlotL1 !== undefined)
                             settingsService.barSlotL1 = prefs.barSlotL1;

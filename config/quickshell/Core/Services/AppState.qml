@@ -7,206 +7,176 @@ pragma Singleton
 Item {
     id: appState
 
-    property string activePopup: ""
-    property var activePopupsList: []
-    readonly property bool hasAnyPopupOpen: activePopupsList.length > 0 || activePopup !== ""
-    readonly property bool isFocusPopupOpen: isPopupOpen("launcher") || isPopupOpen("clipboard") || isPopupOpen("wallpaper") || isPopupOpen("powerMenu") || isPopupOpen("screenshot")
+    property string activeWidget: ""
+    property var activeWidgetsList: []
+    readonly property bool isFocusWidgetOpen: isWidgetOpen("launcher") || isWidgetOpen("clipboard") || isWidgetOpen("wallpaper") || isWidgetOpen("powerMenu") || isWidgetOpen("screenshot")
     property int pendingSettingsTab: -1
     property var launcherApps: []
     property bool socketsCleaned: false
     property real islandWidth: 180
-    property real islandHeight: 36
-    readonly property real islandRadius: islandHeight / 2
-    property real barIslandWidth: 180
-    property real barIslandHeight: 36
-    readonly property real barIslandRadius: barIslandHeight / 2
+    property real islandHeight: Constants.size3Xl
+    property alias barIslandWidth: appState.islandWidth
+    property alias barIslandHeight: appState.islandHeight
     property bool isIslandOpen: false
-    property real barNotchWidth: 220
-    property real barNotchHeight: 40
-    property bool isNotchOpen: false
     property bool isConvexOpen: false
     property real barConvexWidth: 220
-    property real barConvexHeight: 40
-    property real activeConvexWidth: barConvexWidth
-    property real activeConvexHeight: barConvexHeight
-    property bool lockConvexCenterHeight: false
+    property real barConvexHeight: Constants.size4Xl
+    property var activeTrayItem: null
     property bool hasActiveNotification: false
     property real activeNotificationWidth: 0
     property real activeNotificationHeight: 0
-    readonly property var focusPopups: ["launcher", "clipboard", "wallpaper", "screenshot", "powerMenu"]
+    readonly property var focusWidgets: ["launcher", "clipboard", "wallpaper", "screenshot", "powerMenu"]
     readonly property var standaloneWindows: ["minflair_settings", "minflair_keybinds", "packagemanager"]
 
-    signal togglePopup(string popupId)
-    signal openPopup(string popupId)
+    signal toggleWidget(string widgetId)
+    signal openWidget(string widgetId)
 
-    function isBarPopup(id) {
+    function isBarWidget(id) {
         if (!id)
             return false;
 
-        return id === "dashboard" || id === "controlCenter" || id === "notificationsCenter" || id === "music" || id.startsWith("systemTray_");
+        return id === "dashboard" || id === "controlCenter" || id === "notificationsCenter" || id === "music" || id === "clock" || id.startsWith("systemTray_");
     }
 
-    function isFocusPopup(id) {
-        return focusPopups.indexOf(id) !== -1;
+    function isFocusWidget(id) {
+        return focusWidgets.indexOf(id) !== -1;
+    }
+
+    function isBarOverlayWidget(id) {
+        return isFocusWidget(id) || isBarWidget(id);
     }
 
     function isStandaloneWindow(id) {
         return standaloneWindows.indexOf(id) !== -1;
     }
 
-    function isPopupOpen(id) {
+    function isWidgetOpen(id) {
         if (!id || isStandaloneWindow(id))
             return false;
 
-        if (activePopup === id)
+        if (activeWidget === id)
             return true;
 
-        return activePopupsList.indexOf(id) !== -1;
+        return activeWidgetsList.indexOf(id) !== -1;
     }
 
-    function getSlot(popupId, barStyle) {
-        if (isFocusPopup(popupId))
+    function getSlot(widgetId, barStyle) {
+        if (isFocusWidget(widgetId))
             return "focus";
 
         let s = barStyle || SettingsService.barStyle;
-        if (s === "minflair") {
-            if (isBarPopup(popupId))
-                return "bar";
+        if (s === "island")
+            return "center";
 
-        } else if (s === "island" || s === "notch") {
-            if (popupId === "dashboard" || popupId === "controlCenter" || popupId === "notificationsCenter" || popupId === "music")
-                return "center";
+        // convex
+        if (widgetId === "dashboard")
+            return "left";
 
-            if (popupId.startsWith("systemTray_"))
-                return "tray";
+        if (widgetId === "music")
+            return "center";
 
-        } else if (s === "convex") {
-            if (popupId === "dashboard")
-                return "left";
+        if (widgetId === "controlCenter" || widgetId === "notificationsCenter" || widgetId === "clock" || widgetId.startsWith("systemTray_"))
+            return "right";
 
-            if (popupId === "music" || popupId === "notificationsCenter")
-                return "center";
-
-            if (popupId === "controlCenter" || popupId.startsWith("systemTray_"))
-                return "right";
-
-        }
-        return popupId;
+        return widgetId;
     }
 
-    function closePopup(popupId) {
-        if (!popupId)
+    function closeWidget(widgetId) {
+        if (!widgetId)
             return ;
 
-        if (activePopup === popupId)
-            activePopup = "";
+        if (widgetId.startsWith("systemTray_") || activeWidget === widgetId)
+            activeTrayItem = null;
 
-        let idx = activePopupsList.indexOf(popupId);
+        let idx = activeWidgetsList.indexOf(widgetId);
         if (idx !== -1) {
-            let next = activePopupsList.slice();
+            let next = activeWidgetsList.slice();
             next.splice(idx, 1);
-            activePopupsList = next;
+            activeWidgetsList = next;
         }
+        if (activeWidget === widgetId)
+            activeWidget = "";
+
     }
 
-    function closeAllPopups() {
-        activePopup = "";
-        activePopupsList = [];
+    function closeAllWidgets() {
+        activeTrayItem = null;
+        activeWidgetsList = [];
+        activeWidget = "";
     }
 
-    function openPopupInternal(popupId) {
-        if (!popupId || isStandaloneWindow(popupId))
+    function openWidgetInternal(widgetId) {
+        if (!widgetId || isStandaloneWindow(widgetId))
             return ;
 
-        let slot = getSlot(popupId);
+        let slot = getSlot(widgetId);
         // Rule 1: Focus widgets close each other, but do NOT close bar widgets
         if (slot === "focus") {
             let next = [];
-            for (let i = 0; i < activePopupsList.length; i++) {
-                let item = activePopupsList[i];
-                if (isFocusPopup(item))
+            for (let i = 0; i < activeWidgetsList.length; i++) {
+                let item = activeWidgetsList[i];
+                if (isFocusWidget(item))
                     continue;
 
                 next.push(item);
             }
-            next.push(popupId);
-            activePopupsList = next;
-            activePopup = popupId;
+            next.push(widgetId);
+            activeWidgetsList = next;
+            activeWidget = widgetId;
             return ;
         }
         // Rule 2: Opening a bar widget closes widgets in the same slot, but keeps focus widgets open
         let next = [];
-        for (let i = 0; i < activePopupsList.length; i++) {
-            let item = activePopupsList[i];
+        for (let i = 0; i < activeWidgetsList.length; i++) {
+            let item = activeWidgetsList[i];
             if (getSlot(item) === slot)
                 continue;
 
             next.push(item);
         }
-        if (next.indexOf(popupId) === -1)
-            next.push(popupId);
+        if (next.indexOf(widgetId) === -1)
+            next.push(widgetId);
 
-        if (SettingsService.barMinflairMode && isBarPopup(popupId)) {
-            activePopup = popupId;
-        } else if (SettingsService.barIslandMode || SettingsService.barNotchMode) {
-            activePopup = popupId;
-        } else if (isFocusPopup(activePopup)) {
-        } else if (next.length === 1)
-            activePopup = popupId;
-        else if (next.length === 0)
-            activePopup = "";
-        activePopupsList = next;
+        activeWidgetsList = next;
+        activeWidget = widgetId;
     }
 
-    function togglePopupInternal(popupId) {
-        if (!popupId) {
-            closeAllPopups();
+    function toggleWidgetInternal(widgetId) {
+        if (!widgetId) {
+            closeAllWidgets();
             return ;
         }
-        if (isStandaloneWindow(popupId))
+        if (isStandaloneWindow(widgetId))
             return ;
 
-        if (isPopupOpen(popupId))
-            closePopup(popupId);
+        if (isWidgetOpen(widgetId))
+            closeWidget(widgetId);
         else
-            openPopupInternal(popupId);
+            openWidgetInternal(widgetId);
     }
 
-    function formatTime(seconds) {
-        if (seconds <= 0)
-            return "Calculating...";
-
-        let hours = Math.floor(seconds / 3600);
-        let mins = Math.floor((seconds % 3600) / 60);
-        if (hours > 0)
-            return hours + "h " + mins + "m";
-        else
-            return mins + "m";
-    }
-
-    onActivePopupChanged: {
-        if (activePopup === "") {
+    onActiveWidgetChanged: {
+        if (activeWidget === "") {
             let next = [];
-            for (let i = 0; i < activePopupsList.length; i++) {
-                let item = activePopupsList[i];
-                if (isFocusPopup(item) || (SettingsService.barMinflairMode && isBarPopup(item)) || SettingsService.barIslandMode || SettingsService.barNotchMode)
-                    continue;
+            for (let i = 0; i < activeWidgetsList.length; i++) {
+                let item = activeWidgetsList[i];
+                if (isFocusWidget(item))
+                    next.push(item);
 
-                next.push(item);
             }
-            if (next.length !== activePopupsList.length)
-                activePopupsList = next;
+            if (next.length !== activeWidgetsList.length)
+                activeWidgetsList = next;
 
         } else {
-            if (activePopupsList.indexOf(activePopup) === -1)
-                openPopupInternal(activePopup);
+            if (activeWidgetsList.indexOf(activeWidget) === -1)
+                openWidgetInternal(activeWidget);
 
         }
     }
-    onTogglePopup: (popupId) => {
-        togglePopupInternal(popupId);
+    onToggleWidget: (widgetId) => {
+        toggleWidgetInternal(widgetId);
     }
-    onOpenPopup: (popupId) => {
-        openPopupInternal(popupId);
+    onOpenWidget: (widgetId) => {
+        openWidgetInternal(widgetId);
     }
 }

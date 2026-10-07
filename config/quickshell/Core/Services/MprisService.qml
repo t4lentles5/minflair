@@ -314,7 +314,7 @@ Item {
     Process {
         id: playerScannerProc
 
-        command: ["python3", Quickshell.shellDir + "/Modules/MusicPopup/scripts/get_music_players.py"]
+        command: ["python3", Quickshell.shellDir + "/Modules/Music/scripts/get_music_players.py"]
         Component.onCompleted: running = true
         onExited: (exitCode) => {
             if (exitCode === 0) {

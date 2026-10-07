@@ -8,13 +8,15 @@ Card {
     id: root
 
     property string title: ""
-    property string icon: "ghost"
+    property string icon: ""
+    property string badge: ""
     property bool showDividers: true
     default property alias groupContent: contentLayout.data
 
     Layout.fillWidth: true
     contentPadding: Constants.sizeLg
     cardRadius: Constants.sizeSm
+    useBorder: true
 
     ColumnLayout {
         id: mainLayout
@@ -28,14 +30,26 @@ Card {
             visible: root.title !== ""
 
             SvgIcon {
+                visible: root.icon !== "" && root.icon !== "ghost"
                 icon: root.icon
-                iconSize: Constants.sizeLg
+                iconSize: Constants.sizeMd
                 iconColor: Theme.muted
                 flat: true
             }
 
             ThemedText {
-                text: root.title
+                text: root.title.toUpperCase()
+                customSize: 10
+                font.weight: Font.Bold
+                font.letterSpacing: 0.9
+                color: Theme.muted
+                Layout.fillWidth: true
+            }
+
+            ThemedText {
+                visible: root.badge !== ""
+                text: root.badge
+                customSize: 10
                 color: Theme.muted
             }
 

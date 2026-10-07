@@ -9,7 +9,7 @@ import qs.Core.Services
 FloatingWindow {
     id: root
 
-    property string popupId: ""
+    property string widgetId: ""
     property string windowTitle: ""
     property string windowIcon: ""
     default property alias content: innerLayout.data

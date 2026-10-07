@@ -7,21 +7,22 @@ import qs.Core.Services
 Item {
     id: root
 
-    property string popupId: ""
+    property string widgetId: ""
     property Component sourceComponent
     property bool enabled: true
     property bool exclusive: true
     property bool _isInternalActive: false
-    readonly property bool isIslandHandled: SettingsService.barIslandMode && (popupId === "dashboard" || popupId === "controlCenter" || popupId === "notificationsCenter" || popupId === "music" || popupId === "launcher" || popupId === "clipboard" || popupId === "wallpaper")
-    readonly property bool isConvexHandled: SettingsService.barConvexMode && (popupId === "music" || popupId === "notificationsCenter" || popupId === "launcher" || popupId === "powerMenu" || popupId === "clipboard" || popupId === "wallpaper" || popupId === "screenshot")
-    readonly property bool isNotchHandled: SettingsService.barNotchMode && (popupId === "dashboard" || popupId === "controlCenter" || popupId === "notificationsCenter" || popupId === "music" || popupId === "launcher" || popupId === "clipboard" || popupId === "wallpaper")
-    readonly property bool shouldLoadWindow: enabled && !isIslandHandled && !isNotchHandled && !isConvexHandled
-    readonly property bool _isActive: shouldLoadWindow && (exclusive ? AppState.isPopupOpen(popupId) : _isInternalActive)
+    readonly property bool isBarOverlayHandled: AppState.isBarOverlayWidget(widgetId)
+    readonly property bool isIslandHandled: !DisplayProfileService.gameModeActive && SettingsService.barIslandMode && isBarOverlayHandled
+    readonly property bool isConvexHandled: !DisplayProfileService.gameModeActive && SettingsService.barConvexMode && isBarOverlayHandled
+    readonly property bool isGamingHandled: DisplayProfileService.gameModeActive && isBarOverlayHandled
+    readonly property bool shouldLoadWindow: enabled && !isIslandHandled && !isConvexHandled && !isGamingHandled
+    readonly property bool _isActive: shouldLoadWindow && (exclusive ? AppState.isWidgetOpen(widgetId) : _isInternalActive)
     property bool _isClosing: false
     property alias item: loader.item
 
     on_IsActiveChanged: {
-        if (popupId === "")
+        if (widgetId === "")
             return ;
 
         if (_isActive) {
@@ -38,14 +39,14 @@ Item {
         }
     }
     Component.onCompleted: {
-        if (AppState.socketsCleaned && root.popupId !== "")
+        if (AppState.socketsCleaned && root.widgetId !== "")
             server.active = true;
 
     }
 
     Connections {
         function onSocketsCleanedChanged() {
-            if (AppState.socketsCleaned && root.popupId !== "")
+            if (AppState.socketsCleaned && root.widgetId !== "")
                 server.active = true;
 
         }
@@ -54,14 +55,14 @@ Item {
     }
 
     Connections {
-        function onTogglePopup(id) {
-            if (root.popupId !== "" && id === root.popupId)
+        function onToggleWidget(id) {
+            if (root.widgetId !== "" && id === root.widgetId)
                 root._isInternalActive = !root._isInternalActive;
 
         }
 
-        function onOpenPopup(id) {
-            if (root.popupId !== "" && id === root.popupId)
+        function onOpenWidget(id) {
+            if (root.widgetId !== "" && id === root.widgetId)
                 root._isInternalActive = true;
 
         }
@@ -89,7 +90,7 @@ Item {
                 if (!root.exclusive)
                     root._isInternalActive = false;
 
-                AppState.closePopup(root.popupId);
+                AppState.closeWidget(root.widgetId);
             }
 
             target: loader.item
@@ -101,14 +102,14 @@ Item {
     SocketServer {
         id: server
 
-        path: root.popupId !== "" ? "/tmp/quickshell_" + root.popupId : ""
+        path: root.widgetId !== "" ? "/tmp/quickshell_" + root.widgetId : ""
         active: false
 
         handler: Component {
             Socket {
                 onConnectedChanged: {
                     if (connected) {
-                        AppState.togglePopup(root.popupId);
+                        AppState.toggleWidget(root.widgetId);
                         connected = false;
                     }
                 }

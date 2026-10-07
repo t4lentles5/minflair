@@ -5,16 +5,32 @@ import qs.Modules.KeybindsCheatSheet
 import qs.Modules.Launcher
 import qs.Modules.LockScreen
 import qs.Modules.PackageManager
-import qs.Modules.PowerMenu
-import qs.Modules.ScreenCapture
 import qs.Modules.Settings
 import qs.Modules.WallpaperSelector
 
 Item {
     id: root
 
-    PopupLoader {
-        popupId: "launcher"
+    // Bar & media sockets
+    WidgetLoader {
+        widgetId: "dashboard"
+    }
+
+    WidgetLoader {
+        widgetId: "controlCenter"
+    }
+
+    WidgetLoader {
+        widgetId: "notificationsCenter"
+    }
+
+    WidgetLoader {
+        widgetId: "music"
+    }
+
+    // Application & drawer widgets
+    WidgetLoader {
+        widgetId: "launcher"
 
         sourceComponent: Component {
             Launcher {
@@ -24,8 +40,8 @@ Item {
 
     }
 
-    PopupLoader {
-        popupId: "clipboard"
+    WidgetLoader {
+        widgetId: "clipboard"
 
         sourceComponent: Component {
             Clipboard {
@@ -35,8 +51,8 @@ Item {
 
     }
 
-    PopupLoader {
-        popupId: "wallpaper"
+    WidgetLoader {
+        widgetId: "wallpaper"
 
         sourceComponent: Component {
             WallpaperSelector {
@@ -46,20 +62,17 @@ Item {
 
     }
 
-    PopupLoader {
-        popupId: "screenshot"
-        exclusive: true
-
-        sourceComponent: Component {
-            ScreenCapture {
-            }
-
-        }
-
+    WidgetLoader {
+        widgetId: "screenshot"
     }
 
-    PopupLoader {
-        popupId: "minflair_keybinds"
+    WidgetLoader {
+        widgetId: "powerMenu"
+    }
+
+    // Standalone application windows
+    WidgetLoader {
+        widgetId: "minflair_keybinds"
         exclusive: false
 
         sourceComponent: Component {
@@ -70,8 +83,8 @@ Item {
 
     }
 
-    PopupLoader {
-        popupId: "minflair_settings"
+    WidgetLoader {
+        widgetId: "minflair_settings"
         exclusive: false
 
         sourceComponent: Component {
@@ -82,8 +95,8 @@ Item {
 
     }
 
-    PopupLoader {
-        popupId: "packagemanager"
+    WidgetLoader {
+        widgetId: "packagemanager"
         exclusive: false
 
         sourceComponent: Component {
@@ -96,18 +109,6 @@ Item {
 
     LockScreen {
         id: lockScreen
-    }
-
-    PopupLoader {
-        popupId: "powerMenu"
-        exclusive: true
-
-        sourceComponent: Component {
-            PowerMenu {
-            }
-
-        }
-
     }
 
 }

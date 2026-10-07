@@ -1,5 +1,3 @@
-pragma ComponentBehavior: Bound
-
 import QtQuick
 import Quickshell
 import Quickshell.Services.Notifications
@@ -16,65 +14,51 @@ QtObject {
     property string appName: "System"
     property string appIcon: ""
     property string image: ""
-
     property int urgency: NotificationUrgency.Normal
     property double timestamp: new Date().getTime()
     property bool popup: true
     property bool isDnd: false
     property bool closed: false
-    
     property bool isTransient: summary === "Volume" || summary === "Brightness" || summary === "Microphone" || summary === "Power Menu" || body.includes("Taking shot in")
-    
-    property real progress: 1.0 
-
-    property var locks: []
-
+    property real progress: 1
+    property var locks: ({
+    })
+    readonly property bool isLocked: Object.keys(locks).length > 0
     readonly property bool isObscured: {
-        let isNotchHostPopup = AppState.isPopupOpen("dashboard") || AppState.isPopupOpen("controlCenter") || AppState.isPopupOpen("music");
-        let isIslandHostPopup = isNotchHostPopup || AppState.isPopupOpen("launcher") || AppState.isPopupOpen("clipboard") || AppState.isPopupOpen("wallpaper");
-        if (SettingsService.barNotchMode)
-            return isNotchHostPopup || AppState.isNotchOpen;
+        let isIslandHostPopup = AppState.isWidgetOpen("dashboard") || AppState.isWidgetOpen("controlCenter") || AppState.isWidgetOpen("music") || AppState.isWidgetOpen("launcher") || AppState.isWidgetOpen("clipboard") || AppState.isWidgetOpen("wallpaper");
         if (SettingsService.barIslandMode)
             return isIslandHostPopup || AppState.isIslandOpen;
+
         if (SettingsService.barConvexMode)
-            return AppState.isPopupOpen("music") || AppState.isConvexOpen;
+            return AppState.isWidgetOpen("music") || AppState.isConvexOpen;
+
         return false;
     }
+    property NumberAnimation progressAnim
 
-    onIsObscuredChanged: {
-        if (!isObscured) {
-            startProgress();
-        } else {
-            if (progressAnim.running) {
-                progressAnim.stop();
-                progress = 1.0;
-            }
-        }
-    }
-
-    property NumberAnimation progressAnim: NumberAnimation {
+    progressAnim: NumberAnimation {
         target: root
         property: "progress"
-        from: 1.0
-        to: 0.0
+        from: 1
+        to: 0
         duration: {
-            if (root.summary === "Power Menu") return 10000;
-            if (root.summary === "Volume" || root.summary === "Brightness" || root.summary === "Microphone") return 1500;
+            if (root.summary === "Power Menu")
+                return 10000;
+
+            if (root.summary === "Volume" || root.summary === "Brightness" || root.summary === "Microphone")
+                return 1500;
+
             return 5000;
         }
         onFinished: {
-            root.popup = false;
+            if (!root.isLocked)
+                root.popup = false;
+
         }
     }
 
-    function startProgress() {
-        if (popup && (!isDnd || urgency === 2) && !closed && urgency !== 2 && !isObscured && locks.length === 0) {
-            progress = 1.0;
-            progressAnim.restart();
-        }
-    }
-
-    readonly property Connections conn: Connections {
+    readonly property Connections
+    conn: Connections {
         function onClosed() {
             root.close();
         }
@@ -109,21 +93,31 @@ QtObject {
         target: root.notification
     }
 
-    function lock(item) {
-        if (!locks.includes(item)) {
-            locks.push(item);
-        }
-        if (progressAnim.running) {
-            progressAnim.pause();
+    function startProgress() {
+        if (popup && (!isDnd || urgency === 2) && !closed && urgency !== 2 && !isObscured && !isLocked) {
+            progress = 1;
+            progressAnim.restart();
         }
     }
 
+    function lock(item) {
+        let key = typeof item === "string" ? item : "default";
+        let newLocks = Object.assign({
+        }, locks);
+        newLocks[key] = true;
+        locks = newLocks;
+        if (progressAnim.running)
+            progressAnim.pause();
+
+    }
+
     function unlock(item) {
-        let idx = locks.indexOf(item);
-        if (idx !== -1) {
-            locks.splice(idx, 1);
-        }
-        if (locks.length === 0 && popup && !root.closed && urgency !== 2 && !isObscured) {
+        let key = typeof item === "string" ? item : "default";
+        let newLocks = Object.assign({
+        }, locks);
+        delete newLocks[key];
+        locks = newLocks;
+        if (Object.keys(newLocks).length === 0 && popup && !root.closed && urgency !== 2 && !isObscured) {
             if (progressAnim.paused)
                 progressAnim.resume();
             else if (!progressAnim.running && progress > 0)
@@ -132,13 +126,29 @@ QtObject {
     }
 
     function close() {
-        if (closed) return;
+        if (closed)
+            return ;
+
         closed = true;
         popup = false;
+        locks = ({
+        });
         progressAnim.stop();
-        notification?.dismiss();
+        if (notification)
+            notification.dismiss();
+
     }
 
+    onIsObscuredChanged: {
+        if (!isObscured) {
+            startProgress();
+        } else {
+            if (progressAnim.running) {
+                progressAnim.stop();
+                progress = 1;
+            }
+        }
+    }
     Component.onCompleted: {
         if (notification) {
             notificationId = notification.id;

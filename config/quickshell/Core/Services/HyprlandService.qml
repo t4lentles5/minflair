@@ -3,6 +3,7 @@ import Quickshell
 import Quickshell.Hyprland
 import Quickshell.Io
 import qs.Core
+import qs.Core.Services
 pragma Singleton
 
 Item {
@@ -19,8 +20,10 @@ Item {
     property int wpTransitionStep: 120
     property int wpTransitionFps: 60
     property int wpTransitionAngle: 30
+    property string wpResizeMode: "crop"
+    property string wpCropGravity: "center"
     property bool hyprBlur: true
-    property int hyprRounding: 32
+    property int hyprRounding: Constants.size3Xl
     property int hyprActiveOpacity: 100
     property int hyprInactiveOpacity: 100
     property int hyprBlurSize: 6
@@ -46,6 +49,12 @@ Item {
     property bool isSyncing: false
     property bool isTrueFullscreen: false
 
+    function reloadHyprPrefs() {
+        if (!readHyprPrefsProc.running)
+            readHyprPrefsProc.running = true;
+
+    }
+
     function checkFullscreen() {
         if (checkFullscreenProc.running)
             checkFullscreenProc.running = false;
@@ -68,7 +77,6 @@ Item {
                     "enabled": false
                 },
                 "decoration": {
-                    "rounding": 0,
                     "blur": {
                         "enabled": false
                     },
@@ -157,6 +165,18 @@ Item {
         if (SettingsService.settingsLoaded)
             SettingsService.saveSettings();
 
+    }
+    onWpResizeModeChanged: {
+        if (SettingsService.settingsLoaded) {
+            SettingsService.saveSettings();
+            WallpaperManager.reapplyCurrentWallpaper();
+        }
+    }
+    onWpCropGravityChanged: {
+        if (SettingsService.settingsLoaded) {
+            SettingsService.saveSettings();
+            WallpaperManager.reapplyCurrentWallpaper();
+        }
     }
     onKeyboardLayoutChanged: {
         if (SettingsService.settingsLoaded) {
@@ -489,6 +509,9 @@ Item {
         stdout: SplitParser {
             onRead: (data) => {
                 if (data && data.trim() !== "") {
+                    if (DisplayProfileService.gameModeActive)
+                        return ;
+
                     try {
                         let prefs = JSON.parse(data.trim());
                         hyprlandService.isSyncing = true;

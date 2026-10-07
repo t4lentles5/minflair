@@ -5,7 +5,8 @@ Rectangle {
     id: root
 
     property int activeIndex: 0
-    property int lastIndex: 0
+    property int lastIndex: activeIndex
+    property var order: []
     property int animOff: 0
     property var updateCallback: null
     default property alias content: contentContainer.data
@@ -13,21 +14,38 @@ Rectangle {
     signal contentNeedsUpdate(int newIndex)
 
     function triggerTransition(direction, callback) {
-        switchAnim.complete();
-        root.animOff = 40 * direction;
+        if (switchAnim.running) {
+            switchAnim.stop();
+            contentContainer.opacity = 0;
+        }
+        root.animOff = 20 * direction;
         root.updateCallback = callback;
         switchAnim.start();
     }
 
-    color: Theme.bg
+    color: "transparent"
     onActiveIndexChanged: {
         if (activeIndex === lastIndex)
             return ;
 
-        switchAnim.complete();
-        root.animOff = 40 * (root.activeIndex > root.lastIndex ? 1 : -1);
-        switchAnim.start();
+        let dir = 1;
+        if (order && order.length > 0) {
+            let prevPos = order.indexOf(lastIndex);
+            let nextPos = order.indexOf(activeIndex);
+            if (prevPos !== -1 && nextPos !== -1)
+                dir = nextPos > prevPos ? 1 : -1;
+            else
+                dir = activeIndex > lastIndex ? 1 : -1;
+        } else {
+            dir = activeIndex > lastIndex ? 1 : -1;
+        }
+        if (switchAnim.running) {
+            switchAnim.stop();
+            contentContainer.opacity = 0;
+        }
+        root.animOff = 20 * dir;
         root.lastIndex = root.activeIndex;
+        switchAnim.start();
     }
 
     SequentialAnimation {
@@ -58,12 +76,6 @@ Rectangle {
             value: root.animOff
         }
 
-        PropertyAction {
-            target: contentContainer
-            property: "scale"
-            value: 0.97
-        }
-
         ParallelAnimation {
             NumberAnimation {
                 target: contentContainer
@@ -78,16 +90,8 @@ Rectangle {
                 target: contentTranslate
                 property: "y"
                 to: 0
-                duration: Constants.animSlow
-                easing.type: Easing.OutQuart
-            }
-
-            NumberAnimation {
-                target: contentContainer
-                property: "scale"
-                to: 1
-                duration: Constants.animSlow
-                easing.type: Easing.OutQuart
+                duration: Constants.animNormal
+                easing.type: Easing.OutQuint
             }
 
         }

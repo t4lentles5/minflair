@@ -9,7 +9,7 @@ RectangularShadow {
 
     property bool active: true
 
-    visible: active && HyprlandService.hyprShadow
+    visible: active && HyprlandService.hyprShadow && !DisplayProfileService.gameModeActive && (SystemInfoService.powerProfile !== "power-saver")
     blur: HyprlandService.hyprShadowRange
     spread: HyprlandService.hyprShadowRenderPower
     color: Theme.shadow

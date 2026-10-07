@@ -32,14 +32,16 @@ QtObject {
     property color bg: Qt.rgba(_rawBg.r, _rawBg.g, _rawBg.b, bgOpacity)
     property bool isDark: ColorUtils.isDark(_rawBg)
     property color overlayBase: isDark ? Qt.rgba(fg.r * 0.3 + accent.r * 0.7, fg.g * 0.3 + accent.g * 0.7, fg.b * 0.3 + accent.b * 0.7, 1) : accent
-    property color bgSecondary: Qt.rgba(overlayBase.r, overlayBase.g, overlayBase.b, isDark ? 0.05 : 0.1)
-    property color bgTertiary: Qt.rgba(overlayBase.r, overlayBase.g, overlayBase.b, isDark ? 0.1 : 0.2)
+    property color bgSecondary: Qt.rgba(overlayBase.r, overlayBase.g, overlayBase.b, isDark ? 0.06 : 0.1)
+    property color bgTertiary: Qt.rgba(overlayBase.r, overlayBase.g, overlayBase.b, isDark ? 0.02 : 0.04)
+    property color bgAccent: Qt.rgba(accent.r, accent.g, accent.b, isDark ? 0.15 : 0.3)
+    property color bgAccentComplementary: Qt.rgba(accentComplementary.r, accentComplementary.g, accentComplementary.b, isDark ? 0.15 : 0.3)
     property color fg: themes[0].dark.fg
-    property color muted: Qt.rgba(fg.r, fg.g, fg.b, 0.65)
-    property color border: Qt.rgba(fg.r, fg.g, fg.b, 0.15)
+    property color muted: Qt.rgba(fg.r, fg.g, fg.b, 0.4)
+    property color border: isDark ? Qt.rgba(fg.r, fg.g, fg.b, 0.1) : Qt.rgba(fg.r, fg.g, fg.b, 0.2)
     property color accent: themes[0].dark.accent
     property color accentComplementary: themes[0].dark.accentComplementary
-    property color shadow: isDark ? Qt.rgba(0, 0, 0, 0.45) : Qt.rgba(0, 0, 0, 0.25)
+    property color shadow: isDark ? Qt.rgba(0, 0, 0, 0.75) : Qt.rgba(0, 0, 0, 0.45)
     property bool generateFromWallpaper: false
     property bool wallpaperIsDark: true
     property var wallpaperColors: null
@@ -86,11 +88,17 @@ QtObject {
             "wallpaperIsDark": wallpaperIsDark,
             "bgOpacity": bgOpacity,
             "bg": "" + _rawBg,
+            "opaqueBg": "" + opaqueBg,
             "fg": "" + fg,
             "muted": "" + muted,
             "border": "" + border,
             "accent": "" + accent,
             "accentComplementary": "" + accentComplementary,
+            "overlayBase": "" + overlayBase,
+            "bgSecondary": "" + bgSecondary,
+            "bgTertiary": "" + bgTertiary,
+            "bgAccent": "" + bgAccent,
+            "bgAccentComplementary": "" + bgAccentComplementary,
             "shadow": "" + shadow
         };
         let json = JSON.stringify(obj);

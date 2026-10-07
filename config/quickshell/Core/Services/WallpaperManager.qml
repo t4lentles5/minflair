@@ -15,6 +15,8 @@ QtObject {
     property string transitionPos: HyprlandService.wpTransitionPos
     property int transitionFps: HyprlandService.wpTransitionFps
     property int transitionAngle: HyprlandService.wpTransitionAngle
+    property string resizeMode: HyprlandService.wpResizeMode
+    property string cropGravity: HyprlandService.wpCropGravity
     property bool enableTransitions: HyprlandService.wpEnableTransitions
     property bool autoShuffle: HyprlandService.wpAutoShuffle
     property int shuffleInterval: HyprlandService.wpShuffleInterval
@@ -31,16 +33,47 @@ QtObject {
         applyWallpaper(rawPath);
     }
 
+    function reapplyCurrentWallpaper() {
+        let p = currentWallpaperPath;
+        if (p && !p.startsWith("/"))
+            p = Quickshell.env("HOME") + "/Pictures/Wallpapers/" + p;
+        else if (!p && currentWallpaper)
+            p = currentWallpaper.startsWith("/") ? currentWallpaper : (Quickshell.env("HOME") + "/Pictures/Wallpapers/" + currentWallpaper);
+        if (p)
+            applyWallpaperInstant(p);
+
+    }
+
+    function applyWallpaperInstant(rawPath) {
+        wallpaperApplyProc.running = false;
+        let rMode = HyprlandService.wpResizeMode || "crop";
+        let gravity = HyprlandService.wpCropGravity || "center";
+        let cmd = ["awww", "img", rawPath, "--resize", rMode];
+        if (rMode === "crop")
+            cmd.push("--crop-gravity", gravity);
+
+        cmd.push("--transition-type", "none");
+        wallpaperApplyProc.command = cmd;
+        wallpaperApplyProc.startDetached();
+    }
+
     function applyWallpaper(rawPath) {
         wallpaperApplyProc.running = false;
+        let rMode = HyprlandService.wpResizeMode || "crop";
+        let gravity = HyprlandService.wpCropGravity || "center";
+        let cmd = ["awww", "img", rawPath, "--resize", rMode];
+        if (rMode === "crop")
+            cmd.push("--crop-gravity", gravity);
+
         if (enableTransitions && SystemInfoService.powerProfile !== "power-saver") {
-            let cmd = ["awww", "img", rawPath, "--transition-type", transitionType, "--transition-pos", transitionPos, "--transition-step", String(transitionStep), "--transition-fps", String(transitionFps)];
+            cmd.push("--transition-type", transitionType, "--transition-pos", transitionPos, "--transition-step", String(transitionStep), "--transition-fps", String(transitionFps));
             if (transitionType === "wipe" || transitionType === "wave")
                 cmd.push("--transition-angle", String(transitionAngle));
 
             wallpaperApplyProc.command = cmd;
         } else {
-            wallpaperApplyProc.command = ["awww", "img", rawPath, "--transition-type", "none"];
+            cmd.push("--transition-type", "none");
+            wallpaperApplyProc.command = cmd;
         }
         wallpaperApplyProc.startDetached();
     }
@@ -99,7 +132,7 @@ QtObject {
                 let name = wallpaperLoaderOutput.text.trim();
                 if (name) {
                     root.currentWallpaper = name;
-                    root.currentWallpaperPath = Quickshell.env("HOME") + "/Pictures/Wallpapers/" + name;
+                    root.currentWallpaperPath = name.startsWith("/") ? name : (Quickshell.env("HOME") + "/Pictures/Wallpapers/" + name);
                 }
             }
         }

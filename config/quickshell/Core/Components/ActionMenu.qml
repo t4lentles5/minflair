@@ -13,10 +13,10 @@ ListView {
 
     Layout.alignment: Qt.AlignHCenter
     Layout.preferredWidth: 64 * actionModel.length
-    Layout.preferredHeight: 48
+    Layout.preferredHeight: Constants.size5Xl
     currentIndex: 0
     width: 64 * actionModel.length
-    height: 48
+    height: Constants.size5Xl
     orientation: ListView.Horizontal
     spacing: 0
     model: actionModel
@@ -47,7 +47,7 @@ ListView {
 
     highlight: Item {
         width: 64
-        height: 48
+        height: Constants.size5Xl
 
         Rectangle {
             anchors.fill: parent
@@ -64,7 +64,7 @@ ListView {
         readonly property bool isCurrent: root.currentIndex === index
 
         width: 64
-        height: 48
+        height: Constants.size5Xl
 
         Rectangle {
             anchors.fill: parent

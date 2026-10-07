@@ -19,16 +19,19 @@ Item {
     property var groupRepresentationIds: ({
     })
 
-    function pruneForIslandMode() {
-        if (SettingsService.barIslandMode || SettingsService.barNotchMode) {
-            while (activeListModel.count > 1) {
-                let oldItem = activeListModel.get(1);
-                if (oldItem && oldItem.notifData)
-                    oldItem.notifData.popup = false;
+    function pruneActiveNotifications() {
+        let maxCount = 1;
+        while (activeListModel.count > maxCount) {
+            let oldItem = activeListModel.get(maxCount);
+            if (oldItem && oldItem.notifData)
+                oldItem.notifData.popup = false;
 
-                activeListModel.remove(1);
-            }
+            activeListModel.remove(maxCount);
         }
+    }
+
+    function pruneForIslandMode() {
+        pruneActiveNotifications();
     }
 
     function notify(summary, body, icon = "", appName = "System", urgency = NotificationUrgency.Normal) {
@@ -53,7 +56,7 @@ Item {
                 "id": timestamp,
                 "notifData": nd
             });
-            pruneForIslandMode();
+            pruneActiveNotifications();
         }
     }
 
@@ -219,7 +222,7 @@ Item {
                         "id": repId,
                         "notifData": repData
                     });
-                    pruneForIslandMode();
+                    pruneActiveNotifications();
                 }
             }
         }
@@ -283,7 +286,7 @@ Item {
                 "notifData": nd
             });
 
-            pruneForIslandMode();
+            pruneActiveNotifications();
         }
         while (historyListModel.count > 50)removeHistoryItem(historyListModel.count - 1)
     }
@@ -325,10 +328,75 @@ Item {
 
     Connections {
         function onBarIslandModeChanged() {
-            root.pruneForIslandMode();
+            root.pruneActiveNotifications();
         }
 
         target: SettingsService
+    }
+
+    Connections {
+        property string _prevStatus: ""
+        property int _prevLevel: -1
+        property bool _notifiedFull: false
+
+        function onBatteryStatusChanged() {
+            let status = SystemInfoService.batteryStatus;
+            let level = SystemInfoService.batteryLevel;
+            if (!SystemInfoService.hasBattery || status === "" || status === _prevStatus)
+                return ;
+
+            if (_prevStatus !== "") {
+                let summary = "Battery";
+                let body = "";
+                if (status === "Charging") {
+                    if (_prevStatus === "Discharging") {
+                        summary = "Battery";
+                        body = "Charger connected";
+                    }
+                } else if (status === "Discharging") {
+                    if (_prevStatus === "Charging" || _prevStatus === "Full" || _prevStatus === "Not charging") {
+                        summary = "Battery";
+                        body = "Charger disconnected";
+                    }
+                } else if (status === "Full" || status === "Not charging") {
+                    if (!_notifiedFull && status === "Full" && level >= 95) {
+                        summary = "Battery";
+                        body = "Battery fully charged";
+                        _notifiedFull = true;
+                    }
+                }
+                if (body !== "")
+                    root.notify(summary, body);
+
+            }
+            _prevStatus = status;
+        }
+
+        function onBatteryLevelChanged() {
+            let status = SystemInfoService.batteryStatus;
+            let level = SystemInfoService.batteryLevel;
+            if (!SystemInfoService.hasBattery || level <= 0 || level === _prevLevel)
+                return ;
+
+            if (status === "Discharging" && level < 95)
+                _notifiedFull = false;
+
+            if (_prevLevel !== -1 && status === "Discharging") {
+                let threshold = 0;
+                if (level <= 5 && _prevLevel > 5)
+                    threshold = 5;
+                else if (level <= 10 && _prevLevel > 10)
+                    threshold = 10;
+                else if (level <= 20 && _prevLevel > 20)
+                    threshold = 20;
+                if (threshold > 0)
+                    root.notify("Low Battery", "Battery level: " + level + "%", "", "System", NotificationUrgency.Critical);
+
+            }
+            _prevLevel = level;
+        }
+
+        target: SystemInfoService
     }
 
     ListModel {

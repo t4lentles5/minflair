@@ -23,6 +23,18 @@ SettingRowTemplate {
 
     signal activated(int index)
 
+    function closePopup() {
+        if (internalCombo && internalCombo.popup && internalCombo.popup.visible)
+            internalCombo.popup.close();
+
+    }
+
+    onVisibleChanged: {
+        if (!visible)
+            closePopup();
+
+    }
+
     ComboBox {
         id: internalCombo
 
@@ -40,7 +52,7 @@ SettingRowTemplate {
         opacity: root.enabled ? 1 : 0.5
         Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
         implicitWidth: root.comboWidth
-        implicitHeight: 36
+        implicitHeight: Constants.size4Xl
         model: root.searchable ? root._filteredModel : root.model
         onActivated: (index) => {
             if (root.searchable) {
@@ -94,11 +106,11 @@ SettingRowTemplate {
         }
 
         indicator: SvgIcon {
-            x: internalCombo.width - width - Constants.sizeSm
+            x: internalCombo.width - width - 10
             y: (internalCombo.height - height) / 2
             flat: true
             icon: "chevron-down"
-            iconSize: Constants.sizeMd
+            iconSize: 13
             iconColor: internalCombo.popup.visible ? Theme.accent : Theme.muted
             rotation: internalCombo.popup.visible ? 180 : 0
 
@@ -121,8 +133,8 @@ SettingRowTemplate {
 
         contentItem: RowLayout {
             anchors.fill: parent
-            anchors.leftMargin: Constants.sizeSm
-            anchors.rightMargin: 36
+            anchors.leftMargin: 10
+            anchors.rightMargin: 30
             spacing: Constants.sizeXs
 
             ThemedText {
@@ -139,7 +151,7 @@ SettingRowTemplate {
                         return word.charAt(0).toUpperCase() + word.slice(1);
                     }).join('-');
                 }
-                font.bold: true
+                font.weight: Font.DemiBold
                 customSize: root.customSize
                 color: internalCombo.popup.visible ? Theme.accent : Theme.fg
                 elide: Text.ElideRight
@@ -157,12 +169,19 @@ SettingRowTemplate {
         }
 
         background: Rectangle {
-            color: internalCombo.down || internalCombo.hovered || internalCombo.popup.visible ? Qt.lighter(Theme.bgTertiary, 1.2) : Theme.bgTertiary
-            radius: Constants.sizeSm
+            color: internalCombo.down || internalCombo.hovered || internalCombo.popup.visible ? Theme.bgTertiary : Theme.bgSecondary
+            radius: Constants.sizeXs
             border.width: 1
-            border.color: Theme.border
+            border.color: internalCombo.popup.visible ? Theme.accent : Theme.border
 
             Behavior on color {
+                ColorAnimation {
+                    duration: Constants.animFast
+                }
+
+            }
+
+            Behavior on border.color {
                 ColorAnimation {
                     duration: Constants.animFast
                 }
@@ -232,7 +251,7 @@ SettingRowTemplate {
                     id: popupSearchInput
 
                     Layout.fillWidth: true
-                    Layout.preferredHeight: 32
+                    Layout.preferredHeight: Constants.size4Xl
                     leftPadding: Constants.sizeSm
                     rightPadding: Constants.sizeSm
                     visible: root.searchable
