@@ -8,8 +8,6 @@ local fileManager = "nautilus"
 hl.bind(mainMod .. " + Return", hl.dsp.exec_cmd(terminal))
 -- # Open Floating Terminal
 hl.bind(mainMod .. " + SHIFT + Return", hl.dsp.exec_cmd("kitty --class kitty-floating"))
--- # Open Kew
-hl.bind(mainMod .. " + SHIFT + K", hl.dsp.exec_cmd("kitty --class kitty-kew -e kew"))
 -- # Open File Manager
 hl.bind(mainMod .. " + E", hl.dsp.exec_cmd(fileManager))
 -- # Open Browser
