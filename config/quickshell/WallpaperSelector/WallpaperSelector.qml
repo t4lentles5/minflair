@@ -6,14 +6,13 @@ import qs.Core.Windows
 OverlayWindow {
     id: root
 
-    popupId: "wallpaper"
+    widgetId: "wallpaper"
     enableShadow: true
     positionAtBottom: true
-    enableBottomNotch: false
     preferredWidth: content.implicitWidth + (contentPadding * 2)
     preferredHeight: content.implicitHeight + (contentPadding * 2)
     initialFocusItem: content.initialFocusItem
-    onPopupOpened: {
+    onWidgetOpened: {
         content.resetWallpaperSelector();
     }
 
