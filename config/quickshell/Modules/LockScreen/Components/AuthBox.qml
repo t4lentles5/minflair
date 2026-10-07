@@ -7,7 +7,7 @@ import qs.Core
 import qs.Core.Components
 import qs.Core.Services
 
-Rectangle {
+Item {
     id: rootBox
 
     property Item backgroundItem
@@ -24,24 +24,26 @@ Rectangle {
         passwordInput.forceActiveFocus();
     }
 
+    Component.onCompleted: {
+        forceFocus();
+    }
     onAuthFailedChanged: {
         if (authFailed)
             passwordInput.text = "";
 
     }
-    width: Constants.size5Xl * 8
-    height: Constants.size5Xl * 3.8
-    color: "transparent"
-    border.color: Theme.border
-    border.width: 1
-    radius: Constants.sizeLg
-    state: rootBox.authFailed ? "error" : "default"
+    implicitWidth: 380
+    implicitHeight: contentLayout.implicitHeight + (Constants.sizeXl * 2)
+    width: implicitWidth
+    height: implicitHeight
     states: [
         State {
             name: "error"
+            when: rootBox.authFailed
         },
         State {
             name: "default"
+            when: !rootBox.authFailed
         }
     ]
     transitions: [
@@ -53,40 +55,40 @@ Rectangle {
                     target: shakeTranslate
                     property: "x"
                     from: 0
-                    to: -15
-                    duration: Constants.animUltraFast / 2
+                    to: -14
+                    duration: Constants.animFast / 3
                 }
 
                 NumberAnimation {
                     target: shakeTranslate
                     property: "x"
-                    from: -15
-                    to: 15
-                    duration: Constants.animUltraFast / 2
+                    from: -14
+                    to: 14
+                    duration: Constants.animFast / 3
                 }
 
                 NumberAnimation {
                     target: shakeTranslate
                     property: "x"
-                    from: 15
-                    to: -15
-                    duration: Constants.animUltraFast / 2
+                    from: 14
+                    to: -10
+                    duration: Constants.animFast / 3
                 }
 
                 NumberAnimation {
                     target: shakeTranslate
                     property: "x"
-                    from: -15
-                    to: 15
-                    duration: Constants.animUltraFast / 2
+                    from: -10
+                    to: 10
+                    duration: Constants.animFast / 3
                 }
 
                 NumberAnimation {
                     target: shakeTranslate
                     property: "x"
-                    from: 15
+                    from: 10
                     to: 0
-                    duration: Constants.animUltraFast / 2
+                    duration: Constants.animFast / 3
                 }
 
             }
@@ -94,40 +96,59 @@ Rectangle {
         }
     ]
 
-    Item {
+    Timer {
+        id: focusEnsureTimer
+
+        interval: 60
+        running: rootBox.locked
+        repeat: false
+        onTriggered: {
+            rootBox.forceFocus();
+        }
+    }
+
+    ThemedShadow {
+        anchors.fill: cardBg
+        radius: cardBg.radius
+        active: true
+        opacity: Theme.isDark ? 0.6 : 0.3
+    }
+
+    Rectangle {
+        id: cardBg
+
         anchors.fill: parent
-        layer.enabled: true
-
-        ShaderEffectSource {
-            id: authBoxBlurSource
-
-            sourceItem: rootBox.backgroundItem
-            sourceRect: Qt.rect(rootBox.x, rootBox.y, rootBox.width, rootBox.height)
-        }
-
-        FastBlur {
-            anchors.fill: parent
-            source: authBoxBlurSource
-            radius: 64
-        }
+        radius: Constants.size2Xl
+        color: Theme.bg
+        border.color: rootBox.authFailed ? Theme.accentComplementary : (passwordInput.activeFocus ? Theme.accent : Theme.border)
+        border.width: 1
 
         Rectangle {
             anchors.fill: parent
-            color: Qt.rgba(Theme.bg.r, Theme.bg.g, Theme.bg.b, 0.4)
+            anchors.margins: 1
+            radius: parent.radius
+            color: Theme.bgSecondary
         }
 
-        layer.effect: OpacityMask {
+        MouseArea {
+            anchors.fill: parent
+            onClicked: {
+                passwordInput.text = "";
+                rootBox.clearRequested();
+                passwordInput.forceActiveFocus();
+            }
+        }
 
-            maskSource: Rectangle {
-                width: rootBox.width
-                height: rootBox.height
-                radius: rootBox.radius
+        Behavior on border.color {
+            ColorAnimation {
+                duration: Constants.animFast
             }
 
         }
 
     }
 
+    // Hidden native text field for keyboard capture
     TextField {
         id: passwordInput
 
@@ -151,80 +172,88 @@ Rectangle {
         }
     }
 
-    MouseArea {
-        anchors.fill: parent
-        z: -1
-        onClicked: {
-            passwordInput.text = "";
-            rootBox.clearRequested();
-            passwordInput.forceActiveFocus();
-        }
-    }
-
     ColumnLayout {
-        anchors.fill: parent
-        anchors.margins: Constants.size2Xl
+        id: contentLayout
+
+        anchors.centerIn: parent
+        width: parent.width - (Constants.sizeXl * 2)
         spacing: Constants.sizeLg
 
+        // User Avatar and Name
         RowLayout {
-            spacing: Constants.sizeLg
+            Layout.alignment: Qt.AlignLeft
+            spacing: Constants.sizeMd
 
             Rectangle {
-                id: avatarContainer
+                id: avatarOuter
 
-                width: Constants.size4Xl
-                height: Constants.size4Xl
-                radius: Constants.sizeSm
-                color: Theme.bg
-                border.color: Theme.border
-                border.width: 1
+                width: 52
+                height: 52
+                radius: width / 2
+                color: "transparent"
+                border.color: Theme.accent
+                border.width: 1.5
 
-                Image {
-                    id: faceImage
+                Rectangle {
+                    id: avatarInner
 
-                    anchors.fill: parent
-                    source: "file://" + Quickshell.env("HOME") + "/.face"
-                    fillMode: Image.PreserveAspectCrop
-                    mipmap: true
-                    visible: status === Image.Ready
-                    asynchronous: true
-                    layer.enabled: true
+                    anchors.centerIn: parent
+                    width: 44
+                    height: 44
+                    radius: width / 2
+                    color: Theme.bg
+                    clip: true
 
-                    layer.effect: OpacityMask {
+                    Image {
+                        id: faceImage
 
-                        maskSource: Rectangle {
-                            width: avatarContainer.width
-                            height: avatarContainer.height
-                            radius: avatarContainer.radius
+                        anchors.fill: parent
+                        source: "file://" + Quickshell.env("HOME") + "/.face"
+                        fillMode: Image.PreserveAspectCrop
+                        mipmap: true
+                        visible: status === Image.Ready
+                        asynchronous: true
+                        layer.enabled: true
+
+                        layer.effect: OpacityMask {
+
+                            maskSource: Rectangle {
+                                width: avatarInner.width
+                                height: avatarInner.height
+                                radius: avatarInner.radius
+                            }
+
                         }
 
                     }
 
-                }
+                    ThemedText {
+                        anchors.centerIn: parent
+                        text: (SystemStats.username ? SystemStats.username.charAt(0).toUpperCase() : "U")
+                        customSize: Constants.sizeLg
+                        font.bold: true
+                        color: Theme.accent
+                        visible: !faceImage.visible
+                    }
 
-                ThemedText {
-                    anchors.centerIn: parent
-                    text: SystemStats.username.charAt(0).toUpperCase()
-                    customSize: Constants.sizeLg
-                    font.bold: true
-                    color: Theme.accent
-                    visible: !faceImage.visible
                 }
 
             }
 
             ColumnLayout {
                 spacing: Constants.size3Xs
+                Layout.alignment: Qt.AlignVCenter
 
                 ThemedText {
-                    text: SystemStats.username
-                    customSize: Constants.sizeLg
+                    text: SystemStats.username || "User"
+                    customSize: Constants.sizeMd
                     font.bold: true
+                    color: Theme.fg
                 }
 
                 ThemedText {
-                    text: "@" + SystemStats.hostname
-                    customSize: Constants.sizeSm
+                    text: "@" + (SystemStats.hostname || "arch")
+                    customSize: 11
                     color: Theme.muted
                 }
 
@@ -232,46 +261,130 @@ Rectangle {
 
         }
 
-        ColumnLayout {
-            spacing: Constants.sizeXs
+        // Styled Password Input Box
+        Rectangle {
+            id: inputContainer
 
-            ThemedText {
-                text: "PASSWORD"
-                customSize: Constants.sizeSm
-                color: Theme.muted
-                font.letterSpacing: 2
-                font.bold: true
-            }
+            Layout.fillWidth: true
+            Layout.preferredHeight: 46
+            radius: Constants.sizeLg
+            color: passwordInput.activeFocus ? (Theme.isDark ? Theme.bgSecondary : Theme.bg) : (Theme.isDark ? Theme.bgTertiary : Theme.bg)
+            border.color: rootBox.authFailed ? Theme.accentComplementary : (passwordInput.activeFocus ? Theme.accent : Theme.border)
+            border.width: passwordInput.activeFocus ? 2 : 1
 
-            Item {
-                Layout.fillWidth: true
-                Layout.preferredHeight: Constants.sizeLg
-                clip: true
+            RowLayout {
+                anchors.fill: parent
+                anchors.leftMargin: Constants.sizeMd
+                anchors.rightMargin: Constants.sizeSm
+                spacing: Constants.sizeSm
 
-                Row {
-                    id: dotsRow
+                SvgIcon {
+                    icon: "lock"
+                    iconSize: Constants.sizeMd
+                    iconColor: rootBox.authFailed ? Theme.accentComplementary : (passwordInput.activeFocus ? Theme.accent : Theme.muted)
+                    flat: true
+                    Layout.alignment: Qt.AlignVCenter
 
-                    anchors.top: parent.top
-                    anchors.bottom: parent.bottom
-                    x: Math.min(0, parent.width - width)
-                    spacing: Constants.sizeXs
+                    Behavior on iconColor {
+                        ColorAnimation {
+                            duration: Constants.animFast
+                        }
 
-                    Repeater {
-                        model: Math.max(8, passwordInput.text.length)
+                    }
+
+                }
+
+                // Password placeholder, cursor, or dots
+                Item {
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    clip: true
+
+                    Row {
+                        anchors.verticalCenter: parent.verticalCenter
+                        spacing: 6
+                        visible: passwordInput.text.length === 0 && !rootBox.authenticating
 
                         Rectangle {
-                            width: Constants.sizeLg
-                            height: Constants.sizeLg
-                            radius: Constants.size3Xs
-                            color: index < passwordInput.text.length ? Theme.accent : Theme.muted
-                            opacity: index < passwordInput.text.length ? 1 : 0.2
+                            id: blinkingCursorPlaceholder
 
-                            Behavior on color {
-                                ColorAnimation {
+                            anchors.verticalCenter: parent.verticalCenter
+                            width: Constants.size3Xs
+                            height: Constants.sizeLg
+                            radius: width / 2
+                            color: Theme.accent
+                            visible: passwordInput.activeFocus
+                            opacity: cursorTimer.cursorVisible ? 1 : 0
+
+                            Behavior on opacity {
+                                NumberAnimation {
                                     duration: Constants.animFast
                                 }
 
                             }
+
+                        }
+
+                        ThemedText {
+                            anchors.verticalCenter: parent.verticalCenter
+                            verticalAlignment: Text.AlignVCenter
+                            text: "Type password to unlock..."
+                            customSize: Constants.sizeSm
+                            color: Theme.muted
+                            opacity: passwordInput.activeFocus ? 0.9 : 0.6
+                        }
+
+                    }
+
+                    ThemedText {
+                        anchors.verticalCenter: parent.verticalCenter
+                        verticalAlignment: Text.AlignVCenter
+                        text: "Verifying..."
+                        customSize: Constants.sizeSm
+                        color: Theme.accent
+                        font.bold: true
+                        visible: rootBox.authenticating
+                    }
+
+                    Row {
+                        id: dotsRow
+
+                        anchors.verticalCenter: parent.verticalCenter
+                        spacing: Constants.sizeXs
+                        visible: passwordInput.text.length > 0 && !rootBox.authenticating
+
+                        Repeater {
+                            model: passwordInput.text.length
+
+                            Rectangle {
+                                anchors.verticalCenter: parent.verticalCenter
+                                width: Constants.sizeXs
+                                height: Constants.sizeXs
+                                radius: Constants.size2Xs
+                                color: Theme.accent
+
+                                Behavior on scale {
+                                    NumberAnimation {
+                                        duration: Constants.animFast
+                                        easing.type: Easing.OutBack
+                                    }
+
+                                }
+
+                            }
+
+                        }
+
+                        Rectangle {
+                            id: blinkingCursorDots
+
+                            anchors.verticalCenter: parent.verticalCenter
+                            width: Constants.size3Xs
+                            height: Constants.sizeMd
+                            radius: width / 2
+                            color: Theme.accent
+                            visible: passwordInput.activeFocus
+                            opacity: cursorTimer.cursorVisible ? 1 : 0
 
                             Behavior on opacity {
                                 NumberAnimation {
@@ -284,10 +397,73 @@ Rectangle {
 
                     }
 
-                    Behavior on x {
-                        NumberAnimation {
-                            duration: Constants.animFast
-                            easing.type: Easing.OutCubic
+                    Timer {
+                        id: cursorTimer
+
+                        property bool cursorVisible: true
+
+                        interval: 500
+                        running: passwordInput.activeFocus
+                        repeat: true
+                        onTriggered: cursorVisible = !cursorVisible
+                    }
+
+                }
+
+                // Action button (arrow or spinner)
+                Item {
+                    Layout.preferredWidth: 28
+                    Layout.preferredHeight: 28
+                    Layout.alignment: Qt.AlignVCenter
+
+                    SvgIcon {
+                        anchors.centerIn: parent
+                        icon: "reload"
+                        iconSize: Constants.sizeLg
+                        iconColor: Theme.accent
+                        flat: true
+                        visible: rootBox.authenticating
+
+                        RotationAnimation on rotation {
+                            from: 0
+                            to: 360
+                            duration: Constants.animExpressive * 2
+                            loops: Animation.Infinite
+                            running: rootBox.authenticating
+                        }
+
+                    }
+
+                    Rectangle {
+                        anchors.fill: parent
+                        radius: width / 2
+                        color: passwordInput.text.length > 0 ? Theme.accent : "transparent"
+                        opacity: passwordInput.text.length > 0 ? 0.9 : 0
+                        visible: !rootBox.authenticating
+
+                        SvgIcon {
+                            anchors.centerIn: parent
+                            icon: "rocket"
+                            iconSize: Constants.sizeSm
+                            iconColor: Theme.bg
+                            flat: true
+                        }
+
+                        MouseArea {
+                            anchors.fill: parent
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: {
+                                if (passwordInput.text.length > 0)
+                                    rootBox.submitPassword(passwordInput.text);
+
+                            }
+                        }
+
+                        Behavior on opacity {
+                            NumberAnimation {
+                                duration: Constants.animFast
+                            }
+
                         }
 
                     }
@@ -296,11 +472,44 @@ Rectangle {
 
             }
 
+            Behavior on border.color {
+                ColorAnimation {
+                    duration: Constants.animFast
+                }
+
+            }
+
+            Behavior on border.width {
+                NumberAnimation {
+                    duration: Constants.animFast
+                }
+
+            }
+
+            Behavior on color {
+                ColorAnimation {
+                    duration: Constants.animFast
+                }
+
+            }
+
         }
 
+        // Status text / hint
         ThemedText {
-            text: rootBox.authFailed ? "incorrect password" : (rootBox.authenticating ? "verifying..." : "enter to unlock - esc to clear")
-            color: rootBox.authFailed ? Theme.accent : Theme.muted
+            Layout.alignment: Qt.AlignHCenter
+            text: rootBox.authFailed ? "Incorrect password. Please try again." : (rootBox.authenticating ? "Verifying credentials..." : "Press Enter to unlock • Esc to clear")
+            customSize: 11
+            color: rootBox.authFailed ? Theme.accentComplementary : Theme.muted
+            font.bold: rootBox.authFailed
+
+            Behavior on color {
+                ColorAnimation {
+                    duration: Constants.animFast
+                }
+
+            }
+
         }
 
     }
