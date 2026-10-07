@@ -8,12 +8,13 @@ import qs.Core.Components
 import qs.Core.Windows
 import qs.Modules.KeybindsCheatSheet.Components
 
-SearchAppWindow {
+AppWindow {
     id: root
 
     property var hyprlandData: []
     property string searchText: ""
     property string selectedCategory: "All"
+    readonly property alias searchField: keybindsHeader.searchField
     property var categories: {
         let cats = ["All"];
         for (let i = 0; i < hyprlandData.length; i++) {
@@ -84,6 +85,65 @@ SearchAppWindow {
         return matches;
     }
     property var displayedBinds: []
+
+    function selectCategory(cat) {
+        if (root.selectedCategory === cat)
+            return ;
+
+        let prevIdx = root.categories.indexOf(root.selectedCategory);
+        let nextIdx = root.categories.indexOf(cat);
+        let dir = (prevIdx !== -1 && nextIdx !== -1) ? (nextIdx > prevIdx ? 1 : -1) : 1;
+        if (typeof pageTransition !== "undefined" && pageTransition)
+            pageTransition.triggerTransition(dir, function() {
+            root.selectedCategory = cat;
+        });
+        else
+            root.selectedCategory = cat;
+    }
+
+    function categoryBindCount(catName) {
+        for (let i = 0; i < hyprlandData.length; i++) {
+            if (hyprlandData[i].section === catName)
+                return hyprlandData[i].bindCount || 0;
+
+        }
+        return 0;
+    }
+
+    function categoryIcon(sectionName) {
+        let s = (sectionName || "").toLowerCase();
+        if (s.indexOf("workspace") !== -1)
+            return "apps";
+
+        if (s.indexOf("window") !== -1)
+            return "window";
+
+        if (s.indexOf("app") !== -1 || s.indexOf("launcher") !== -1)
+            return "rocket";
+
+        if (s.indexOf("media") !== -1 || s.indexOf("audio") !== -1 || s.indexOf("music") !== -1)
+            return "music";
+
+        if (s.indexOf("volume") !== -1)
+            return "volume";
+
+        if (s.indexOf("system") !== -1 || s.indexOf("session") !== -1 || s.indexOf("power") !== -1)
+            return "power";
+
+        if (s.indexOf("mouse") !== -1 || s.indexOf("touchpad") !== -1)
+            return "cursor";
+
+        if (s.indexOf("capture") !== -1 || s.indexOf("screen") !== -1)
+            return "capture";
+
+        if (s.indexOf("clipboard") !== -1)
+            return "clipboard";
+
+        if (s.indexOf("special") !== -1 || s.indexOf("utility") !== -1)
+            return "sparkles";
+
+        return "keyboard";
+    }
 
     function loadKeybinds() {
         hyprlandData = [];
@@ -168,24 +228,26 @@ SearchAppWindow {
     onComputedBindsChanged: {
         root.displayedBinds = root.computedBinds;
     }
-    popupId: "minflair_keybinds"
+    widgetId: "minflair_keybinds"
     windowTitle: "Minflair Keybinds Cheat Sheet"
-    placeholderText: "Search keybinds..."
-    tabsModel: root.categories
-    activeTabValue: root.selectedCategory
-    onSearchRequested: (text) => {
-        root.searchText = text;
-    }
-    onTabClicked: (val, index) => {
-        root.selectedCategory = val;
-    }
+    contentPadding: 0
     onIsOpenChanged: {
         if (isOpen)
             root.loadKeybinds();
 
     }
     onWindowReadyForFocus: {
-        root.focusSearch();
+        searchField.textField.forceActiveFocus();
+    }
+
+    Shortcut {
+        sequence: "/"
+        onActivated: {
+            if (!searchField.textField.activeFocus) {
+                searchField.textField.forceActiveFocus();
+                searchField.textField.selectAll();
+            }
+        }
     }
 
     Shortcut {
@@ -200,8 +262,7 @@ SearchAppWindow {
                 idx = 0;
 
             let nextIdx = (idx + 1) % cats.length;
-            root.selectedCategory = cats[nextIdx];
-            root.activeTabIndex = nextIdx;
+            root.selectCategory(cats[nextIdx]);
         }
     }
 
@@ -217,8 +278,7 @@ SearchAppWindow {
                 idx = 0;
 
             let prevIdx = (idx - 1 + cats.length) % cats.length;
-            root.selectedCategory = cats[prevIdx];
-            root.activeTabIndex = prevIdx;
+            root.selectCategory(cats[prevIdx]);
         }
     }
 
@@ -243,11 +303,54 @@ SearchAppWindow {
 
     }
 
-    KeybindsList {
-        id: bindsList
+    RowLayout {
+        Layout.fillWidth: true
+        Layout.fillHeight: true
+        spacing: 0
 
-        anchors.fill: parent
-        currentBinds: root.displayedBinds
+        KeybindsSidebar {
+            id: sidebar
+
+            keybindsRoot: root
+        }
+
+        // Content Area
+        ColumnLayout {
+            id: contentContainer
+
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            spacing: 0
+
+            KeybindsHeader {
+                id: keybindsHeader
+
+                keybindsRoot: root
+            }
+
+            Item {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                Layout.margins: Constants.sizeLg
+
+                PageTransitionView {
+                    id: pageTransition
+
+                    anchors.fill: parent
+
+                    KeybindsList {
+                        id: bindsList
+
+                        anchors.fill: parent
+                        currentBinds: root.displayedBinds
+                    }
+
+                }
+
+            }
+
+        }
+
     }
 
 }

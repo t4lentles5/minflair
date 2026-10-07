@@ -58,19 +58,15 @@ ColumnLayout {
             AppGroup {
                 title: modelData.name || "General"
                 icon: "keyboard"
+                badge: (modelData.binds ? modelData.binds.length : 0) + " binds"
 
                 Repeater {
                     model: modelData.binds
 
-                    ColumnLayout {
+                    KeybindItem {
                         Layout.fillWidth: true
-                        spacing: Constants.sizeLg
-
-                        KeybindItem {
-                            uiElements: modelData.uiElements || []
-                            desc: modelData.desc || ""
-                        }
-
+                        uiElements: modelData.uiElements || []
+                        desc: modelData.desc || ""
                     }
 
                 }
