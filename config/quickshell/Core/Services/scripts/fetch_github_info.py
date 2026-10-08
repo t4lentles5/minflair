@@ -4,7 +4,9 @@ import sys
 sys.dont_write_bytecode = True
 
 import json
+import os
 import urllib.error
+import urllib.parse
 import urllib.request
 
 
@@ -20,6 +22,22 @@ def fetch_json(url, token=None):
         return {"error": str(e)}
 
 
+def download_avatar(url, dest_path):
+    if not url:
+        return False
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent": "Minflair-Shell"})
+        with urllib.request.urlopen(req, timeout=8) as response:
+            data = response.read()
+            tmp_path = dest_path + ".tmp"
+            with open(tmp_path, "wb") as f:
+                f.write(data)
+            os.replace(tmp_path, dest_path)
+        return True
+    except Exception:
+        return False
+
+
 def main():
     if len(sys.argv) < 2:
         print(json.dumps({"error": "Missing username"}))
@@ -29,6 +47,15 @@ def main():
     token = sys.argv[2] if len(sys.argv) > 2 else None
 
     result = {}
+
+    cache_dir = os.path.expanduser("~/.cache/quickshell")
+    os.makedirs(cache_dir, exist_ok=True)
+    clean_user = "".join(c for c in user if c.isalnum() or c in ("-", "_")).strip()
+    avatar_path = (
+        os.path.join(cache_dir, f"github_avatar_{clean_user}.png")
+        if clean_user
+        else os.path.join(cache_dir, "github_avatar.png")
+    )
 
     # 1. Fetch Profile
     if token:
@@ -47,6 +74,19 @@ def main():
         profile = fetch_json(f"https://api.github.com/users/{urllib.parse.quote(user)}")
         result["profile"] = profile
         result["hasToken"] = False
+
+    # Download and cache avatar locally to avoid Qt network/SSL issues
+    avatar_url = (
+        profile.get("avatar_url")
+        if isinstance(profile, dict) and "avatar_url" in profile
+        else None
+    )
+    if not avatar_url:
+        avatar_url = f"https://github.com/identicons/{urllib.parse.quote(user)}.png"
+
+    download_avatar(avatar_url, avatar_path)
+    if os.path.exists(avatar_path):
+        result["avatar_path"] = avatar_path
 
     # 2. Fetch Repos
     if token:

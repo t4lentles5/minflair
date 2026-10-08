@@ -100,16 +100,25 @@ Card {
                     width: 44
                     height: 44
 
+                    SvgIcon {
+                        anchors.centerIn: parent
+                        icon: "github"
+                        iconSize: Constants.sizeLg
+                        color: Theme.muted
+                        visible: userImage.status !== Image.Ready
+                    }
+
                     Image {
                         id: userImage
 
                         anchors.fill: parent
-                        source: (GithubService.avatarUrl || GithubService.username) ? (GithubService.avatarUrl || "https://github.com/identicons/" + GithubService.username + ".png") : ""
+                        source: GithubService.avatarUrl
                         fillMode: Image.PreserveAspectCrop
                         sourceSize: Qt.size(88, 88)
                         mipmap: true
                         visible: false
                         antialiasing: true
+                        cache: false
                     }
 
                     Rectangle {

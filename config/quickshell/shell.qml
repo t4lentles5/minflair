@@ -15,12 +15,20 @@ ShellRoot {
     readonly property bool isGaming: DisplayProfileService.gameModeActive
     readonly property bool isConvex: SettingsService.barStyle === "convex"
 
-    Process {
-        id: globalSocketCleanup
+    IpcHandler {
+        function toggle(widgetId: string) {
+            AppState.toggleWidget(widgetId);
+        }
 
-        command: ["sh", "-c", "rm -f /tmp/quickshell_*"]
-        running: true
-        onExited: AppState.socketsCleaned = true
+        function open(widgetId: string) {
+            AppState.openWidget(widgetId);
+        }
+
+        function close(widgetId: string) {
+            AppState.closeWidget(widgetId);
+        }
+
+        target: "widgets"
     }
 
     NotificationService {
@@ -51,7 +59,6 @@ ShellRoot {
 
     }
 
-    // Gaming Bar dedicada: No flotante (top: 0, margin: 0), radio 0, cero animaciones
     PanelWindow {
         id: gamingBarSurface
 

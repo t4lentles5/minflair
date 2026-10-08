@@ -33,18 +33,44 @@ Item {
         authProc.write(pwd + "\n");
     }
 
+    Timer {
+        id: socketRecoveryTimer
+
+        interval: 350
+        running: true
+        repeat: false
+        onTriggered: {
+            server.active = false;
+            server.active = true;
+        }
+    }
+
+    IpcHandler {
+        function toggle() {
+            root.toggleLockRequested();
+        }
+
+        function unlock() {
+            root.unlockRequested();
+        }
+
+        target: "lockScreen"
+    }
+
     SocketServer {
         id: server
 
         path: "/tmp/quickshell_lockScreen"
-        active: AppState.socketsCleaned
+        active: true
 
         handler: Component {
             Socket {
                 onConnectedChanged: {
                     if (connected) {
                         root.toggleLockRequested();
-                        connected = false;
+                        Qt.callLater(() => {
+                            connected = false;
+                        });
                     }
                 }
             }

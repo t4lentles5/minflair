@@ -12,7 +12,7 @@ Item {
     readonly property bool isFocusWidgetOpen: isWidgetOpen("launcher") || isWidgetOpen("clipboard") || isWidgetOpen("wallpaper") || isWidgetOpen("powerMenu") || isWidgetOpen("screenshot")
     property int pendingSettingsTab: -1
     property var launcherApps: []
-    property bool socketsCleaned: false
+    property bool socketsCleaned: true
     property real islandWidth: 180
     property real islandHeight: Constants.size3Xl
     property alias barIslandWidth: appState.islandWidth

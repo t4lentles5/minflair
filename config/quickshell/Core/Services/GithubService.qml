@@ -30,6 +30,11 @@ Item {
     property bool isFetching: false
     property var contributionData: []
 
+    function getCachedAvatarPath(user) {
+        let clean = ("" + user).replace(/[^a-zA-Z0-9_\-]/g, "").trim();
+        return clean !== "" ? (Quickshell.env("HOME") + "/.cache/quickshell/github_avatar_" + clean + ".png") : (Quickshell.env("HOME") + "/.cache/quickshell/github_avatar.png");
+    }
+
     function fetchData() {
         debounceTimer.restart();
     }
@@ -71,11 +76,16 @@ Item {
         fetchContributions(user);
     }
 
-    function applyProfileData(profile) {
+    function applyProfileData(profile, avatarPath) {
         if (!profile || !profile.login)
             return ;
 
-        githubService.avatarUrl = profile.avatar_url || "";
+        if (avatarPath) {
+            githubService.avatarUrl = "file://" + avatarPath;
+        } else {
+            let localPath = getCachedAvatarPath(profile.login || githubService.username);
+            githubService.avatarUrl = "file://" + localPath;
+        }
         githubService.fullName = profile.name || "";
         githubService.bio = profile.bio || "";
         githubService.location = profile.location || "";
@@ -147,7 +157,18 @@ Item {
         fetchTimer.restart();
     }
 
-    onUsernameChanged: fetchData()
+    Component.onCompleted: {
+        if (githubService.username !== "")
+            githubService.avatarUrl = "file://" + getCachedAvatarPath(githubService.username);
+
+    }
+    onUsernameChanged: {
+        if (githubService.username !== "")
+            githubService.avatarUrl = "file://" + getCachedAvatarPath(githubService.username);
+        else
+            githubService.avatarUrl = "";
+        fetchData();
+    }
     onTokenChanged: fetchData()
 
     Process {
@@ -167,7 +188,7 @@ Item {
                     let parsed = JSON.parse(fetchInfoOutput.text);
                     if (parsed.profile) {
                         githubService.hasToken = parsed.hasToken === true;
-                        applyProfileData(parsed.profile);
+                        applyProfileData(parsed.profile, parsed.avatar_path);
                         if (githubService.hasToken)
                             githubService.privateRepos = parsed.profile.total_private_repos || parsed.profile.owned_private_repos || 0;
                         else

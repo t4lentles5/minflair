@@ -38,20 +38,19 @@ Item {
             _isClosing = true;
         }
     }
-    Component.onCompleted: {
-        if (AppState.socketsCleaned && root.widgetId !== "")
-            server.active = true;
 
-    }
+    Timer {
+        id: socketRecoveryTimer
 
-    Connections {
-        function onSocketsCleanedChanged() {
-            if (AppState.socketsCleaned && root.widgetId !== "")
+        interval: 350
+        running: true
+        repeat: false
+        onTriggered: {
+            if (root.widgetId !== "") {
+                server.active = false;
                 server.active = true;
-
+            }
         }
-
-        target: AppState
     }
 
     Connections {
@@ -103,14 +102,16 @@ Item {
         id: server
 
         path: root.widgetId !== "" ? "/tmp/quickshell_" + root.widgetId : ""
-        active: false
+        active: root.widgetId !== ""
 
         handler: Component {
             Socket {
                 onConnectedChanged: {
                     if (connected) {
                         AppState.toggleWidget(root.widgetId);
-                        connected = false;
+                        Qt.callLater(() => {
+                            connected = false;
+                        });
                     }
                 }
             }
