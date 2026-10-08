@@ -52,8 +52,10 @@ Rectangle {
                 text: root.subtitle
                 customSize: Constants.sizeXs + 2
                 font.weight: Font.DemiBold
-                font.letterSpacing: 1.2
+                font.letterSpacing: 1
                 color: Theme.muted
+                Layout.fillWidth: true
+                elide: Text.ElideRight
             }
 
         }

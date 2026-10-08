@@ -23,7 +23,7 @@ SettingRowTemplate {
         Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
         implicitHeight: Constants.size3Xl
         implicitWidth: row.implicitWidth
-        radius: Constants.sizeSm
+        radius: Constants.sizeXs
         color: Theme.bgSecondary
         border.width: 1
         border.color: Theme.border
@@ -39,14 +39,14 @@ SettingRowTemplate {
             Rectangle {
                 anchors.fill: parent
                 anchors.margins: Constants.size3Xs
-                radius: Constants.sizeSm - Constants.size3Xs
-                color: Theme.accent
+                radius: Constants.sizeXs
+                color: Theme.bgAccent
             }
 
             Behavior on x {
                 NumberAnimation {
                     duration: Constants.animNormal
-                    easing.type: Easing.OutBack
+                    easing.type: Easing.OutQuart
                 }
 
             }
@@ -54,7 +54,7 @@ SettingRowTemplate {
             Behavior on width {
                 NumberAnimation {
                     duration: Constants.animNormal
-                    easing.type: Easing.OutBack
+                    easing.type: Easing.OutQuart
                 }
 
             }
@@ -72,7 +72,7 @@ SettingRowTemplate {
                 delegate: Item {
                     property bool isActive: root.currentValue === modelData.value
 
-                    width: Math.max(64, textItem.implicitWidth + Constants.sizeLg * 2)
+                    width: Math.max(54, textItem.implicitWidth + 20)
                     height: controlContainer.height
                     onIsActiveChanged: {
                         if (isActive) {
@@ -100,7 +100,7 @@ SettingRowTemplate {
                     Rectangle {
                         anchors.fill: parent
                         anchors.margins: Constants.size3Xs
-                        radius: Constants.sizeSm - Constants.size3Xs
+                        radius: Constants.sizeXs
                         color: mouseArea.containsMouse && !isActive ? Theme.bgSecondary : "transparent"
 
                         ThemedText {
@@ -108,8 +108,9 @@ SettingRowTemplate {
 
                             anchors.centerIn: parent
                             text: modelData.text
-                            font.bold: true
-                            color: isActive ? Theme.bg : (mouseArea.containsMouse ? Theme.fg : Theme.muted)
+                            font.weight: isActive ? Font.Bold : Font.Normal
+                            customSize: 11
+                            color: isActive ? Theme.fg : (mouseArea.containsMouse ? Theme.fg : Theme.muted)
 
                             Behavior on color {
                                 ColorAnimation {

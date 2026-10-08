@@ -52,7 +52,7 @@ SettingRowTemplate {
         opacity: root.enabled ? 1 : 0.5
         Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
         implicitWidth: root.comboWidth
-        implicitHeight: Constants.size4Xl
+        implicitHeight: Constants.size3Xl
         model: root.searchable ? root._filteredModel : root.model
         onActivated: (index) => {
             if (root.searchable) {
@@ -251,7 +251,7 @@ SettingRowTemplate {
                     id: popupSearchInput
 
                     Layout.fillWidth: true
-                    Layout.preferredHeight: Constants.size4Xl
+                    Layout.preferredHeight: Constants.size3Xl
                     leftPadding: Constants.sizeSm
                     rightPadding: Constants.sizeSm
                     visible: root.searchable
@@ -343,7 +343,7 @@ SettingRowTemplate {
             id: delegateItem
 
             width: ListView.view.width
-            height: 34
+            height: Constants.size3Xl
 
             HoverHandler {
                 cursorShape: Qt.PointingHandCursor

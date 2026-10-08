@@ -10,7 +10,7 @@ import qs.Core.Services
 SettingRowTemplate {
     id: root
 
-    property bool checked: false
+    property alias checked: settingSwitch.checked
 
     signal toggled(bool checked)
 
@@ -20,45 +20,46 @@ SettingRowTemplate {
         z: 10
         Layout.alignment: Qt.AlignVCenter
         opacity: root.enabled ? 1 : 0.5
-        checked: root.checked
-        onToggled: root.checked = checked
-        implicitWidth: 44
-        implicitHeight: 24
+        onToggled: root.toggled(checked)
+        implicitWidth: Constants.size4Xl
+        implicitHeight: Constants.sizeXl + 2
 
         HoverHandler {
             cursorShape: Qt.PointingHandCursor
         }
 
         indicator: Rectangle {
-            implicitWidth: 44
-            implicitHeight: 24
+            implicitWidth: Constants.size4Xl
+            implicitHeight: Constants.sizeXl + 2
             radius: height / 2
-            color: settingSwitch.checked ? Theme.accent : Theme.muted
+            color: settingSwitch.checked ? Theme.accent : Theme.bgSecondary
+            border.width: 1
+            border.color: settingSwitch.checked ? Theme.accent : Theme.border
 
             Rectangle {
                 id: knob
 
                 x: settingSwitch.checked ? parent.width - width - 3 : 3
                 y: (parent.height - height) / 2
-                width: 18
-                height: 18
+                width: Constants.sizeLg
+                height: Constants.sizeLg
                 radius: width / 2
-                color: Theme.bg
-                scale: settingSwitch.pressed ? 0.85 : (settingSwitch.hovered ? 1.08 : 1)
+                color: settingSwitch.checked ? "#ffffff" : (Theme.isDark ? Theme.muted : "#ffffff")
+                scale: settingSwitch.pressed ? 0.9 : (settingSwitch.hovered ? 1.05 : 1)
                 layer.enabled: true
 
                 layer.effect: DropShadow {
                     transparentBorder: true
-                    color: Qt.rgba(0, 0, 0, 0.4)
-                    radius: 4
-                    samples: 9
+                    color: Theme.shadow
+                    radius: Constants.size3Xs + 1
+                    samples: 7
                     verticalOffset: 1
                 }
 
                 Behavior on x {
                     NumberAnimation {
                         duration: Constants.animFast
-                        easing.type: Easing.OutBack
+                        easing.type: Easing.OutCubic
                     }
 
                 }
@@ -81,6 +82,13 @@ SettingRowTemplate {
             }
 
             Behavior on color {
+                ColorAnimation {
+                    duration: Constants.animFast
+                }
+
+            }
+
+            Behavior on border.color {
                 ColorAnimation {
                     duration: Constants.animFast
                 }

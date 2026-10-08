@@ -21,13 +21,16 @@ FocusScope {
     signal editingFinished()
 
     Layout.fillWidth: true
-    Layout.preferredHeight: (label !== "" ? 20 + Constants.sizeXs : 0) + 36
+    implicitHeight: (label !== "" ? labelText.implicitHeight + Constants.sizeXs : 0) + inputRect.implicitHeight
+    Layout.preferredHeight: implicitHeight
 
     ColumnLayout {
         anchors.fill: parent
         spacing: Constants.sizeXs
 
         ThemedText {
+            id: labelText
+
             text: root.label
             font.bold: true
             color: Theme.fg
@@ -36,10 +39,13 @@ FocusScope {
         }
 
         Rectangle {
+            id: inputRect
+
             Layout.fillWidth: true
-            Layout.preferredHeight: 36
-            color: Theme.bg
-            radius: Constants.sizeSm
+            implicitHeight: 34
+            Layout.preferredHeight: implicitHeight
+            color: Theme.isDark ? Theme.bgSecondary : Theme.bg
+            radius: Constants.sizeXs
             border.color: textInput.activeFocus ? Theme.accent : Theme.border
             border.width: 1
 
@@ -54,6 +60,10 @@ FocusScope {
 
                     focus: true
                     Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    Layout.alignment: Qt.AlignVCenter
+                    verticalAlignment: TextInput.AlignVCenter
+                    padding: 0
                     placeholderText: root.placeholderText
                     placeholderTextColor: Theme.muted
                     font.family: Constants.fontFamily
@@ -78,6 +88,9 @@ FocusScope {
                     iconColor: Theme.muted
                     hoverColor: Theme.accent
                     flat: true
+                    iconSize: Constants.sizeMd
+                    padding: Constants.size2Xs
+                    Layout.alignment: Qt.AlignVCenter
                     visible: root.isPassword
                     onClicked: root.revealPassword = !root.revealPassword
                 }
@@ -87,6 +100,9 @@ FocusScope {
                     iconColor: Theme.accent
                     hoverColor: Theme.fg
                     flat: true
+                    iconSize: Constants.sizeMd
+                    padding: Constants.size2Xs
+                    Layout.alignment: Qt.AlignVCenter
                     visible: root.showSubmitHint && textInput.activeFocus && textInput.text !== root._savedText
                     onClicked: {
                         textInput.focus = false;

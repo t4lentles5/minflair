@@ -10,7 +10,7 @@ AppSidebar {
     required property var managerRoot
 
     title: "PACKAGES"
-    subtitle: (SystemInfoService.osName || "ARCH LINUX").toUpperCase() + " / PACMAN"
+    subtitle: "SOFTWARE & SYSTEM UPDATES"
 
     ThemedText {
         text: "MODES"

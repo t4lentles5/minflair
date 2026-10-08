@@ -86,7 +86,7 @@ AppContainer {
             to: 40
             stepSize: 1
             value: HyprlandService.hyprGapsOut
-            defaultValue: 8
+            defaultValue: Constants.sizeXs
             suffix: "px"
             onMoved: (val) => {
                 HyprlandService.hyprGapsOut = Math.round(val);

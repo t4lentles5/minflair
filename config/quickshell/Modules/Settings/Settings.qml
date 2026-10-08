@@ -7,21 +7,74 @@ import qs.Core.Components
 import qs.Core.Services
 import qs.Core.Windows
 import qs.Modules.Settings.BarSettings
+import qs.Modules.Settings.Components
 import qs.Modules.Settings.EffectsSettings
 import qs.Modules.Settings.InputAndClipboardSettings
 import qs.Modules.Settings.IntegrationsSettings
 import qs.Modules.Settings.MouseSettings
 import qs.Modules.Settings.PersonalizationSettings
 import qs.Modules.Settings.SystemInfo
+import qs.Modules.Settings.WallpaperSettings
 import qs.Modules.Settings.WindowSettings
 
-SidebarAppWindow {
+AppWindow {
     id: root
 
-    property var pageComponents: [personalizationComp, barSettingsComp, effectsComp, windowComp, integrationsComp, mouseComp, inputAndClipboardComp, systemInfoComp]
+    property var pageComponents: [personalizationComp, barSettingsComp, effectsComp, windowComp, integrationsComp, mouseComp, inputAndClipboardComp, systemInfoComp, wallpaperComp]
+    property int activeTab: 0
+    readonly property var navOrder: [0, 8, 1, 2, 3, 5, 6, 4, 7]
+    readonly property var tabMetadata: ({
+        "0": {
+            "title": "Appearance",
+            "subtitle": "Themes, dynamic colors, and system typography",
+            "category": "DESKTOP"
+        },
+        "1": {
+            "title": "Desktop Bar",
+            "subtitle": "Configure widgets, layout, style, and bar visibility",
+            "category": "DESKTOP"
+        },
+        "2": {
+            "title": "Visual Effects",
+            "subtitle": "Blur, opacity, window animations, and shadow effects",
+            "category": "DESKTOP"
+        },
+        "3": {
+            "title": "Windows & Display",
+            "subtitle": "Window rules, borders, gaps, and monitor arrangements",
+            "category": "DESKTOP"
+        },
+        "4": {
+            "title": "Integrations & Apps",
+            "subtitle": "Weather service, GitHub status, notifications, and launcher",
+            "category": "MANAGEMENT"
+        },
+        "5": {
+            "title": "Mouse & Touchpad",
+            "subtitle": "Cursor speed, acceleration, scrolling, and touchpad gestures",
+            "category": "INPUT & HARDWARE"
+        },
+        "6": {
+            "title": "Keyboard & Clipboard",
+            "subtitle": "Keyboard layouts, repeat delay, and clipboard history",
+            "category": "INPUT & HARDWARE"
+        },
+        "7": {
+            "title": "About System",
+            "subtitle": "Hardware specifications, kernel, and software environment",
+            "category": "ABOUT"
+        },
+        "8": {
+            "title": "Wallpaper",
+            "subtitle": "Screen crop preview, scaling modes, transitions, and shuffle",
+            "category": "DESKTOP"
+        }
+    })
+    readonly property var currentTabMeta: tabMetadata[activeTab] || tabMetadata[0]
 
-    popupId: "minflair_settings"
+    widgetId: "minflair_settings"
     windowTitle: "Minflair Settings"
+    contentPadding: 0
     onIsOpenChanged: {
         if (isOpen) {
             if (AppState.pendingSettingsTab !== -1) {
@@ -32,41 +85,87 @@ SidebarAppWindow {
             }
         }
     }
-    sidebarModel: [{
-        "index": 0,
-        "label": "Personalization",
-        "icon": "color-palette"
-    }, {
-        "index": 1,
-        "label": "Desktop Bar",
-        "icon": "bar"
-    }, {
-        "index": 2,
-        "label": "Desktop Effects",
-        "icon": "sparkles"
-    }, {
-        "index": 3,
-        "label": "Windows & Display",
-        "icon": "monitor"
-    }, {
-        "index": 4,
-        "label": "Integrations & Apps",
-        "icon": "apps"
-    }, {
-        "index": 5,
-        "label": "Mouse & Touchpad",
-        "icon": "cursor"
-    }, {
-        "index": 6,
-        "label": "Keyboard & Clipboard",
-        "icon": "keyboard"
-    }, {
-        "index": 7,
-        "label": "System & Updates",
-        "icon": "info"
-    }]
-    onTabClicked: (id) => {
-        root.activeTab = id;
+
+    RowLayout {
+        Layout.fillWidth: true
+        Layout.fillHeight: true
+        spacing: 0
+
+        SettingsSidebar {
+            id: sidebar
+
+            Layout.fillHeight: true
+            activeTab: root.activeTab
+            onTabClicked: (id) => {
+                root.activeTab = id;
+            }
+        }
+
+        ColumnLayout {
+            id: contentContainer
+
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            spacing: 0
+
+            AppHeader {
+                title: root.currentTabMeta.title
+                category: root.currentTabMeta.category
+                subtitle: root.currentTabMeta.subtitle
+                showDivider: true
+            }
+
+            Item {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+
+                PageTransitionView {
+                    anchors.fill: parent
+                    activeIndex: root.activeTab
+                    order: root.navOrder
+                    onContentNeedsUpdate: (index) => {
+                        pageLoader.sourceComponent = root.pageComponents[index];
+                    }
+
+                    Loader {
+                        id: pageLoader
+
+                        anchors.fill: parent
+                        sourceComponent: personalizationComp
+                    }
+
+                }
+
+            }
+
+        }
+
+    }
+
+    Shortcut {
+        sequence: "Ctrl+Tab"
+        enabled: root.isOpen && root.pageComponents && root.pageComponents.length > 1
+        onActivated: {
+            let currentIdx = root.navOrder.indexOf(root.activeTab);
+            if (currentIdx === -1)
+                currentIdx = 0;
+
+            let nextIdx = (currentIdx + 1) % root.navOrder.length;
+            root.activeTab = root.navOrder[nextIdx];
+        }
+    }
+
+    Shortcut {
+        sequence: "Ctrl+Shift+Tab"
+        enabled: root.isOpen && root.pageComponents && root.pageComponents.length > 1
+        onActivated: {
+            let currentIdx = root.navOrder.indexOf(root.activeTab);
+            if (currentIdx === -1)
+                currentIdx = 0;
+
+            let prevIdx = (currentIdx - 1 + root.navOrder.length) % root.navOrder.length;
+            root.activeTab = root.navOrder[prevIdx];
+        }
     }
 
     Component {
@@ -141,18 +240,11 @@ SidebarAppWindow {
 
     }
 
-    PageTransitionView {
-        anchors.fill: parent
-        activeIndex: root.activeTab
-        onContentNeedsUpdate: (index) => {
-            pageLoader.sourceComponent = root.pageComponents[index];
-        }
+    Component {
+        id: wallpaperComp
 
-        Loader {
-            id: pageLoader
-
+        WallpaperSettings {
             anchors.fill: parent
-            sourceComponent: personalizationComp
         }
 
     }

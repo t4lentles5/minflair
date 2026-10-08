@@ -16,19 +16,13 @@ AppContainer {
 
         SettingSegmented {
             label: "Style"
-            description: "Choose between Minflair, Island, Notch, or Convex"
+            description: "Choose between Convex or Island"
             model: [{
-                "text": "Minflair",
-                "value": "minflair"
+                "text": "Convex",
+                "value": "convex"
             }, {
                 "text": "Island",
                 "value": "island"
-            }, {
-                "text": "Notch",
-                "value": "notch"
-            }, {
-                "text": "Convex",
-                "value": "convex"
             }]
             currentValue: SettingsService.barStyle
             onActivated: (value) => {
@@ -38,79 +32,28 @@ AppContainer {
 
     }
 
+    // ISLAND MODE WIDGETS
     AppGroup {
-        title: "Bar Widgets"
+        title: "Island Bar Widgets"
         icon: "widgets"
+        visible: SettingsService.barIslandMode
 
-        SettingSlotSelect {
-            label: "Left Slot 1"
-            description: "First widget on the left"
-            slotId: "barSlotL1"
-            updateFn: (val) => {
-                return SettingsService.barSlotL1 = val;
-            }
-        }
-
-        SettingSlotSelect {
-            label: "Left Slot 2"
-            description: "Second widget on the left"
-            slotId: "barSlotL2"
-            updateFn: (val) => {
-                return SettingsService.barSlotL2 = val;
-            }
-        }
-
-        SettingSlotSelect {
-            label: "Left Slot 3"
-            description: "Third widget on the left"
-            slotId: "barSlotL3"
-            updateFn: (val) => {
-                return SettingsService.barSlotL3 = val;
-            }
-        }
-
-        SettingSlotSelect {
-            label: "Center Slot 1"
-            description: "First widget in the center of the bar"
-            slotId: "barSlotC1"
-            updateFn: (val) => {
-                return SettingsService.barSlotC1 = val;
-            }
-        }
-
-        SettingSlotSelect {
-            label: "Center Slot 2"
-            description: "Second widget in the center of the bar"
-            slotId: "barSlotC2"
-            updateFn: (val) => {
-                return SettingsService.barSlotC2 = val;
-            }
-        }
-
-        SettingSlotSelect {
-            label: "Right Slot 1"
-            description: "First widget on the right"
-            slotId: "barSlotR1"
-            updateFn: (val) => {
-                return SettingsService.barSlotR1 = val;
-            }
-        }
-
-        SettingSlotSelect {
-            label: "Right Slot 2"
-            description: "Second widget on the right"
-            slotId: "barSlotR2"
-            updateFn: (val) => {
-                return SettingsService.barSlotR2 = val;
-            }
-        }
-
-        SettingSlotSelect {
-            label: "Right Slot 3"
-            description: "Third widget on the right"
-            slotId: "barSlotR3"
-            updateFn: (val) => {
-                return SettingsService.barSlotR3 = val;
+        SettingSegmented {
+            label: "Right Circular Island"
+            description: "Choose what to display in the right circular island (Music cover or Control Center)"
+            model: [{
+                "text": "Auto (Music or Tune)",
+                "value": "auto"
+            }, {
+                "text": "Always Music",
+                "value": "music"
+            }, {
+                "text": "Always Control Center",
+                "value": "control_center"
+            }]
+            currentValue: SettingsService.islandRightMode
+            onActivated: (value) => {
+                SettingsService.islandRightMode = value;
             }
         }
 

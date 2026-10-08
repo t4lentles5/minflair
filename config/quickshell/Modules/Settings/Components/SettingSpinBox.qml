@@ -23,15 +23,16 @@ SettingRowTemplate {
 
     RowLayout {
         Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
-        spacing: Constants.sizeMd
+        spacing: 6
         opacity: root.enabled ? 1 : 0.5
 
+        // Minus Button
         Rectangle {
             width: Constants.size3Xl
             height: Constants.size3Xl
-            radius: Constants.sizeSm
-            color: minusArea.containsMouse ? (minusArea.pressed ? Theme.bgTertiary : Theme.bgSecondary) : "transparent"
-            scale: minusArea.pressed ? 0.95 : (minusArea.containsMouse ? 1.05 : 1)
+            radius: Constants.sizeXs
+            color: minusArea.containsMouse ? Theme.bgSecondary : Theme.bgTertiary
+            scale: minusArea.pressed ? 0.94 : 1
             border.width: 1
             border.color: minusArea.containsMouse ? Theme.accent : Theme.border
 
@@ -75,18 +76,19 @@ SettingRowTemplate {
             Behavior on scale {
                 NumberAnimation {
                     duration: Constants.animFast
-                    easing.type: Easing.OutBack
+                    easing.type: Easing.OutQuart
                 }
 
             }
 
         }
 
+        // Center Value Input
         Rectangle {
-            Layout.preferredWidth: Math.max(64, contentRow.implicitWidth + Constants.sizeLg * 1.5)
+            Layout.preferredWidth: Math.max(58, contentRow.implicitWidth + 20)
             Layout.preferredHeight: Constants.size3Xl
-            radius: Constants.sizeSm
-            color: Theme.bgTertiary
+            radius: Constants.sizeXs
+            color: Theme.bgSecondary
             border.width: 1
             border.color: valueInput.activeFocus ? Theme.accent : Theme.border
 
@@ -100,7 +102,7 @@ SettingRowTemplate {
                 id: contentRow
 
                 anchors.centerIn: parent
-                spacing: Constants.size2Xs
+                spacing: 3
 
                 TextInput {
                     id: valueInput
@@ -151,6 +153,7 @@ SettingRowTemplate {
                     anchors.verticalCenter: parent.verticalCenter
                     text: root.suffix
                     color: Theme.muted
+                    customSize: 11
                     visible: root.suffix !== "" && (!root.allowOff || root.value > 0.001 || valueInput.activeFocus)
                 }
 
@@ -165,12 +168,13 @@ SettingRowTemplate {
 
         }
 
+        // Plus Button
         Rectangle {
             width: Constants.size3Xl
             height: Constants.size3Xl
-            radius: Constants.sizeSm
-            color: plusArea.containsMouse ? (plusArea.pressed ? Theme.bgTertiary : Theme.bgSecondary) : "transparent"
-            scale: plusArea.pressed ? 0.95 : (plusArea.containsMouse ? 1.05 : 1)
+            radius: Constants.sizeXs
+            color: plusArea.containsMouse ? Theme.bgSecondary : Theme.bgTertiary
+            scale: plusArea.pressed ? 0.94 : 1
             border.width: 1
             border.color: plusArea.containsMouse ? Theme.accent : Theme.border
 
@@ -214,7 +218,7 @@ SettingRowTemplate {
             Behavior on scale {
                 NumberAnimation {
                     duration: Constants.animFast
-                    easing.type: Easing.OutBack
+                    easing.type: Easing.OutQuart
                 }
 
             }

@@ -9,7 +9,7 @@ AppSidebar {
     required property var keybindsRoot
 
     title: "KEYBINDS"
-    subtitle: (keybindsRoot.totalKeybinds > 0 ? (keybindsRoot.totalKeybinds + " SHORTCUTS") : "HYPRLAND") + " / CHEATSHEET"
+    subtitle: "HYPRLAND SHORTCUT REFERENCE"
 
     ThemedText {
         text: "CATEGORIES"

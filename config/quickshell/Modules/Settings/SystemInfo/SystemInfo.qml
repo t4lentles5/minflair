@@ -1,3 +1,4 @@
+import QtQuick
 import QtQuick.Layouts
 import qs.Core
 import qs.Core.Components
@@ -22,30 +23,39 @@ AppContainer {
     property string diskTotal: SystemStats.diskTotal
     property string gpuName: SystemStats.gpuName
 
-    ColumnLayout {
-        spacing: Constants.sizeSm
+    // System Overview Hero Card
+    Card {
         Layout.fillWidth: true
-        Layout.alignment: Qt.AlignHCenter
-        Layout.topMargin: Constants.sizeLg
-        Layout.bottomMargin: Constants.sizeLg
+        contentPadding: Constants.sizeLg
+        cardRadius: Constants.sizeSm
+        useBorder: true
 
-        AnimatedMinflair {
-            iconSize: 96
-            Layout.alignment: Qt.AlignHCenter
-        }
+        RowLayout {
+            spacing: Constants.sizeLg
 
-        ThemedText {
-            text: root.username + "@" + root.hostname
-            font.bold: true
-            customSize: Constants.sizeLg
-            Layout.alignment: Qt.AlignHCenter
-        }
+            AnimatedMinflair {
+                iconSize: Constants.size5Xl
+            }
 
-        ThemedText {
-            text: root.osName
-            customSize: Constants.sizeMd
-            color: Theme.muted
-            Layout.alignment: Qt.AlignHCenter
+            ColumnLayout {
+                Layout.fillWidth: true
+                spacing: Constants.size2Xs
+
+                ThemedText {
+                    text: root.username + "@" + root.hostname
+                    font.weight: Font.Bold
+                    customSize: 15
+                    color: Theme.fg
+                }
+
+                ThemedText {
+                    text: root.osName + (root.kernel !== "" ? (" (" + root.kernel + ")") : "")
+                    customSize: 11
+                    color: Theme.muted
+                }
+
+            }
+
         }
 
     }
