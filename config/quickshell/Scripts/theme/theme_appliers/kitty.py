@@ -32,8 +32,8 @@ active_tab_background   {sanitize_color(accent)}
 inactive_tab_foreground {sanitize_color(muted)}
 inactive_tab_background {sanitize_color(bgSecondary)}
 tab_bar_background      {sanitize_color(bg)}
-color0  {sanitize_color(bgSecondary)}
-color8  {sanitize_color(muted)}
+color0  {sanitize_color(accent)}
+color8  {sanitize_color(accent)}
 color1  {sanitize_color(accent)}
 color9  {sanitize_color(accent)}
 color2  {sanitize_color(accent)}
@@ -42,18 +42,18 @@ color3  {sanitize_color(accent)}
 color11 {sanitize_color(accent)}
 color4  {sanitize_color(accent)}
 color12 {sanitize_color(accent)}
-color5  {sanitize_color(accentComplementary)}
-color13 {sanitize_color(accentComplementary)}
+color5  {sanitize_color(accent)}
+color13 {sanitize_color(accent)}
 color6  {sanitize_color(accent)}
 color14 {sanitize_color(accent)}
-color7  {sanitize_color(fg)}
-color15 {sanitize_color(fg)}
-color16 {sanitize_color(bgSecondary)}
-color17 {sanitize_color(bgTertiary)}
-color18 {sanitize_color(bgAccent)}
-color19 {sanitize_color(bgAccentComplementary)}
-color20 {sanitize_color(overlayBase)}
-color21 {sanitize_color(border)}
+color7  {sanitize_color(accent)}
+color15 {sanitize_color(accent)}
+color16 {sanitize_color(accent)}
+color17 {sanitize_color(accent)}
+color18 {sanitize_color(accent)}
+color19 {sanitize_color(accent)}
+color20 {sanitize_color(accent)}
+color21 {sanitize_color(accent)}
 """
     kitty_dir = os.path.join(home, ".config", "kitty")
     os.makedirs(kitty_dir, exist_ok=True)
