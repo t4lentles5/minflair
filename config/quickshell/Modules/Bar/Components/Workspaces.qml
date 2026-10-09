@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Layouts
 import Quickshell
 import Quickshell.Hyprland
 import qs.Core
@@ -9,9 +10,9 @@ import qs.Core.Utils
 Item {
     id: root
 
-    property color bgColor: Theme.isDark ? "#121118" : "#1a1922"
+    property color bgColor: Theme.bgSecondary
     property bool compact: false
-    property int customHeight: compact ? 20 : 22
+    property int customHeight: compact ? 20 : SettingsService.barWidgetHeight
     readonly property real containerPadding: compact ? 8 : 10
     readonly property int dotHeight: compact ? 6 : 8
     readonly property int activePillWidth: compact ? 18 : 24
@@ -60,7 +61,10 @@ Item {
     }
 
     implicitHeight: customHeight
-    height: parent && parent.height > 0 ? parent.height : implicitHeight
+    height: customHeight
+    Layout.preferredHeight: customHeight
+    Layout.preferredWidth: implicitWidth
+    Layout.alignment: Qt.AlignVCenter
     implicitWidth: Math.round(hLayout.implicitWidth + (root.bgColor === "transparent" ? 0 : (containerPadding * 2)))
     width: implicitWidth
 
