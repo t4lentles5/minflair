@@ -54,6 +54,20 @@ Item {
             "message": body
         };
     }
+    readonly property real textContentHeight: {
+        let h = 0;
+        if (summaryText.visible && summaryText.text !== "")
+            h += summaryText.implicitHeight;
+
+        if (bodyText.visible && bodyText.text !== "")
+            h += (h > 0 ? textColumn.spacing : 0) + bodyText.implicitHeight;
+
+        if (osdBar.visible)
+            h += (h > 0 ? textColumn.spacing : 0) + osdBar.height;
+
+        return h > 0 ? h : Constants.size2Xl;
+    }
+    readonly property int calculatedIconSize: Math.max(Constants.sizeLg, Math.round(textContentHeight))
 
     implicitHeight: layout.implicitHeight
 
@@ -67,18 +81,20 @@ Item {
         NotificationIcon {
             id: iconContainer
 
-            Layout.alignment: Qt.AlignTop | Qt.AlignLeft
-            Layout.topMargin: Constants.size3Xs
-            Layout.preferredWidth: iconContainer.isUrgencyIcon ? Constants.sizeLg : Constants.size3Xl
-            Layout.preferredHeight: iconContainer.isUrgencyIcon ? Constants.sizeLg : Constants.size3Xl
+            Layout.alignment: iconContainer.isUrgencyIcon ? (Qt.AlignTop | Qt.AlignLeft) : Qt.AlignVCenter
+            Layout.topMargin: iconContainer.isUrgencyIcon ? Constants.size3Xs : 0
+            Layout.preferredWidth: iconContainer.isUrgencyIcon ? Constants.sizeLg : root.calculatedIconSize
+            Layout.preferredHeight: iconContainer.isUrgencyIcon ? Constants.sizeLg : root.calculatedIconSize
             notifData: root.notifData
             bgColor: root.isConvex ? "transparent" : Theme.bgSecondary
         }
 
         ColumnLayout {
+            id: textColumn
+
             Layout.fillWidth: true
-            Layout.alignment: Qt.AlignTop
-            spacing: Constants.size3Xs
+            Layout.alignment: Qt.AlignVCenter
+            spacing: 0
 
             ThemedText {
                 id: summaryText
@@ -108,6 +124,8 @@ Item {
             }
 
             OsdProgressBar {
+                id: osdBar
+
                 Layout.fillWidth: true
                 notifData: root.notifData
             }
