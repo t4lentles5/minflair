@@ -25,13 +25,7 @@ def apply(home, colors):
 bg = "{sanitize_color(bg)}"
 fg = "{sanitize_color(fg)}"
 accent = "{sanitize_color(accent)}"
-accentcomplementary = "{sanitize_color(accentComplementary)}"
-bgsecondary = "{sanitize_color(bgSecondary)}"
-bgtertiary = "{sanitize_color(bgTertiary)}"
-bgaccent = "{sanitize_color(bgAccent)}"
-bgaccentcomplementary = "{sanitize_color(bgAccentComplementary)}"
-muted = "{sanitize_color(muted)}"
-border = "{sanitize_color(border)}"
+accentComplementary = "{sanitize_color(accentComplementary)}"
 """
     os.system(f"sed -i '/# --- Quickshell Palette ---/,$d' '{starship_file}'")
     with open(starship_file, "a") as f2:
