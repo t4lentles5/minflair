@@ -13,9 +13,9 @@ hl.curve("easeInOut", { type = "bezier", points = { { 0.42, 0 }, { 0.58, 1.0 } }
 hl.curve("spring", { type = "bezier", points = { { 0.5, 1.6 }, { 0.4, 0.8 } } })
 
 -- Define animations
-hl.animation({ leaf = "windows", enabled = true, speed = 5, bezier = "overshot", style = "slide bottom" })
-hl.animation({ leaf = "windowsOut", enabled = true, speed = 5, bezier = "ease", style = "slide bottom" })
-hl.animation({ leaf = "windowsMove", enabled = true, speed = 5, bezier = "overshot", style = "slide" })
+hl.animation({ leaf = "windowsIn", enabled = true, speed = 4, bezier = "overshot", style = "popin 80%" })
+hl.animation({ leaf = "windowsOut", enabled = true, speed = 3, bezier = "ease", style = "popin 85%" })
+hl.animation({ leaf = "windowsMove", enabled = true, speed = 4, bezier = "overshot" })
 hl.animation({ leaf = "fade", enabled = true, speed = 3, bezier = "ease" })
 hl.animation({ leaf = "fadeDim", enabled = true, speed = 4, bezier = "ease" })
 hl.animation({ leaf = "border", enabled = true, speed = 2, bezier = "ease" })

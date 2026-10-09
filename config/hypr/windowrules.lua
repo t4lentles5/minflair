@@ -13,11 +13,28 @@ hl.window_rule({
 	center = true,
 })
 
-hl.window_rule({ match = { class = "^steam$", title = "^Friends List.*$|^Lista de amigos.*$" }, float = true, size = "420 750", center = true, rounding = 16 })
-hl.window_rule({ match = { class = "^steam$", title = "^Steam Settings$|^Parámetros.*$|^Settings$" }, float = true, size = "950 680", center = true, rounding = 16 })
+hl.window_rule({
+	match = { class = "^steam$", title = "^Friends List.*$|^Lista de amigos.*$" },
+	float = true,
+	size = "420 750",
+	center = true,
+	rounding = 16,
+})
+hl.window_rule({
+	match = { class = "^steam$", title = "^Steam Settings$|^Parámetros.*$|^Settings$" },
+	float = true,
+	size = "950 680",
+	center = true,
+	rounding = 16,
+})
 hl.window_rule({ match = { class = "^steam$", title = "^notificationtoasts_.*$" }, float = true, rounding = 16 })
 hl.window_rule({ match = { class = "^steam$", title = "^$" }, rounding = 16 })
-hl.window_rule({ match = { class = "^steam$", title = "^Steam - News$|^Special Offers$|^CD key.*$|^Steam Guard.*$" }, float = true, center = true, rounding = 16 })
+hl.window_rule({
+	match = { class = "^steam$", title = "^Steam - News$|^Special Offers$|^CD key.*$|^Steam Guard.*$" },
+	float = true,
+	center = true,
+	rounding = 16,
+})
 
 hl.window_rule({ match = { title = "^Select a File|Choose wallpaper|Open Folder|Library|File Upload$" }, float = true })
 hl.window_rule({ match = { title = "^Minflair Settings$" }, float = true, size = "1200 750", center = true })
