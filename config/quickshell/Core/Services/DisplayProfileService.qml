@@ -59,6 +59,11 @@ Item {
         }
     }
 
+    Component.onCompleted: {
+        if (gameModeActive)
+            applyGameMode(true);
+
+    }
     onNightLightActiveChanged: {
         if (SettingsService.settingsLoaded)
             SettingsService.saveSettings();

@@ -63,7 +63,7 @@ Item {
     }
 
     function applyHyprlandSettings() {
-        if (!hyprPrefsLoaded || isSyncing)
+        if (!hyprPrefsLoaded || isSyncing || DisplayProfileService.gameModeActive)
             return ;
 
         applySettingsTimer.restart();
@@ -107,7 +107,7 @@ Item {
     }
 
     onEnableAnimationsChanged: {
-        if (SettingsService.settingsLoaded && hyprPrefsLoaded && !isSyncing) {
+        if (SettingsService.settingsLoaded && hyprPrefsLoaded && !isSyncing && !DisplayProfileService.gameModeActive) {
             animationsProc.running = false;
             animationsProc.command = ["hyprctl", "eval", "hl.config({ animations = { enabled = " + (enableAnimations ? "true" : "false") + " } })"];
             animationsProc.running = true;
@@ -431,6 +431,18 @@ Item {
 
     }
 
+    Timer {
+        id: reapplyGameModeTimer
+
+        interval: 100
+        repeat: false
+        onTriggered: {
+            if (DisplayProfileService.gameModeActive)
+                DisplayProfileService.applyGameMode(true);
+
+        }
+    }
+
     Connections {
         function onRawEvent(event) {
             if (event.name === "activelayout") {
@@ -442,6 +454,11 @@ Item {
                     hyprlandService.checkFullscreen();
             } else if (event.name === "activewindow" || event.name === "activewindowv2" || event.name === "workspace" || event.name === "workspacev2") {
                 hyprlandService.checkFullscreen();
+            } else if (event.name === "configreloaded") {
+                if (DisplayProfileService.gameModeActive)
+                    reapplyGameModeTimer.restart();
+                else
+                    hyprlandService.reloadHyprPrefs();
             }
         }
 

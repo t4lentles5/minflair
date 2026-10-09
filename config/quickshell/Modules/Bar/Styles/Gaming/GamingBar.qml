@@ -29,7 +29,7 @@ Item {
         id: leftSection
 
         anchors.left: parent.left
-        anchors.leftMargin: Constants.sizeSm
+        anchors.leftMargin: Constants.sizeXs
         anchors.verticalCenter: parent.verticalCenter
         height: Constants.size2Xl + 4
         spacing: Constants.sizeXs
@@ -126,7 +126,7 @@ Item {
         id: rightSection
 
         anchors.right: parent.right
-        anchors.rightMargin: Constants.sizeSm
+        anchors.rightMargin: Constants.sizeXs
         anchors.verticalCenter: parent.verticalCenter
         height: Constants.size2Xl + 4
         spacing: Constants.sizeXs

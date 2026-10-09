@@ -22,6 +22,9 @@ PanelWindow {
     id: root
 
     required property var notificationService
+    readonly property int barHeight: Constants.size3Xl + 2
+    readonly property int widgetOffset: barHeight + 8
+    readonly property int edgeSpacing: 8
     readonly property bool isControlCenter: AppState.isWidgetOpen("controlCenter")
     readonly property bool isNotificationsCenter: AppState.isWidgetOpen("notificationsCenter")
     readonly property bool isDashboard: AppState.isWidgetOpen("dashboard")
@@ -117,6 +120,16 @@ PanelWindow {
 
         }
     }
+    onIsWallpaperChanged: {
+        if (isWallpaper) {
+            if (wallpaperContent && typeof wallpaperContent.resetWallpaperSelector === "function")
+                wallpaperContent.resetWallpaperSelector();
+
+            if (wallpaperContent && wallpaperContent.initialFocusItem)
+                wallpaperContent.initialFocusItem.forceActiveFocus();
+
+        }
+    }
 
     anchors {
         top: true
@@ -157,10 +170,11 @@ PanelWindow {
         id: ccContainer
 
         visible: root.isControlCenter
+        enabled: visible
         anchors.top: parent.top
-        anchors.topMargin: 34
+        anchors.topMargin: root.widgetOffset
         anchors.right: parent.right
-        anchors.rightMargin: 12
+        anchors.rightMargin: root.edgeSpacing
         width: Math.min(ccContent.implicitWidth + 24, root.width - 24)
         height: Math.min(ccContent.implicitHeight + 24, root.height - 48)
         color: Theme.bg
@@ -188,10 +202,11 @@ PanelWindow {
         id: ncContainer
 
         visible: root.isNotificationsCenter
+        enabled: visible
         anchors.top: parent.top
-        anchors.topMargin: 34
+        anchors.topMargin: root.widgetOffset
         anchors.right: parent.right
-        anchors.rightMargin: 12
+        anchors.rightMargin: root.edgeSpacing
         width: Math.min(ncContent.implicitWidth + 24, root.width - 24)
         height: Math.min(ncContent.implicitHeight + 24, root.height - 48)
         color: Theme.bg
@@ -219,8 +234,9 @@ PanelWindow {
         id: dashboardContainer
 
         visible: root.isDashboard
+        enabled: visible
         anchors.top: parent.top
-        anchors.topMargin: 34
+        anchors.topMargin: root.widgetOffset
         anchors.horizontalCenter: parent.horizontalCenter
         width: Math.min(dashboardContent.implicitWidth + 24, root.width - 24)
         height: Math.min(dashboardContent.implicitHeight + 24, root.height - 48)
@@ -248,10 +264,11 @@ PanelWindow {
         id: musicContainer
 
         visible: root.isMusic
+        enabled: visible
         anchors.top: parent.top
-        anchors.topMargin: 34
+        anchors.topMargin: root.widgetOffset
         anchors.right: parent.right
-        anchors.rightMargin: 12
+        anchors.rightMargin: root.edgeSpacing
         width: Math.min(musicContent.implicitWidth + 24, root.width - 24)
         height: Math.min(musicContent.implicitHeight + 24, root.height - 48)
         color: Theme.bg
@@ -278,10 +295,11 @@ PanelWindow {
         id: trayContainer
 
         visible: root.isTray
+        enabled: visible
         anchors.top: parent.top
-        anchors.topMargin: 34
+        anchors.topMargin: root.widgetOffset
         anchors.right: parent.right
-        anchors.rightMargin: 12
+        anchors.rightMargin: root.edgeSpacing
         width: Math.min(300, root.width - 24)
         height: Math.min(340, root.height - 48)
         color: Theme.bg
@@ -319,6 +337,7 @@ PanelWindow {
         id: launcherContainer
 
         visible: root.isLauncher
+        enabled: visible
         anchors.centerIn: parent
         width: Math.min(launcherContent.implicitWidth + 32, root.width - 40)
         height: Math.min(launcherContent.implicitHeight + 32, root.height - 40)
@@ -346,6 +365,7 @@ PanelWindow {
         id: clipboardContainer
 
         visible: root.isClipboard
+        enabled: visible
         anchors.centerIn: parent
         width: Math.min(clipboardContent.implicitWidth + 32, root.width - 40)
         height: Math.min(clipboardContent.implicitHeight + 32, root.height - 40)
@@ -373,6 +393,7 @@ PanelWindow {
         id: wallpaperContainer
 
         visible: root.isWallpaper
+        enabled: visible
         anchors.centerIn: parent
         width: Math.min(wallpaperContent.implicitWidth + 32, root.width - 40)
         height: Math.min(wallpaperContent.implicitHeight + 32, root.height - 40)
@@ -400,6 +421,7 @@ PanelWindow {
         id: powerMenuContainer
 
         visible: root.isPowerMenu
+        enabled: visible
         anchors.centerIn: parent
         width: powerMenuContent.implicitWidth + 24
         height: powerMenuContent.implicitHeight + 24
@@ -426,6 +448,7 @@ PanelWindow {
         id: screenshotContainer
 
         visible: root.isScreenshot
+        enabled: visible
         anchors.centerIn: parent
         width: screenshotContent.implicitWidth + 24
         height: screenshotContent.implicitHeight + 24
