@@ -119,7 +119,7 @@ Item {
             }
 
             PauseAnimation {
-                duration: Constants.animNormal - 50
+                duration: Math.max(0, Constants.animNormal - 50)
             }
 
             ParallelAnimation {

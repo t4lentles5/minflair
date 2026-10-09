@@ -56,7 +56,7 @@ Item {
 
                     Behavior on height {
                         NumberAnimation {
-                            duration: Constants.animFast - 50
+                            duration: Math.max(0, Constants.animFast - 50)
                             easing.type: Easing.OutQuad
                         }
 
