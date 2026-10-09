@@ -36,7 +36,7 @@ PanelWindow {
     readonly property bool isScreenshot: AppState.isWidgetOpen("screenshot")
     readonly property bool isTray: (AppState.activeWidget || "").startsWith("systemTray_")
     readonly property bool hasAnyOpen: isControlCenter || isNotificationsCenter || isDashboard || isMusic || isLauncher || isClipboard || isWallpaper || isPowerMenu || isScreenshot || isTray
-    readonly property bool needsFocus: isLauncher || isClipboard || isWallpaper
+    readonly property bool needsFocus: isLauncher || isClipboard || isWallpaper || isPowerMenu || isScreenshot
     readonly property int activeTrayIndex: {
         let targetId = AppState.activeWidget && AppState.activeWidget.startsWith("systemTray_") ? AppState.activeWidget : "";
         if (targetId && targetId.startsWith("systemTray_")) {
@@ -129,6 +129,33 @@ PanelWindow {
                 wallpaperContent.initialFocusItem.forceActiveFocus();
 
         }
+    }
+    onIsPowerMenuChanged: {
+        if (isPowerMenu) {
+            if (powerMenuContent && typeof powerMenuContent.resetPowerMenu === "function")
+                powerMenuContent.resetPowerMenu();
+
+            Qt.callLater(() => {
+                if (powerMenuContent && powerMenuContent.initialFocusItem)
+                    powerMenuContent.initialFocusItem.forceActiveFocus();
+
+            });
+        }
+    }
+    onIsScreenshotChanged: {
+        if (isScreenshot) {
+            if (screenshotContent && typeof screenshotContent.resetScreenCapture === "function")
+                screenshotContent.resetScreenCapture();
+
+            Qt.callLater(() => {
+                if (screenshotContent && screenshotContent.initialFocusItem)
+                    screenshotContent.initialFocusItem.forceActiveFocus();
+
+            });
+        }
+    }
+    Keys.onEscapePressed: {
+        AppState.closeAllWidgets();
     }
 
     anchors {
@@ -423,8 +450,8 @@ PanelWindow {
         visible: root.isPowerMenu
         enabled: visible
         anchors.centerIn: parent
-        width: powerMenuContent.implicitWidth + 24
-        height: powerMenuContent.implicitHeight + 24
+        width: powerMenuContent.implicitWidth
+        height: powerMenuContent.implicitHeight
         color: Theme.bg
         radius: 0
         border.width: 1
@@ -450,8 +477,8 @@ PanelWindow {
         visible: root.isScreenshot
         enabled: visible
         anchors.centerIn: parent
-        width: screenshotContent.implicitWidth + 24
-        height: screenshotContent.implicitHeight + 24
+        width: screenshotContent.implicitWidth
+        height: screenshotContent.implicitHeight
         color: Theme.bg
         radius: 0
         border.width: 1

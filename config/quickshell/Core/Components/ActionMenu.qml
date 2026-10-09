@@ -21,6 +21,8 @@ ListView {
     spacing: 0
     model: actionModel
     clip: true
+    focus: true
+    keyNavigationEnabled: false
     highlightFollowsCurrentItem: true
     highlightMoveDuration: Constants.animNormal
     Keys.onPressed: function(event) {

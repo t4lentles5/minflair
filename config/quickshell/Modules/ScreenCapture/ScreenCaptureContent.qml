@@ -97,6 +97,10 @@ Item {
     implicitHeight: buttonHeight
     width: implicitWidth
     height: implicitHeight
+    Keys.forwardTo: [shotView]
+    Keys.onEscapePressed: {
+        root.hideWidget();
+    }
     Component.onCompleted: {
         resetScreenCapture();
     }

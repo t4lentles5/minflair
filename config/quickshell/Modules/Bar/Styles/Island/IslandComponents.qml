@@ -21,11 +21,8 @@ Item {
     required property var notificationService
 
     function getTargetPadding(panel) {
-        if (panel === "")
+        if (panel === "" || panel === "screenshot" || panel === "powerMenu")
             return 0;
-
-        if (panel === "screenshot" || panel === "powerMenu")
-            return Constants.sizeSm;
 
         return Constants.sizeLg;
     }
