@@ -9,11 +9,12 @@ import qs.Core.Utils
 Item {
     id: root
 
-    property color bgColor: Theme.bgSecondary
+    property color bgColor: Theme.isDark ? "#121118" : "#1a1922"
     property bool compact: false
-    property int customHeight: compact ? 22 : SettingsService.barWidgetHeight
-    readonly property real containerPadding: compact ? 3 : 5
-    readonly property int itemHeight: Math.min(20, Math.max(16, (root.height > 0 ? root.height : root.customHeight) - (root.compact ? 4 : 6)))
+    property int customHeight: compact ? 20 : 22
+    readonly property real containerPadding: compact ? 8 : 10
+    readonly property int dotHeight: compact ? 6 : 8
+    readonly property int activePillWidth: compact ? 18 : 24
     readonly property int activeWsId: Hyprland.focusedWorkspace ? Hyprland.focusedWorkspace.id : 1
     readonly property int maxOccupiedWsId: {
         let maxId = 1;
@@ -94,7 +95,7 @@ Item {
         id: hLayout
 
         anchors.centerIn: parent
-        spacing: root.compact ? 3 : 4
+        spacing: root.compact ? 5 : 6
 
         Repeater {
             model: 10
@@ -126,90 +127,26 @@ Item {
 
                 visible: opacity > 0.001
                 opacity: isVisibleSlot ? 1 : 0
-                height: root.itemHeight
-                width: wsItemH.currentSize
+                height: root.dotHeight
+                width: isActive ? root.activePillWidth : root.dotHeight
 
                 Rectangle {
-                    id: wsItemH
-
-                    readonly property real targetSize: (wsSlot.isActive || wsSlot.hasWindows || wsSlot.isHovered) ? root.itemHeight : (root.compact ? 5 : 6)
-                    property real currentSize: targetSize
+                    id: dotItem
 
                     anchors.centerIn: parent
-                    height: currentSize
-                    width: currentSize
-                    radius: DisplayProfileService.gameModeActive ? 0 : currentSize / 2
+                    height: root.dotHeight
+                    width: parent.width
+                    radius: DisplayProfileService.gameModeActive ? 0 : height / 2
                     color: {
                         if (wsSlot.isActive)
                             return Theme.accent;
 
                         if (wsSlot.hasWindows)
-                            return mouseAreaH.pressed ? Theme.bgTertiary : (wsSlot.isHovered ? Theme.bgSecondary : Theme.bgTertiary);
+                            return wsSlot.isHovered ? Qt.rgba(Theme.fg.r, Theme.fg.g, Theme.fg.b, 0.95) : Qt.rgba(Theme.fg.r, Theme.fg.g, Theme.fg.b, 0.65);
 
-                        return wsSlot.isHovered ? Theme.bgTertiary : Theme.bgSecondary;
+                        return wsSlot.isHovered ? Qt.rgba(Theme.fg.r, Theme.fg.g, Theme.fg.b, 0.45) : Qt.rgba(Theme.fg.r, Theme.fg.g, Theme.fg.b, 0.22);
                     }
-                    scale: mouseAreaH.pressed ? 0.9 : 1
-
-                    ThemedText {
-                        id: numText
-
-                        // Smoothly scale & fade text with circle expansion
-                        readonly property real textProgress: Math.min(1, Math.max(0, (wsItemH.currentSize - (root.compact ? 5 : 6)) / Math.max(1, root.itemHeight - (root.compact ? 5 : 6))))
-
-                        anchors.centerIn: parent
-                        text: wsSlot.wsId.toString()
-                        customSize: root.compact ? 10 : 11
-                        font.weight: wsSlot.isActive ? Font.Bold : (wsSlot.hasWindows ? Font.DemiBold : Font.Normal)
-                        color: {
-                            if (wsSlot.isActive)
-                                return ColorUtils.isDark(Theme.accent) ? Theme.fg : Theme.opaqueBg;
-
-                            if (wsSlot.hasWindows)
-                                return Theme.fg;
-
-                            return Theme.fg;
-                        }
-                        scale: 0.5 + 0.5 * textProgress
-                        opacity: {
-                            if (wsSlot.isActive)
-                                return textProgress;
-
-                            if (wsSlot.hasWindows)
-                                return wsSlot.isHovered ? 1 : 0.85;
-
-                            return wsSlot.isHovered ? 0.85 : 0;
-                        }
-                        visible: opacity > 0.01
-
-                        Behavior on color {
-                            ColorAnimation {
-                                duration: Constants.animFast
-                            }
-
-                        }
-
-                    }
-
-                    MouseArea {
-                        id: mouseAreaH
-
-                        anchors.fill: parent
-                        anchors.margins: wsSlot.isActive || wsSlot.hasWindows ? 0 : -4
-                        hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: Hyprland.dispatch('hl.dsp.focus({workspace=' + wsSlot.wsId + '})')
-                        onWheel: (wheel) => {
-                            return root.handleWheel(wheel);
-                        }
-                    }
-
-                    Behavior on currentSize {
-                        NumberAnimation {
-                            duration: Constants.animNormal
-                            easing.type: Easing.OutCubic
-                        }
-
-                    }
+                    scale: mouseAreaH.pressed ? 0.85 : (wsSlot.isHovered && !wsSlot.isActive ? 1.2 : 1)
 
                     Behavior on color {
                         ColorAnimation {
@@ -224,6 +161,28 @@ Item {
                             easing.type: Easing.OutQuad
                         }
 
+                    }
+
+                }
+
+                MouseArea {
+                    id: mouseAreaH
+
+                    anchors.centerIn: parent
+                    width: Math.max(parent.width, 14)
+                    height: Math.max(parent.height, 18)
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: Hyprland.dispatch('hl.dsp.focus({workspace=' + wsSlot.wsId + '})')
+                    onWheel: (wheel) => {
+                        return root.handleWheel(wheel);
+                    }
+                }
+
+                Behavior on width {
+                    NumberAnimation {
+                        duration: Constants.animNormal
+                        easing.type: Easing.OutCubic
                     }
 
                 }
