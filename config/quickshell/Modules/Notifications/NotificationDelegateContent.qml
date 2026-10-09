@@ -77,7 +77,7 @@ Item {
 
         ColumnLayout {
             Layout.fillWidth: true
-            Layout.alignment: Qt.AlignVCenter
+            Layout.alignment: Qt.AlignTop
             spacing: Constants.size3Xs
 
             ThemedText {
