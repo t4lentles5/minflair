@@ -5,7 +5,19 @@ local theme_file = vim.fn.expand("~/.cache/quickshell/nvim_theme.lua")
 function M.load_theme()
   if vim.fn.filereadable(theme_file) == 1 then
     -- Source the file which contains vim.cmd.colorscheme and vim.opt.background
+    package.loaded["luna.palette"] = nil
+    package.loaded["luna.palette_dark"] = nil
+    package.loaded["luna.palette_light"] = nil
+    package.loaded["luna.highlights"] = nil
+    package.loaded["lualine.themes.luna"] = nil
     vim.cmd("luafile " .. theme_file)
+
+    -- Sincronizar Lualine con el tema nativo de luna
+    local has_lualine, lualine = pcall(require, "lualine")
+    if has_lualine then
+      package.loaded["lualine.themes.luna"] = nil
+      lualine.setup({ options = { theme = "luna" } })
+    end
   end
 end
 

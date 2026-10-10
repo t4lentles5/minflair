@@ -1,9 +1,10 @@
 local M = {
-  dir = "/dummy",
-  enabled = false,
+  "t4lentles5/luna.nvim",
+  lazy = false,
+  priority = 1000,
+  opts = {},
 }
 
--- Define colors using vim.g.qs_colors if available, otherwise fallback to reasonable defaults
 M.colors = setmetatable({}, {
   __index = function(_, key)
     local defaults = {

@@ -1,35 +1,78 @@
-import "Components"
-import Qt5Compat.GraphicalEffects
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import Quickshell
-import Quickshell.Io
 import qs.Core
 import qs.Core.Components
 import qs.Core.Services
 import qs.Core.Windows
+import qs.Modules.Settings.BarSettings
+import qs.Modules.Settings.Components
 import qs.Modules.Settings.EffectsSettings
 import qs.Modules.Settings.InputAndClipboardSettings
 import qs.Modules.Settings.IntegrationsSettings
+import qs.Modules.Settings.MouseSettings
 import qs.Modules.Settings.PersonalizationSettings
 import qs.Modules.Settings.SystemInfo
-import qs.Modules.Settings.UpdatePreferences
+import qs.Modules.Settings.WallpaperSettings
 import qs.Modules.Settings.WindowSettings
 
 AppWindow {
     id: root
 
+    property var pageComponents: [personalizationComp, barSettingsComp, effectsComp, windowComp, integrationsComp, mouseComp, inputAndClipboardComp, systemInfoComp, wallpaperComp]
     property int activeTab: 0
-    property int lastTab: 0
-    property int animOff: 0
-    property var pageComponents: [personalizationComp, effectsComp, windowComp, integrationsComp, inputAndClipboardComp, updatePreferencesComp, systemInfoComp]
-    property string powerProfile: SystemInfoService.powerProfile
-    property string batteryStatus: SystemInfoService.batteryStatus
-    property string batteryPercentage: SystemInfoService.batteryPercentage
-    property string batteryEstimation: SystemInfoService.batteryEstimation
+    readonly property var navOrder: [0, 8, 1, 2, 3, 5, 6, 4, 7]
+    readonly property var tabMetadata: ({
+        "0": {
+            "title": "Appearance",
+            "subtitle": "Themes, dynamic colors, and system typography",
+            "category": "DESKTOP"
+        },
+        "1": {
+            "title": "Desktop Bar",
+            "subtitle": "Configure widgets, layout, style, and bar visibility",
+            "category": "DESKTOP"
+        },
+        "2": {
+            "title": "Visual Effects",
+            "subtitle": "Blur, opacity, window animations, and shadow effects",
+            "category": "DESKTOP"
+        },
+        "3": {
+            "title": "Windows & Display",
+            "subtitle": "Window rules, borders, gaps, and monitor arrangements",
+            "category": "DESKTOP"
+        },
+        "4": {
+            "title": "Integrations & Apps",
+            "subtitle": "Weather service, GitHub status, notifications, and launcher",
+            "category": "MANAGEMENT"
+        },
+        "5": {
+            "title": "Mouse & Touchpad",
+            "subtitle": "Cursor speed, acceleration, scrolling, and touchpad gestures",
+            "category": "INPUT & HARDWARE"
+        },
+        "6": {
+            "title": "Keyboard & Clipboard",
+            "subtitle": "Keyboard layouts, repeat delay, and clipboard history",
+            "category": "INPUT & HARDWARE"
+        },
+        "7": {
+            "title": "About System",
+            "subtitle": "Hardware specifications, kernel, and software environment",
+            "category": "ABOUT"
+        },
+        "8": {
+            "title": "Wallpaper",
+            "subtitle": "Screen crop preview, scaling modes, transitions, and shuffle",
+            "category": "DESKTOP"
+        }
+    })
+    readonly property var currentTabMeta: tabMetadata[activeTab] || tabMetadata[0]
 
-    popupId: "minflair_settings"
+    widgetId: "minflair_settings"
     windowTitle: "Minflair Settings"
     contentPadding: 0
     onIsOpenChanged: {
@@ -43,65 +86,101 @@ AppWindow {
         }
     }
 
-    Process {
-        id: queryHyprlandProc
+    RowLayout {
+        Layout.fillWidth: true
+        Layout.fillHeight: true
+        spacing: 0
 
-        command: ["sh", "-c", "echo \"{\\\"blur\\\":$(hyprctl getoption decoration:blur:enabled -j | jq .int),\\\"rounding\\\":$(hyprctl getoption decoration:rounding -j | jq .int),\\\"active_opacity\\\":$(hyprctl getoption decoration:active_opacity -j | jq .float),\\\"inactive_opacity\\\":$(hyprctl getoption decoration:inactive_opacity -j | jq .float),\\\"blur_size\\\":$(hyprctl getoption decoration:blur:size -j | jq .int),\\\"blur_passes\\\":$(hyprctl getoption decoration:blur:passes -j | jq .int),\\\"gaps_in\\\":\\\"$(hyprctl getoption general:gaps_in -j | jq -r .custom)\\\",\\\"gaps_out\\\":\\\"$(hyprctl getoption general:gaps_out -j | jq -r .custom)\\\"}\""]
+        SettingsSidebar {
+            id: sidebar
 
-        stdout: SplitParser {
-            onRead: (data) => {
-                if (data && data.trim() !== "") {
-                    try {
-                        let opts = JSON.parse(data.trim());
-                        HyprlandService.hyprBlur = opts.blur === 1;
-                        HyprlandService.hyprRounding = opts.rounding;
-                        HyprlandService.hyprActiveOpacity = Math.round(opts.active_opacity * 100);
-                        HyprlandService.hyprInactiveOpacity = Math.round(opts.inactive_opacity * 100);
-                        HyprlandService.hyprBlurSize = opts.blur_size;
-                        HyprlandService.hyprBlurPasses = opts.blur_passes;
-                        let gapsInStr = opts.gaps_in || "4";
-                        HyprlandService.hyprGapsIn = parseInt(gapsInStr.split(" ")[0]) || 4;
-                        let gapsOutStr = opts.gaps_out || "8";
-                        HyprlandService.hyprGapsOut = parseInt(gapsOutStr.split(" ")[0]) || 8;
-                    } catch (e) {
-                        console.error("Error parsing Hyprland options: " + e);
-                    }
-                }
+            Layout.fillHeight: true
+            activeTab: root.activeTab
+            onTabClicked: (id) => {
+                root.activeTab = id;
             }
+        }
+
+        ColumnLayout {
+            id: contentContainer
+
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            spacing: 0
+
+            AppHeader {
+                title: root.currentTabMeta.title
+                category: root.currentTabMeta.category
+                subtitle: root.currentTabMeta.subtitle
+                showDivider: true
+            }
+
+            Item {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+
+                PageTransitionView {
+                    anchors.fill: parent
+                    activeIndex: root.activeTab
+                    order: root.navOrder
+                    onContentNeedsUpdate: (index) => {
+                        pageLoader.sourceComponent = root.pageComponents[index];
+                    }
+
+                    Loader {
+                        id: pageLoader
+
+                        anchors.fill: parent
+                        sourceComponent: personalizationComp
+                    }
+
+                }
+
+            }
+
         }
 
     }
 
-    Process {
-        id: resetSettingsProc
+    Shortcut {
+        sequence: "Ctrl+Tab"
+        enabled: root.isOpen && root.pageComponents && root.pageComponents.length > 1
+        onActivated: {
+            let currentIdx = root.navOrder.indexOf(root.activeTab);
+            if (currentIdx === -1)
+                currentIdx = 0;
 
-        command: ["sh", "-c", "rm -f ~/.cache/quickshell/settings_prefs.json ~/.cache/quickshell/colorscheme.json ~/.cache/quickshell/wallpaper_colorscheme.json"]
+            let nextIdx = (currentIdx + 1) % root.navOrder.length;
+            root.activeTab = root.navOrder[nextIdx];
+        }
     }
 
-    Process {
-        id: clearClipboardProc
+    Shortcut {
+        sequence: "Ctrl+Shift+Tab"
+        enabled: root.isOpen && root.pageComponents && root.pageComponents.length > 1
+        onActivated: {
+            let currentIdx = root.navOrder.indexOf(root.activeTab);
+            if (currentIdx === -1)
+                currentIdx = 0;
 
-        command: ["cliphist", "wipe"]
-    }
-
-    Process {
-        id: wipeClipboardImagesProc
-
-        command: ["sh", "-c", "rm -rf /tmp/quickshell-clipboard/*"]
-    }
-
-    Timer {
-        id: reloadTimer
-
-        interval: 300
-        repeat: false
-        onTriggered: Quickshell.reload()
+            let prevIdx = (currentIdx - 1 + root.navOrder.length) % root.navOrder.length;
+            root.activeTab = root.navOrder[prevIdx];
+        }
     }
 
     Component {
         id: personalizationComp
 
         PersonalizationSettings {
+            anchors.fill: parent
+        }
+
+    }
+
+    Component {
+        id: barSettingsComp
+
+        BarSettings {
             anchors.fill: parent
         }
 
@@ -135,18 +214,18 @@ AppWindow {
     }
 
     Component {
-        id: inputAndClipboardComp
+        id: mouseComp
 
-        InputAndClipboardSettings {
+        MouseSettings {
             anchors.fill: parent
         }
 
     }
 
     Component {
-        id: updatePreferencesComp
+        id: inputAndClipboardComp
 
-        UpdatePreferences {
+        InputAndClipboardSettings {
             anchors.fill: parent
         }
 
@@ -161,47 +240,11 @@ AppWindow {
 
     }
 
-    Shortcut {
-        sequence: "Tab"
-        onActivated: {
-            root.activeTab = (root.activeTab + 1) % root.pageComponents.length;
-        }
-    }
+    Component {
+        id: wallpaperComp
 
-    Shortcut {
-        sequence: "Shift+Tab"
-        onActivated: {
-            root.activeTab = (root.activeTab - 1 + root.pageComponents.length) % root.pageComponents.length;
-        }
-    }
-
-    RowLayout {
-        spacing: 0
-
-        SettingsSidebar {
-            Layout.fillHeight: true
-            Layout.preferredWidth: 260
-            activeTab: root.activeTab
-            onTabClicked: (index) => {
-                root.activeTab = index;
-            }
-        }
-
-        PageTransitionView {
-            Layout.fillWidth: true
-            Layout.fillHeight: true
-            activeIndex: root.activeTab
-            onContentNeedsUpdate: (index) => {
-                pageLoader.sourceComponent = root.pageComponents[index];
-            }
-
-            Loader {
-                id: pageLoader
-
-                anchors.fill: parent
-                sourceComponent: personalizationComp
-            }
-
+        WallpaperSettings {
+            anchors.fill: parent
         }
 
     }

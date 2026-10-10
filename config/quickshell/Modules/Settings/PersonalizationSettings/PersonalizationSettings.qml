@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Layouts
 import Quickshell
 import Quickshell.Io
 import qs.Core
@@ -7,30 +8,37 @@ import qs.Core.Services
 import qs.Core.Utils
 import qs.Modules.Settings.Components
 
-SettingContainer {
+AppContainer {
     id: appearanceRoot
 
     property bool showingDark: true
-    property var availableFonts: []
-    property string currentFontName: "Geist"
-    property int currentFontSize: 11
+    property var availableFonts: ["Geist"]
+    property string currentFontName: SettingsService.fontFamily || "Geist"
+    property int currentFontSize: Math.round(11 * SettingsService.fontScale) || 11
 
     function applyFont() {
         SettingsService.fontFamily = appearanceRoot.currentFontName;
-        setFontProc.command = ["python3", Quickshell.shellDir + "/Scripts/apply_font.py", appearanceRoot.currentFontName, appearanceRoot.currentFontSize.toString()];
-        setFontProc.running = false;
-        setFontProc.running = true;
+        SettingsService.applyFont(appearanceRoot.currentFontName, appearanceRoot.currentFontSize);
     }
 
     onShowingDarkChanged: {
+        darkModeToggle.checked = showingDark;
         if (!Theme.generateFromWallpaper) {
             let t = Theme.themes[0];
             let scheme = showingDark ? t.dark : t.light;
             Theme.applyScheme(scheme);
+        } else {
+            Theme.applyWallpaperTheme(showingDark);
         }
     }
     Component.onCompleted: {
         showingDark = ColorUtils.isDark(Theme.bg);
+        darkModeToggle.checked = showingDark;
+        if (appearanceRoot.availableFonts.indexOf(appearanceRoot.currentFontName) === -1) {
+            let arr = appearanceRoot.availableFonts.slice();
+            arr.unshift(appearanceRoot.currentFontName);
+            appearanceRoot.availableFonts = arr;
+        }
     }
 
     Connections {
@@ -41,8 +49,18 @@ SettingContainer {
         target: Theme
     }
 
-    Process {
-        id: setFontProc
+    Connections {
+        function onFontFamilyChanged() {
+            if (appearanceRoot.currentFontName !== SettingsService.fontFamily)
+                appearanceRoot.currentFontName = SettingsService.fontFamily || "Geist";
+
+        }
+
+        function onFontScaleChanged() {
+            appearanceRoot.currentFontSize = Math.round(11 * SettingsService.fontScale) || 11;
+        }
+
+        target: SettingsService
     }
 
     Process {
@@ -67,6 +85,10 @@ SettingContainer {
                             changed = true;
                         }
                     });
+                    if (arr.indexOf(appearanceRoot.currentFontName) === -1) {
+                        arr.unshift(appearanceRoot.currentFontName);
+                        changed = true;
+                    }
                     if (changed)
                         appearanceRoot.availableFonts = arr;
 
@@ -76,36 +98,7 @@ SettingContainer {
 
     }
 
-    Process {
-        id: getFontProc
-
-        command: ["sh", "-c", "gsettings get org.gnome.desktop.interface font-name | tr -d \"'\""]
-        Component.onCompleted: running = true
-
-        stdout: SplitParser {
-            onRead: (data) => {
-                if (data && data.trim() !== "") {
-                    let full = data.trim();
-                    let match = full.match(/(.*)\s+(\d+)$/);
-                    if (match) {
-                        appearanceRoot.currentFontName = match[1];
-                        appearanceRoot.currentFontSize = parseInt(match[2]);
-                    } else {
-                        appearanceRoot.currentFontName = full;
-                        appearanceRoot.currentFontSize = 11;
-                    }
-                    if (appearanceRoot.availableFonts.indexOf(appearanceRoot.currentFontName) === -1) {
-                        let arr = appearanceRoot.availableFonts.slice();
-                        arr.unshift(appearanceRoot.currentFontName);
-                        appearanceRoot.availableFonts = arr;
-                    }
-                }
-            }
-        }
-
-    }
-
-    SettingGroup {
+    AppGroup {
         title: "Color Theme"
         icon: "color-palette"
 
@@ -136,10 +129,7 @@ SettingContainer {
             }
         }
 
-        Divider {
-        }
-
-        SettingSelect {
+        ThemedSelect {
             label: "Static Theme"
             description: "Color scheme when dynamic colors are off"
             enabled: !Theme.generateFromWallpaper
@@ -169,35 +159,44 @@ SettingContainer {
             }
         }
 
-        Divider {
-        }
-
         SettingToggle {
+            id: darkModeToggle
+
             label: "Dark Mode"
             description: "Use dark variant of the selected theme"
-            enabled: !Theme.generateFromWallpaper
-            opacity: enabled ? 1 : 0.5
-            checked: appearanceRoot.showingDark
             onCheckedChanged: {
-                appearanceRoot.showingDark = checked;
+                if (appearanceRoot.showingDark !== checked)
+                    appearanceRoot.showingDark = checked;
+
             }
         }
 
     }
 
-    SettingGroup {
+    AppGroup {
         title: "System Fonts"
         icon: "font"
 
-        SettingSelect {
+        ThemedSelect {
+            id: fontSelect
+
+            function updateSelection() {
+                for (let i = 0; i < appearanceRoot.availableFonts.length; i++) {
+                    if (appearanceRoot.availableFonts[i] === appearanceRoot.currentFontName) {
+                        fontSelect.currentIndex = i;
+                        return ;
+                    }
+                }
+                fontSelect.currentIndex = 0;
+            }
+
             label: "System Font"
             description: "Global font for GTK, Qt and Shell"
             comboWidth: 260
+            searchable: true
             model: appearanceRoot.availableFonts
-            currentIndex: {
-                let idx = model.indexOf(appearanceRoot.currentFontName);
-                return idx !== -1 ? idx : 0;
-            }
+            Component.onCompleted: updateSelection()
+            onModelChanged: updateSelection()
             onActivated: (index) => {
                 let newFont = model[index];
                 if (appearanceRoot.currentFontName !== newFont) {
@@ -205,62 +204,35 @@ SettingContainer {
                     appearanceRoot.applyFont();
                 }
             }
+
+            Connections {
+                function onCurrentFontNameChanged() {
+                    fontSelect.updateSelection();
+                }
+
+                target: appearanceRoot
+            }
+
         }
 
         SettingSpinBox {
-            label: "System Font Size"
-            description: "Global font size for GTK and Qt"
-            from: 8
-            to: 24
-            stepSize: 1
-            value: appearanceRoot.currentFontSize
-            suffix: " pt"
-            decimals: 0
+            label: "Global Font Scale"
+            description: "Scales fonts across Quickshell, GTK and Qt"
+            from: 0.7
+            to: 2.5
+            stepSize: 0.05
+            value: SettingsService.fontScale
+            suffix: "x"
+            decimals: 2
             onMoved: (val) => {
-                let newSize = Math.round(val);
+                let newSize = Math.round(11 * val);
                 if (appearanceRoot.currentFontSize !== newSize) {
                     appearanceRoot.currentFontSize = newSize;
+                    SettingsService.fontScale = val;
                     appearanceRoot.applyFont();
+                } else {
+                    SettingsService.fontScale = val;
                 }
-            }
-        }
-
-    }
-
-    SettingGroup {
-        title: "Wallpaper Settings"
-        icon: "picture"
-
-        SettingToggle {
-            id: autoShuffleToggle
-
-            label: "Auto-shuffle Wallpapers"
-            onCheckedChanged: {
-                if (checked !== HyprlandService.wpAutoShuffle)
-                    HyprlandService.wpAutoShuffle = checked;
-
-            }
-
-            Binding {
-                target: autoShuffleToggle
-                property: "checked"
-                value: HyprlandService.wpAutoShuffle
-            }
-
-        }
-
-        SettingSpinBox {
-            enabled: HyprlandService.wpAutoShuffle
-            opacity: enabled ? 1 : 0.5
-            label: "Shuffle Interval"
-            from: 1
-            to: 60
-            stepSize: 1
-            value: HyprlandService.wpShuffleInterval
-            suffix: " min"
-            decimals: 0
-            onMoved: (val) => {
-                HyprlandService.wpShuffleInterval = Math.round(val);
             }
         }
 

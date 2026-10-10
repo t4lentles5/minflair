@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import Quickshell
 import Quickshell.Io
 import qs.Core
 import qs.Core.Components
@@ -11,12 +12,34 @@ Rectangle {
     property bool expanded: false
     property bool isActive: false
     property var btList: []
+    property bool isScanning: false
     property bool timedOut: false
+    property bool isVisible: true
+    readonly property var pairedList: {
+        let res = [];
+        for (let i = 0; i < root.btList.length; i++) {
+            if (root.btList[i].paired || root.btList[i].connected)
+                res.push(root.btList[i]);
+
+        }
+        return res;
+    }
+    readonly property var availableList: {
+        let res = [];
+        for (let i = 0; i < root.btList.length; i++) {
+            if (!root.btList[i].paired && !root.btList[i].connected)
+                res.push(root.btList[i]);
+
+        }
+        return res;
+    }
 
     signal connect(string mac)
+    signal refreshRequested()
 
     Layout.fillWidth: true
-    Layout.preferredHeight: expanded ? Math.max(btListCol.implicitHeight, 80) : 0
+    Layout.fillHeight: expanded
+    implicitHeight: expanded ? Math.max(btListCol.implicitHeight, 80) : 0
     opacity: expanded ? 1 : 0
     visible: opacity > 0
     clip: true
@@ -24,53 +47,57 @@ Rectangle {
     color: "transparent"
     border.width: 0
 
-    Timer {
-        id: scanTimeout
-
-        interval: 10000
-        running: root.expanded && root.btList.length === 0
-        onTriggered: root.timedOut = true
-        onRunningChanged: {
-            if (!running && !root.expanded)
-                root.timedOut = false;
-
-        }
-    }
-
     ColumnLayout {
         anchors.centerIn: parent
-        spacing: Constants.sizeXs
+        spacing: Constants.sizeSm
         visible: root.expanded && root.btList.length === 0
 
         Item {
             Layout.alignment: Qt.AlignHCenter
-            width: 20
-            height: 20
-            visible: !root.timedOut
+            width: Constants.size2Xl
+            height: Constants.size2Xl
+            visible: root.isScanning
 
             SvgIcon {
                 anchors.centerIn: parent
                 icon: "reload"
-                iconColor: Theme.muted
-                iconSize: Constants.sizeMd
+                iconColor: Theme.accent
+                iconSize: Constants.sizeLg
                 flat: true
             }
 
             RotationAnimation on rotation {
                 from: 0
                 to: 360
-                duration: 1200
+                duration: Constants.animExpressive * 2
                 loops: Animation.Infinite
-                running: parent.visible && !root.timedOut
+                running: root.expanded && root.isScanning && root.btList.length === 0
             }
 
         }
 
+        SvgIcon {
+            Layout.alignment: Qt.AlignHCenter
+            icon: "bluetooth-off"
+            iconColor: Theme.muted
+            iconSize: Constants.size2Xl
+            flat: true
+            visible: !root.isScanning
+        }
+
         ThemedText {
             Layout.alignment: Qt.AlignHCenter
-            text: root.timedOut ? "No devices found" : "Scanning..."
+            text: root.isScanning ? "Searching for devices..." : "No devices found"
+            color: root.isScanning ? Theme.fg : Theme.muted
+            font.bold: root.isScanning
+        }
+
+        ThemedText {
+            Layout.alignment: Qt.AlignHCenter
+            text: "Make sure device is in pairing mode"
             color: Theme.muted
-            font.pixelSize: Constants.sizeSm
+            customSize: Constants.sizeXs + 2
+            visible: !root.isScanning
         }
 
     }
@@ -78,105 +105,92 @@ Rectangle {
     ColumnLayout {
         id: btListCol
 
-        anchors.top: parent.top
-        anchors.left: parent.left
-        anchors.right: parent.right
+        anchors.fill: parent
         visible: root.btList.length > 0
-
-        ThemedText {
-            text: "Devices"
-            font.pixelSize: Constants.sizeSm
-            font.letterSpacing: 1
-            color: Theme.muted
-            visible: false
-        }
 
         ScrollView {
             Layout.fillWidth: true
-            Layout.preferredHeight: Math.min(btRepeaterCol.implicitHeight, 200)
-            contentHeight: btRepeaterCol.implicitHeight
+            Layout.fillHeight: true
+            contentWidth: availableWidth
             clip: true
-            ScrollBar.vertical.policy: ScrollBar.AlwaysOff
+            ScrollBar.vertical.policy: ScrollBar.AsNeeded
 
             ColumnLayout {
-                id: btRepeaterCol
-
                 width: parent.width
-                spacing: Constants.sizeXs
+                spacing: Constants.sizeMd
 
-                Repeater {
-                    model: root.btList
+                // Paired / My Devices
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    spacing: Constants.sizeSm
+                    visible: root.pairedList.length > 0
 
-                    Item {
-                        id: btItem
-
+                    ThemedText {
+                        text: "PAIRED DEVICES"
+                        customSize: 10
+                        font.weight: Font.Bold
+                        font.letterSpacing: 0.8
+                        color: Theme.muted
                         Layout.fillWidth: true
-                        implicitHeight: 36
+                        Layout.leftMargin: Constants.size2Xs
+                    }
 
-                        Rectangle {
-                            anchors.fill: parent
-                            radius: Constants.sizeLg
-                            color: hoverHandlerB.hovered ? Theme.bgSecondary : "transparent"
+                    Repeater {
+                        model: root.pairedList
 
-                            Behavior on color {
-                                ColorAnimation {
-                                    duration: Constants.animFast
-                                }
-
+                        ControlCenterListDelegate {
+                            Layout.fillWidth: true
+                            width: parent.width
+                            titleText: modelData.name
+                            subtitleText: modelData.connected ? "Connected" : "Paired"
+                            iconName: modelData.connected ? "bluetooth" : "bluetooth-off"
+                            isActive: modelData.connected
+                            canForget: true
+                            onClicked: root.connect(modelData.mac)
+                            onActionClicked: {
+                                settingsProc.running = true;
                             }
-
+                            onDisconnectClicked: {
+                                disconnectProc.command = ["bluetoothctl", "disconnect", modelData.mac];
+                                disconnectProc.running = true;
+                            }
+                            onForgetClicked: {
+                                forgetProc.command = ["bluetoothctl", "remove", modelData.mac];
+                                forgetProc.running = true;
+                            }
                         }
 
-                        RowLayout {
-                            anchors.fill: parent
-                            anchors.leftMargin: Constants.sizeSm
-                            anchors.rightMargin: Constants.sizeSm
-                            spacing: Constants.sizeSm
+                    }
 
-                            SvgIcon {
-                                icon: modelData.connected ? "bluetooth" : "bluetooth-off"
-                                iconColor: modelData.connected ? Theme.accent : Theme.fg
-                                iconSize: Constants.sizeLg
-                                flat: true
-                                opacity: modelData.connected ? 1 : 0.7
-                            }
+                }
 
-                            ThemedText {
-                                text: modelData.name
-                                color: modelData.connected ? Theme.accent : Theme.fg
-                                font.pixelSize: Constants.sizeSm
-                                font.bold: modelData.connected
-                                Layout.fillWidth: true
-                                elide: Text.ElideRight
-                            }
+                // Available Devices (Never connected)
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    spacing: Constants.sizeSm
+                    visible: root.availableList.length > 0
 
-                            Rectangle {
-                                visible: modelData.connected
-                                radius: height / 2
-                                implicitWidth: statusText.implicitWidth + Constants.sizeXs
-                                implicitHeight: statusText.implicitHeight + 2
-                                color: Theme.bgSecondary
+                    ThemedText {
+                        text: "AVAILABLE DEVICES"
+                        customSize: 10
+                        font.weight: Font.Bold
+                        font.letterSpacing: 0.8
+                        color: Theme.muted
+                        Layout.fillWidth: true
+                        Layout.leftMargin: Constants.size2Xs
+                    }
 
-                                ThemedText {
-                                    id: statusText
+                    Repeater {
+                        model: root.availableList
 
-                                    anchors.centerIn: parent
-                                    text: "Connected"
-                                    font.pixelSize: Constants.sizeXs - 1
-                                    font.bold: true
-                                    color: Theme.accent
-                                }
-
-                            }
-
-                        }
-
-                        HoverHandler {
-                            id: hoverHandlerB
-                        }
-
-                        TapHandler {
-                            onTapped: root.connect(modelData.mac)
+                        ControlCenterListDelegate {
+                            Layout.fillWidth: true
+                            width: parent.width
+                            titleText: modelData.name
+                            subtitleText: "Available"
+                            iconName: "bluetooth-off"
+                            isActive: false
+                            onClicked: root.connect(modelData.mac)
                         }
 
                     }
@@ -187,6 +201,32 @@ Rectangle {
 
         }
 
+    }
+
+    Process {
+        id: settingsProc
+
+        command: ["blueman-manager"]
+    }
+
+    Process {
+        id: disconnectProc
+
+        onRunningChanged: {
+            if (!running)
+                root.refreshRequested();
+
+        }
+    }
+
+    Process {
+        id: forgetProc
+
+        onRunningChanged: {
+            if (!running)
+                root.refreshRequested();
+
+        }
     }
 
     transform: Translate {
@@ -205,7 +245,7 @@ Rectangle {
     Behavior on Layout.preferredHeight {
         NumberAnimation {
             duration: Constants.animNormal
-            easing.type: Easing.OutCubic
+            easing.type: root.expanded ? Easing.OutExpo : Easing.OutCubic
         }
 
     }
@@ -213,7 +253,7 @@ Rectangle {
     Behavior on opacity {
         NumberAnimation {
             duration: Constants.animNormal
-            easing.type: Easing.OutCubic
+            easing.type: root.expanded ? Easing.Linear : Easing.OutCubic
         }
 
     }

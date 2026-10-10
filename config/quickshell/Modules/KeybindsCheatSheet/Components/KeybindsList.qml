@@ -2,8 +2,12 @@ import QtQuick
 import QtQuick.Layouts
 import qs.Core
 import qs.Core.Components
+import qs.Core.Components
 
-Flickable {
+ColumnLayout {
+    // searchField moved to parent
+    // ThemedSearchBar moved to parent
+
     id: rightFlick
 
     property var currentBinds: []
@@ -13,7 +17,7 @@ Flickable {
         for (let i = 0; i < currentBinds.length; i++) {
             let item = currentBinds[i];
             if (item.is_subheader) {
-                if (currentGroup !== null)
+                if (currentGroup !== null && currentGroup.binds.length > 0)
                     groups.push(currentGroup);
 
                 currentGroup = {
@@ -23,71 +27,46 @@ Flickable {
             } else {
                 if (currentGroup === null)
                     currentGroup = {
-                    "name": "",
+                    "name": "General",
                     "binds": []
                 };
 
                 currentGroup.binds.push(item);
             }
         }
-        if (currentGroup !== null)
+        if (currentGroup !== null && currentGroup.binds.length > 0)
             groups.push(currentGroup);
 
         return groups;
     }
 
-    Layout.fillWidth: true
-    Layout.fillHeight: true
-    contentHeight: Math.max(bindsCol.implicitHeight, rightFlick.height)
-    clip: true
-    flickableDirection: Flickable.VerticalFlick
-    anchors.margins: Constants.sizeLg
+    signal searchRequested(string text)
 
-    ColumnLayout {
-        id: bindsCol
+    function focusSearch() {
+    }
 
-        width: parent.width
-        spacing: Constants.sizeLg
+    spacing: 0
+
+    AppContainer {
+        Layout.fillWidth: true
+        Layout.fillHeight: true
+        contentPadding: 0
 
         Repeater {
             model: rightFlick.groupedBinds
 
-            Card {
-                Layout.fillWidth: true
+            AppGroup {
+                title: modelData.name || "General"
+                icon: "keyboard"
+                badge: (modelData.binds ? modelData.binds.length : 0) + " binds"
 
-                ColumnLayout {
-                    anchors.fill: parent
-                    spacing: Constants.sizeLg
+                Repeater {
+                    model: modelData.binds
 
-                    RowLayout {
+                    KeybindItem {
                         Layout.fillWidth: true
-                        spacing: Constants.sizeMd
-                        visible: modelData.name !== ""
-
-                        ThemedText {
-                            text: modelData.name || ""
-                            font.pixelSize: Constants.sizeSm
-                            color: Theme.muted
-                        }
-
-                    }
-
-                    Repeater {
-                        id: bindsRepeater
-
-                        model: modelData.binds
-
-                        ColumnLayout {
-                            Layout.fillWidth: true
-                            spacing: Constants.sizeLg
-
-                            KeybindItem {
-                                uiElements: modelData.uiElements || []
-                                desc: modelData.desc || ""
-                            }
-
-                        }
-
+                        uiElements: modelData.uiElements || []
+                        desc: modelData.desc || ""
                     }
 
                 }
@@ -98,7 +77,7 @@ Flickable {
 
         Item {
             Layout.fillWidth: true
-            Layout.preferredHeight: rightFlick.height
+            Layout.preferredHeight: 300
             visible: currentBinds.length === 0
 
             GhostEmptyState {

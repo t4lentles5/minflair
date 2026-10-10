@@ -3,6 +3,7 @@ import QtQuick
 import QtQuick.Layouts
 import Quickshell
 import qs.Core
+import qs.Core.Services
 
 Rectangle {
     id: root
@@ -10,20 +11,19 @@ Rectangle {
     property string icon: ""
     property int iconSize: Constants.sizeLg
     property bool flat: false
-    property color bgColor: flat ? "transparent" : Theme.bgSecondary
-    property color iconColor: Theme.fg
-    property color hoverColor: "transparent"
     property bool isActive: false
+    property color bgColor: isActive ? Theme.accent : (flat ? "transparent" : Theme.bgSecondary)
+    property color iconColor: isActive ? Theme.fg : Theme.fg
+    property color hoverColor: "transparent"
     property alias hovered: mouseArea.containsMouse
     property string textIcon: ""
     property int textIconSize: 0
     property bool disabled: false
-    property bool useBorder: false
-    property color borderColor: Theme.muted
-    property real borderWidth: 1
     property bool useCustomWidth: false
     property bool useOriginalColors: false
-    property int padding: iconSize / 2
+    readonly property int scaledIconSize: Math.round(iconSize * SettingsService.fontScale)
+    readonly property int scaledTextIconSize: Math.round(textIconSize * SettingsService.fontScale)
+    property int padding: Constants.sizeSm
     property int contentAlignment: Qt.AlignHCenter
 
     signal clicked(var mouse)
@@ -33,16 +33,14 @@ Rectangle {
             return flat ? "transparent" : Theme.bgSecondary;
 
         if (mouseArea.pressed || mouseArea.containsMouse)
-            return Theme.bgSecondary;
+            return isActive ? Theme.accent : Theme.bgSecondary;
 
         return bgColor;
     }
     scale: disabled ? 1 : mouseArea.pressed ? 0.95 : 1
-    radius: iconSize + textIconSize / 2
-    implicitWidth: useCustomWidth ? container.width + Constants.sizeLg * 2 : iconSize + padding * 2
-    implicitHeight: (iconSize + textIconSize / 2) + padding * 2
-    border.width: useBorder ? borderWidth : 0
-    border.color: borderColor
+    radius: height / 2
+    implicitWidth: useCustomWidth ? container.width + Constants.sizeLg * 2 : scaledIconSize + padding * 2
+    implicitHeight: (scaledIconSize) + padding * 2
 
     RowLayout {
         id: container
@@ -51,11 +49,11 @@ Rectangle {
         anchors.left: root.contentAlignment === Qt.AlignLeft ? parent.left : undefined
         anchors.leftMargin: root.contentAlignment === Qt.AlignLeft ? Constants.sizeLg : 0
         anchors.horizontalCenter: root.contentAlignment === Qt.AlignHCenter ? parent.horizontalCenter : undefined
-        spacing: 4
+        spacing: Constants.size2Xs
 
         Item {
-            implicitWidth: root.iconSize
-            implicitHeight: root.iconSize
+            implicitWidth: root.scaledIconSize
+            implicitHeight: root.scaledIconSize
             Layout.alignment: Qt.AlignVCenter | Qt.AlignHCenter
 
             Image {
@@ -63,8 +61,8 @@ Rectangle {
 
                 anchors.fill: parent
                 source: root.icon ? `${Quickshell.shellDir}/assets/${root.icon}.svg` : ""
-                sourceSize.width: root.iconSize
-                sourceSize.height: root.iconSize
+                sourceSize.width: root.scaledIconSize
+                sourceSize.height: root.scaledIconSize
                 visible: root.useOriginalColors
             }
 
@@ -119,7 +117,7 @@ Rectangle {
 
             visible: root.textIcon !== ""
             text: root.textIcon
-            font.pixelSize: root.textIconSize
+            customSize: root.textIconSize
             color: {
                 if (disabled)
                     return Theme.muted;
@@ -147,13 +145,6 @@ Rectangle {
     Behavior on color {
         ColorAnimation {
             duration: Constants.animNormal
-        }
-
-    }
-
-    Behavior on border.color {
-        ColorAnimation {
-            duration: Constants.animFast
         }
 
     }

@@ -31,7 +31,7 @@ ColumnLayout {
                 property: "y"
                 from: 0
                 to: -10
-                duration: 1500
+                duration: Constants.animExpressive * 3
                 easing.type: Easing.InOutSine
             }
 
@@ -40,7 +40,7 @@ ColumnLayout {
                 property: "y"
                 from: -10
                 to: 0
-                duration: 1500
+                duration: Constants.animExpressive * 3
                 easing.type: Easing.InOutSine
             }
 
@@ -59,7 +59,7 @@ ColumnLayout {
 
         text: root.text
         color: Theme.muted
-        font.pixelSize: Constants.sizeMd
+        customSize: Constants.sizeMd
         Layout.alignment: Qt.AlignHCenter
 
         SequentialAnimation {
@@ -67,7 +67,7 @@ ColumnLayout {
             loops: Animation.Infinite
 
             PauseAnimation {
-                duration: 150
+                duration: Constants.animFast
             }
 
             NumberAnimation {
@@ -75,7 +75,7 @@ ColumnLayout {
                 property: "y"
                 from: 0
                 to: -8
-                duration: 1500
+                duration: Constants.animExpressive * 3
                 easing.type: Easing.InOutSine
             }
 
@@ -84,7 +84,7 @@ ColumnLayout {
                 property: "y"
                 from: -8
                 to: 0
-                duration: 1500
+                duration: Constants.animExpressive * 3
                 easing.type: Easing.InOutSine
             }
 

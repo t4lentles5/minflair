@@ -4,15 +4,17 @@ import qs.Core
 Rectangle {
     id: root
 
-    property color backgroundColor: Theme.bgSecondary
+    property color backgroundColor: Theme.bgTertiary
     property int contentPadding: Constants.sizeLg
-    property bool useBorder: false
+    property int cardRadius: Constants.sizeSm
+    property bool useBorder: true
+    property color borderColor: Theme.border
     default property alias content: innerContainer.data
 
     signal clicked(var mouse)
 
     border.width: root.useBorder ? 1 : 0
-    border.color: Theme.border
+    border.color: root.useBorder ? root.borderColor : "transparent"
     implicitWidth: {
         let maxW = 0;
         for (let i = 0; i < innerContainer.children.length; i++) {
@@ -34,7 +36,7 @@ Rectangle {
         return maxH + contentPadding * 2;
     }
     color: root.backgroundColor
-    radius: Constants.sizeLg
+    radius: root.cardRadius
 
     Item {
         id: innerContainer

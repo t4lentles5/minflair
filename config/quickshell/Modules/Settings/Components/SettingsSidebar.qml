@@ -6,192 +6,219 @@ import qs.Core
 import qs.Core.Components
 import qs.Core.Services
 
-Rectangle {
+AppSidebar {
     id: sidebarRoot
 
     property int activeTab: 0
-    property var fullModel: [{
-        "index": 0,
-        "label": "Personalization",
-        "icon": "color-palette"
-    }, {
-        "index": 1,
-        "label": "Desktop Effects",
-        "icon": "sparkles"
-    }, {
-        "index": 2,
-        "label": "Window Management",
-        "icon": "window"
-    }, {
-        "index": 3,
-        "label": "Integrations & Apps",
-        "icon": "apps"
-    }, {
-        "index": 4,
-        "label": "Input & Clipboard",
-        "icon": "edit"
-    }, {
-        "index": 5,
-        "label": "Update Preferences",
-        "icon": "update"
-    }, {
-        "index": 6,
-        "label": "System Info",
-        "icon": "info"
-    }]
 
     signal tabClicked(int index)
 
-    Layout.preferredWidth: 64
-    Layout.maximumWidth: 64
-    Layout.minimumWidth: 64
-    Layout.fillHeight: true
-    color: Theme.bgSecondary
+    title: "SETTINGS"
+    subtitle: "PREFERENCES & CUSTOMIZATION"
 
-    ColumnLayout {
-        anchors.fill: parent
-        anchors.topMargin: Constants.sizeLg
-        anchors.bottomMargin: Constants.sizeLg
-        anchors.leftMargin: Constants.sizeMd
-        anchors.rightMargin: Constants.sizeMd
-        spacing: Constants.sizeMd
+    // Section 1: DESKTOP
+    ThemedText {
+        text: "DESKTOP"
+        customSize: 10
+        font.weight: Font.Bold
+        font.letterSpacing: 0.8
+        color: Theme.muted
+        Layout.leftMargin: Constants.sizeLg
+        Layout.topMargin: Constants.size2Xs
+        Layout.bottomMargin: Constants.size2Xs
+    }
 
-        Item {
-            Layout.fillHeight: true
+    // Appearance (Tab 0)
+    Item {
+        Layout.fillWidth: true
+        Layout.leftMargin: Constants.sizeSm
+        Layout.rightMargin: Constants.sizeSm
+        Layout.preferredHeight: 34
+
+        SidebarNavRow {
+            anchors.fill: parent
+            iconName: "color-palette"
+            labelText: "Appearance"
+            isActive: sidebarRoot.activeTab === 0
+            onRowClicked: sidebarRoot.tabClicked(0)
         }
 
-        Repeater {
-            id: tabRepeater
+    }
 
-            model: fullModel
+    // Wallpaper (Tab 8)
+    Item {
+        Layout.fillWidth: true
+        Layout.leftMargin: Constants.sizeSm
+        Layout.rightMargin: Constants.sizeSm
+        Layout.preferredHeight: 34
 
-            delegate: Item {
-                id: delegateRoot
-
-                property bool isActive: sidebarRoot.activeTab === modelData.index
-                property bool isHovered: hoverHandler.hovered
-                property bool isPressed: tapHandler.pressed
-
-                Layout.fillWidth: true
-                Layout.preferredHeight: width
-
-                ToolTip {
-                    text: modelData.label
-                    visible: delegateRoot.isHovered
-                    delay: 300
-
-                    contentItem: ThemedText {
-                        text: modelData.label
-                        font.pixelSize: Constants.sizeSm
-                        font.bold: true
-                        color: Theme.fg
-                    }
-
-                    background: Rectangle {
-                        color: Theme.bg
-                        border.color: Theme.border
-                        border.width: 1
-                        radius: Constants.sizeSm
-                    }
-
-                }
-
-                Rectangle {
-                    anchors.fill: parent
-                    radius: Constants.sizeSm
-                    color: delegateRoot.isActive ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.15) : (delegateRoot.isHovered ? Qt.rgba(Theme.fg.r, Theme.fg.g, Theme.fg.b, 0.05) : "transparent")
-                    scale: delegateRoot.isPressed ? 0.95 : 1
-
-                    Rectangle {
-                        width: 4
-                        height: delegateRoot.isActive ? parent.height * 0.5 : 8
-                        radius: 2
-                        color: Theme.accent
-                        anchors.left: parent.left
-                        anchors.verticalCenter: parent.verticalCenter
-                        anchors.leftMargin: -Constants.sizeSm
-                        opacity: delegateRoot.isActive ? 1 : 0
-                        scale: delegateRoot.isActive ? 1 : 0.5
-
-                        Behavior on height {
-                            NumberAnimation {
-                                duration: Constants.animNormal
-                                easing.type: Easing.OutBack
-                                easing.overshoot: 1.5
-                            }
-
-                        }
-
-                        Behavior on scale {
-                            NumberAnimation {
-                                duration: Constants.animNormal
-                                easing.type: Easing.OutBack
-                            }
-
-                        }
-
-                        Behavior on opacity {
-                            NumberAnimation {
-                                duration: Constants.animFast
-                            }
-
-                        }
-
-                    }
-
-                    SvgIcon {
-                        anchors.centerIn: parent
-                        icon: delegateRoot.isActive ? (modelData.icon + "-filled") : modelData.icon
-                        iconSize: Constants.sizeXl
-                        flat: true
-                        iconColor: delegateRoot.isActive ? Theme.accent : (delegateRoot.isHovered ? Theme.fg : Theme.muted)
-
-                        Behavior on iconColor {
-                            ColorAnimation {
-                                duration: Constants.animFast
-                            }
-
-                        }
-
-                    }
-
-                    Behavior on color {
-                        ColorAnimation {
-                            duration: Constants.animFast
-                        }
-
-                    }
-
-                    Behavior on scale {
-                        NumberAnimation {
-                            duration: Constants.animFast
-                            easing.type: Easing.OutBack
-                        }
-
-                    }
-
-                }
-
-                TapHandler {
-                    id: tapHandler
-
-                    onTapped: sidebarRoot.tabClicked(modelData.index)
-                }
-
-                HoverHandler {
-                    id: hoverHandler
-
-                    cursorShape: Qt.PointingHandCursor
-                }
-
-            }
-
+        SidebarNavRow {
+            anchors.fill: parent
+            iconName: "picture"
+            labelText: "Wallpaper"
+            isActive: sidebarRoot.activeTab === 8
+            onRowClicked: sidebarRoot.tabClicked(8)
         }
 
-        Item {
-            Layout.fillHeight: true
+    }
+
+    // Desktop Bar (Tab 1)
+    Item {
+        Layout.fillWidth: true
+        Layout.leftMargin: Constants.sizeSm
+        Layout.rightMargin: Constants.sizeSm
+        Layout.preferredHeight: 34
+
+        SidebarNavRow {
+            anchors.fill: parent
+            iconName: "bar"
+            labelText: "Desktop Bar"
+            isActive: sidebarRoot.activeTab === 1
+            onRowClicked: sidebarRoot.tabClicked(1)
         }
 
+    }
+
+    // Visual Effects (Tab 2)
+    Item {
+        Layout.fillWidth: true
+        Layout.leftMargin: Constants.sizeSm
+        Layout.rightMargin: Constants.sizeSm
+        Layout.preferredHeight: 34
+
+        SidebarNavRow {
+            anchors.fill: parent
+            iconName: "sparkles"
+            labelText: "Visual Effects"
+            isActive: sidebarRoot.activeTab === 2
+            onRowClicked: sidebarRoot.tabClicked(2)
+        }
+
+    }
+
+    // Windows & Display (Tab 3)
+    Item {
+        Layout.fillWidth: true
+        Layout.leftMargin: Constants.sizeSm
+        Layout.rightMargin: Constants.sizeSm
+        Layout.preferredHeight: 34
+
+        SidebarNavRow {
+            anchors.fill: parent
+            iconName: "monitor"
+            labelText: "Windows & Display"
+            isActive: sidebarRoot.activeTab === 3
+            onRowClicked: sidebarRoot.tabClicked(3)
+        }
+
+    }
+
+    // Section 2: INPUT & HARDWARE
+    ThemedText {
+        text: "INPUT & HARDWARE"
+        customSize: 10
+        font.weight: Font.Bold
+        font.letterSpacing: 0.8
+        color: Theme.muted
+        Layout.leftMargin: Constants.sizeLg
+        Layout.topMargin: Constants.sizeSm
+        Layout.bottomMargin: Constants.size2Xs
+    }
+
+    // Mouse & Touchpad (Tab 5)
+    Item {
+        Layout.fillWidth: true
+        Layout.leftMargin: Constants.sizeSm
+        Layout.rightMargin: Constants.sizeSm
+        Layout.preferredHeight: 34
+
+        SidebarNavRow {
+            anchors.fill: parent
+            iconName: "cursor"
+            labelText: "Mouse & Touchpad"
+            isActive: sidebarRoot.activeTab === 5
+            onRowClicked: sidebarRoot.tabClicked(5)
+        }
+
+    }
+
+    // Keyboard & Clipboard (Tab 6)
+    Item {
+        Layout.fillWidth: true
+        Layout.leftMargin: Constants.sizeSm
+        Layout.rightMargin: Constants.sizeSm
+        Layout.preferredHeight: 34
+
+        SidebarNavRow {
+            anchors.fill: parent
+            iconName: "keyboard"
+            labelText: "Keyboard & Clipboard"
+            isActive: sidebarRoot.activeTab === 6
+            onRowClicked: sidebarRoot.tabClicked(6)
+        }
+
+    }
+
+    // Section 3: MANAGEMENT
+    ThemedText {
+        text: "MANAGEMENT"
+        customSize: 10
+        font.weight: Font.Bold
+        font.letterSpacing: 0.8
+        color: Theme.muted
+        Layout.leftMargin: Constants.sizeLg
+        Layout.topMargin: Constants.sizeSm
+        Layout.bottomMargin: Constants.size2Xs
+    }
+
+    // Integrations & Apps (Tab 4)
+    Item {
+        Layout.fillWidth: true
+        Layout.leftMargin: Constants.sizeSm
+        Layout.rightMargin: Constants.sizeSm
+        Layout.preferredHeight: 34
+
+        SidebarNavRow {
+            anchors.fill: parent
+            iconName: "apps"
+            labelText: "Integrations & Apps"
+            isActive: sidebarRoot.activeTab === 4
+            onRowClicked: sidebarRoot.tabClicked(4)
+        }
+
+    }
+
+    // Section 4: ABOUT
+    ThemedText {
+        text: "ABOUT"
+        customSize: 10
+        font.weight: Font.Bold
+        font.letterSpacing: 0.8
+        color: Theme.muted
+        Layout.leftMargin: Constants.sizeLg
+        Layout.topMargin: Constants.sizeSm
+        Layout.bottomMargin: Constants.size2Xs
+    }
+
+    // About System (Tab 7 - System Info)
+    Item {
+        Layout.fillWidth: true
+        Layout.leftMargin: Constants.sizeSm
+        Layout.rightMargin: Constants.sizeSm
+        Layout.preferredHeight: 34
+
+        SidebarNavRow {
+            anchors.fill: parent
+            iconName: "info"
+            labelText: "About System"
+            isActive: sidebarRoot.activeTab === 7
+            onRowClicked: sidebarRoot.tabClicked(7)
+        }
+
+    }
+
+    Item {
+        Layout.preferredHeight: Constants.sizeMd
     }
 
 }

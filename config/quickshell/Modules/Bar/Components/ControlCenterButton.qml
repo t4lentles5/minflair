@@ -5,51 +5,54 @@ import qs.Core.Components
 import qs.Core.Services
 
 Rectangle {
-    id: ccRoot
+    id: root
 
-    required property var notificationService
-    property bool isHovered: ccHoverHandler.hovered
-    property bool isPressed: ccTapHandler.pressed
+    property var notificationService: null
+    property var controlCenterWidget: null
+    property bool isHovered: mouseArea.containsMouse
+    property bool isPressed: mouseArea.pressed
+    readonly property bool isActive: AppState.isWidgetOpen("controlCenter")
 
-    Layout.preferredHeight: 32
-    color: isHovered || isPressed ? Theme.bgTertiary : Theme.bgSecondary
-    radius: height / 2
-    implicitWidth: ccLayout.implicitWidth + Constants.sizeLg * 2
-    scale: isPressed ? 0.95 : (isHovered ? 1.02 : 1)
+    implicitHeight: SettingsService.barWidgetHeight
+    implicitWidth: height
+    width: implicitWidth
+    height: implicitHeight
+    Layout.preferredHeight: implicitHeight
+    Layout.preferredWidth: implicitWidth
+    Layout.alignment: Qt.AlignVCenter
+    color: isActive ? Theme.bgAccent : (isHovered ? Theme.bgSecondary : "transparent")
+    radius: DisplayProfileService.gameModeActive ? 0 : height / 2
+    visible: true
+    scale: DisplayProfileService.gameModeActive ? 1 : (isPressed ? 0.92 : (isHovered ? 1.05 : 1))
 
-    TapHandler {
-        id: ccTapHandler
-
-        onTapped: AppState.togglePopup("controlCenter")
-    }
-
-    HoverHandler {
-        id: ccHoverHandler
-
-        cursorShape: Qt.PointingHandCursor
-    }
-
-    RowLayout {
-        id: ccLayout
+    SvgIcon {
+        id: tuneIcon
 
         anchors.centerIn: parent
-        spacing: 2
+        icon: "tune"
+        iconColor: root.isActive ? Theme.accent : Theme.fg
+        iconSize: Constants.sizeLg
+        flat: true
 
-        BatteryIcon {
-            notificationService: ccRoot.notificationService
+        Behavior on iconColor {
+            ColorAnimation {
+                duration: Constants.animFast
+            }
+
         }
 
-        SvgIcon {
-            icon: "tune"
-            iconColor: Theme.fg
-            iconSize: Constants.sizeLg
-            flat: true
-        }
+    }
 
-        NotificationsIcon {
-            notificationService: ccRoot.notificationService
-        }
+    MouseArea {
+        id: mouseArea
 
+        z: 10
+        anchors.fill: parent
+        hoverEnabled: true
+        cursorShape: Qt.PointingHandCursor
+        onClicked: {
+            AppState.toggleWidget("controlCenter");
+        }
     }
 
     Behavior on color {

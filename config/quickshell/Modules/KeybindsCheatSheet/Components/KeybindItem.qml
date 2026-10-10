@@ -3,75 +3,90 @@ import QtQuick.Layouts
 import qs.Core
 import qs.Core.Components
 
-RowLayout {
-    property var uiElements
-    property string desc
+Item {
+    id: root
+
+    property var uiElements: []
+    property string desc: ""
 
     Layout.fillWidth: true
+    implicitHeight: Math.max(contentRow.implicitHeight, 28)
 
-    ThemedText {
-        text: desc
-        font.pixelSize: Constants.sizeMd
-        color: Theme.fg
-        Layout.fillWidth: true
-        elide: Text.ElideRight
-    }
+    RowLayout {
+        id: contentRow
 
-    Row {
-        spacing: 4
+        anchors.fill: parent
+        spacing: Constants.sizeMd
 
-        Repeater {
-            model: uiElements
+        ThemedText {
+            text: root.desc
+            customSize: Constants.sizeSm
+            color: Theme.fg
+            Layout.fillWidth: true
+            elide: Text.ElideRight
+            Layout.alignment: Qt.AlignVCenter
+        }
 
-            delegate: Item {
-                required property var modelData
+        Row {
+            spacing: 5
+            Layout.alignment: Qt.AlignVCenter
 
-                width: modelData.isKey ? keyRect.width : sepText.implicitWidth
-                height: 26
+            Repeater {
+                model: root.uiElements
 
-                Rectangle {
-                    id: keyRect
+                delegate: Item {
+                    required property var modelData
 
-                    visible: modelData.isKey
-                    width: Math.max(capText.implicitWidth + 16, 32)
-                    height: 28
-                    radius: 6
-                    color: Theme.bgSecondary
-                    border.color: Theme.border
-                    border.width: 1
-                    anchors.verticalCenter: parent.verticalCenter
+                    width: modelData.isKey ? keyCapBase.width : sepText.implicitWidth
+                    height: 26
 
                     Rectangle {
-                        anchors.left: parent.left
-                        anchors.right: parent.right
-                        anchors.bottom: parent.bottom
-                        height: 3
-                        radius: 6
-                        color: Theme.bgSecondary
+                        id: keyCapBase
+
+                        visible: modelData.isKey
+                        width: Math.max(capText.implicitWidth + Constants.sizeMd, Constants.size2Xl + 2)
+                        height: Constants.size2Xl + 2
+                        radius: Constants.size2Xs + 2
+                        color: Theme.bgTertiary
+                        anchors.verticalCenter: parent.verticalCenter
+
+                        Rectangle {
+                            id: keyCapSurface
+
+                            anchors.left: parent.left
+                            anchors.right: parent.right
+                            anchors.top: parent.top
+                            height: parent.height - 2
+                            radius: Constants.size2Xs + 2
+                            color: Theme.bgTertiary
+                            border.color: Theme.border
+                            border.width: 1
+
+                            ThemedText {
+                                id: capText
+
+                                anchors.centerIn: parent
+                                text: modelData.isKey ? modelData.text : ""
+                                color: Theme.fg
+                                customSize: Constants.sizeSm
+                                font.bold: true
+                            }
+
+                        }
+
                     }
 
                     ThemedText {
-                        id: capText
+                        id: sepText
 
-                        anchors.centerIn: parent
-                        anchors.verticalCenterOffset: -1
-                        text: modelData.isKey ? modelData.text : ""
-                        color: Theme.fg
-                        font.pixelSize: Constants.sizeSm
+                        visible: !modelData.isKey
+                        text: !modelData.isKey ? modelData.text : ""
+                        color: Theme.muted
+                        customSize: Constants.sizeSm
                         font.bold: true
+                        anchors.verticalCenter: parent.verticalCenter
                     }
 
-                }
-
-                ThemedText {
-                    id: sepText
-
-                    visible: !modelData.isKey
-                    text: !modelData.isKey ? modelData.text : ""
-                    color: Theme.muted
-                    font.pixelSize: Constants.sizeMd
-                    font.bold: true
-                    anchors.verticalCenter: parent.verticalCenter
                 }
 
             }

@@ -8,8 +8,6 @@ local fileManager = "nautilus"
 hl.bind(mainMod .. " + Return", hl.dsp.exec_cmd(terminal))
 -- # Open Floating Terminal
 hl.bind(mainMod .. " + SHIFT + Return", hl.dsp.exec_cmd("kitty --class kitty-floating"))
--- # Open Kew
-hl.bind(mainMod .. " + SHIFT + K", hl.dsp.exec_cmd("kitty --class kitty-kew -e kew"))
 -- # Open File Manager
 hl.bind(mainMod .. " + E", hl.dsp.exec_cmd(fileManager))
 -- # Open Browser
@@ -52,7 +50,7 @@ hl.bind(mainMod .. " + SHIFT + N", hl.dsp.workspace.toggle_special("minimized"))
 -- # Pick Color
 hl.bind(mainMod .. " + SHIFT + C", hl.dsp.exec_cmd("hyprpicker -a"))
 -- # Switch Keyboard Layout
-hl.bind(mainMod .. " + SPACE", hl.dsp.exec_cmd("$HOME/.config/quickshell/Scripts/toggle_kb_layout.sh"))
+hl.bind(mainMod .. " + SPACE", hl.dsp.exec_cmd("$HOME/.config/quickshell/Scripts/system/toggle_kb_layout.sh"))
 -- # Restart Quickshell
 hl.bind(mainMod .. " + R", hl.dsp.exec_cmd("killall qs; qs"))
 
@@ -115,6 +113,12 @@ hl.bind(mainMod .. " + V", hl.dsp.exec_cmd("socat - UNIX-CONNECT:/tmp/quickshell
 hl.bind("CTRL + ALT + W", hl.dsp.exec_cmd("socat - UNIX-CONNECT:/tmp/quickshell_wallpaper"))
 -- # Toggle Screenshot
 hl.bind(mainMod .. " + SHIFT + S", hl.dsp.exec_cmd("socat - UNIX-CONNECT:/tmp/quickshell_screenshot"))
+-- # Toggle Dashboard
+hl.bind("CTRL + ALT + D", hl.dsp.exec_cmd("socat - UNIX-CONNECT:/tmp/quickshell_dashboard"))
+-- # Toggle Music Popup
+hl.bind("CTRL + ALT + M", hl.dsp.exec_cmd("socat - UNIX-CONNECT:/tmp/quickshell_music"))
+-- # Toggle Notifications Center
+hl.bind("CTRL + ALT +N", hl.dsp.exec_cmd("socat - UNIX-CONNECT:/tmp/quickshell_notificationsCenter"))
 
 -- ## Quickshell Apps
 

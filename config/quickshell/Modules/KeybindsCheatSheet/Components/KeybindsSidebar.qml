@@ -3,57 +3,67 @@ import QtQuick.Layouts
 import qs.Core
 import qs.Core.Components
 
-SearchableSidebar {
-    id: root
+AppSidebar {
+    id: sidebarRoot
 
-    property int activeTab: 0
-    property int selectedCategory: 0
-    property var currentData: []
+    required property var keybindsRoot
 
-    signal tabSelected(int tabIndex)
-    signal categorySelected(int categoryIndex)
+    title: "KEYBINDS"
+    subtitle: "HYPRLAND SHORTCUT REFERENCE"
 
-    searchPlaceholder: "Search keybinds..."
-
-    SidebarItem {
-        label: "Hyprland"
-        icon: "hyprland"
-        isActive: activeTab === 0
-        onClicked: {
-            tabSelected(0);
-            categorySelected(0);
-        }
+    ThemedText {
+        text: "CATEGORIES"
+        customSize: 10
+        font.weight: Font.Bold
+        font.letterSpacing: 0.8
+        color: Theme.muted
+        Layout.leftMargin: Constants.sizeLg
+        Layout.topMargin: Constants.size2Xs
+        Layout.bottomMargin: Constants.size2Xs
     }
 
-    SidebarItem {
-        label: "Neovim"
-        icon: "neovim"
-        isActive: activeTab === 1
-        onClicked: {
-            tabSelected(1);
-            categorySelected(0);
-        }
-    }
+    // All Keybinds (Tab)
+    Item {
+        Layout.fillWidth: true
+        Layout.leftMargin: Constants.sizeSm
+        Layout.rightMargin: Constants.sizeSm
+        Layout.preferredHeight: 34
 
-    Divider {
-        Layout.margins: Constants.sizeXs
-        Layout.topMargin: 8
-        Layout.bottomMargin: 8
+        SidebarNavRow {
+            anchors.fill: parent
+            iconName: "keyboard"
+            labelText: "All Keybinds"
+            statusText: keybindsRoot.totalKeybinds > 0 ? (keybindsRoot.totalKeybinds + "") : ""
+            isActive: keybindsRoot.selectedCategory === "All"
+            onRowClicked: keybindsRoot.selectCategory("All")
+        }
+
     }
 
     Repeater {
-        model: currentData
+        model: keybindsRoot.hyprlandData
 
-        delegate: SidebarItem {
-            label: modelData.section
-            subLabel: modelData.bindCount
-            isActive: index === selectedCategory && root.searchText === ""
-            onClicked: {
-                categorySelected(index);
-                searchRequested("");
+        Item {
+            Layout.fillWidth: true
+            Layout.leftMargin: Constants.sizeSm
+            Layout.rightMargin: Constants.sizeSm
+            Layout.preferredHeight: 34
+
+            SidebarNavRow {
+                anchors.fill: parent
+                iconName: keybindsRoot.categoryIcon(modelData.section)
+                labelText: modelData.section
+                statusText: modelData.bindCount > 0 ? (modelData.bindCount + "") : ""
+                isActive: keybindsRoot.selectedCategory === modelData.section
+                onRowClicked: keybindsRoot.selectCategory(modelData.section)
             }
+
         }
 
+    }
+
+    Item {
+        Layout.preferredHeight: Constants.sizeMd
     }
 
 }

@@ -1,50 +1,77 @@
 import QtQuick
-import QtQuick.Controls
-import QtQuick.Layouts
 import qs.Core
-import qs.Core.Components
+import qs.Core.Services
 import qs.Core.Windows
-import qs.Modules.ControlCenter.Widgets.NotificationCenter
-import qs.Modules.ControlCenter.Widgets.PerformanceWidget
-import qs.Modules.ControlCenter.Widgets.QuickSettings
 
-SidebarWindow {
+Item {
     id: root
 
-    property var notificationService
+    property var notificationService: null
+    property bool isOpen: false
+    readonly property bool _visible: internalLoader.item ? internalLoader.item._visible : false
 
-    popupId: "controlCenter"
-    preferredHeight: root._screenHeight > 0 ? root._screenHeight - 64 - 8 : 1000
-    backgroundColor: Theme.bg
-    preferredWidth: contentCol.implicitWidth + (Constants.sizeLg * 2)
+    signal widgetOpened()
+    signal widgetClosed()
+    signal fullyClosed()
 
-    ColumnLayout {
-        id: contentCol
+    onIsOpenChanged: {
+        if (internalLoader.item && internalLoader.item.isOpen !== root.isOpen)
+            internalLoader.item.isOpen = root.isOpen;
 
-        spacing: Constants.sizeLg
+    }
 
-        QuickSettings {
-            id: quickSettings
+    Loader {
+        id: internalLoader
 
-            Layout.fillWidth: true
-            quickSettingsOpen: root.isOpen
-            notificationService: root.notificationService
+        anchors.fill: parent
+        sourceComponent: sidebarComponent
+        onStatusChanged: {
+            if (status === Loader.Ready && item)
+                item.isOpen = root.isOpen;
+
         }
 
-        PerformanceWidget {
-            id: performanceWidget
+        Connections {
+            function onIsOpenChanged() {
+                if (internalLoader.item && root.isOpen !== internalLoader.item.isOpen)
+                    root.isOpen = internalLoader.item.isOpen;
 
-            Layout.fillWidth: true
+            }
+
+            function onFullyClosed() {
+                root.fullyClosed();
+            }
+
+            target: internalLoader.item
+            ignoreUnknownSignals: true
         }
 
-        NotificationCenter {
-            id: notificationCenter
+    }
 
-            Layout.fillWidth: true
-            Layout.fillHeight: true
-            notificationService: root.notificationService
+    Component {
+        id: sidebarComponent
+
+        SidebarWindow {
+            widgetId: "controlCenter"
+            isOpen: root.isOpen
+            anchors.fill: parent
+            preferredHeight: 0
+            backgroundColor: Theme.bg
+            preferredWidth: content.implicitWidth + (Constants.sizeLg * 2)
+
+            ControlCenterContent {
+                id: content
+
+                widget: parent
+                notificationService: root.notificationService
+            }
+
         }
 
+    }
+
+    Binding on isOpen {
+        value: AppState.isWidgetOpen("controlCenter")
     }
 
 }

@@ -1,124 +1,87 @@
-import "Components"
 import QtQuick
-import QtQuick.Layouts
-import Quickshell.Services.SystemTray
+import "Styles/Convex"
+import "Styles/Island"
 import qs.Core
-import qs.Core.Components
 import qs.Core.Services
-import qs.Modules.Bar.Widgets.SystemTray as STray
 
 Item {
     id: mainBar
 
     required property var notificationService
-    required property var mainPanelWidget
+    property var mainPanelWidget: null
+    property string activeBarStyle: SettingsService.barStyle
+    readonly property bool isCurrentIsland: activeBarStyle === "island"
+    readonly property bool isCurrentConvex: activeBarStyle === "convex"
+    // Use unified interface exposed by IBarStyle implementation
+    readonly property QtObject currentStyleItem: {
+        switch (mainBar.activeBarStyle) {
+        case "island":
+            return islandLoader.item;
+        case "convex":
+            return convexLoader.item;
+        default:
+            return islandLoader.item ? islandLoader.item : convexLoader.item;
+        }
+    }
+    readonly property real leftWidth: currentStyleItem ? (currentStyleItem.leftWidth || 0) : 0
+    readonly property real rightWidth: currentStyleItem ? (currentStyleItem.rightWidth || 0) : 0
+    readonly property real centerX: currentStyleItem ? (currentStyleItem.centerX || 0) : 0
+    readonly property real centerWidth: currentStyleItem ? (currentStyleItem.centerWidth || 0) : 0
+    readonly property bool isOccupied: currentStyleItem ? (currentStyleItem.isOccupied || false) : false
+    readonly property bool isExpanded: currentStyleItem ? (currentStyleItem.isExpanded || false) : false
+    readonly property real currentHeight: (currentStyleItem && currentStyleItem.currentHeight > 0) ? currentStyleItem.currentHeight : 0
+    readonly property bool isOverlayActive: currentStyleItem ? (currentStyleItem.isOverlayActive || false) : false
+    readonly property bool isOpen: currentStyleItem ? (currentStyleItem.isOpen || false) : false
+    readonly property bool needsFocus: currentStyleItem ? (currentStyleItem.needsFocus || false) : false
+    readonly property real blockX: currentStyleItem ? (currentStyleItem.blockX || 0) : 0
+    readonly property real blockY: currentStyleItem ? (currentStyleItem.blockY || 0) : 0
+    readonly property real blockWidth: currentStyleItem ? (currentStyleItem.blockWidth || 0) : 0
+    readonly property real blockHeight: currentStyleItem ? (currentStyleItem.blockHeight || 0) : 0
 
-    Rectangle {
-        id: barContent
+    function close() {
+        if (currentStyleItem && typeof currentStyleItem.close === "function")
+            currentStyleItem.close();
+
+    }
+
+    implicitWidth: currentStyleItem && currentStyleItem.implicitWidth > 0 ? currentStyleItem.implicitWidth : (BarStyleConfig.isPill(activeBarStyle) ? 180 : 0)
+
+    Loader {
+        id: islandLoader
 
         anchors.fill: parent
-        color: Theme.bg
-        radius: Constants.size2Xl
+        active: mainBar.isCurrentIsland
+        visible: active
+        sourceComponent: islandComp
+        enabled: visible
+    }
 
-        RowLayout {
-            id: hLeftGroup
+    Loader {
+        id: convexLoader
 
-            anchors.left: parent.left
-            anchors.top: parent.top
-            anchors.bottom: parent.bottom
-            spacing: Constants.sizeLg
-            anchors.leftMargin: 16
+        anchors.fill: parent
+        active: mainBar.isCurrentConvex
+        visible: active
+        sourceComponent: convexComp
+        enabled: visible
+    }
 
-            MinflairButton {
-                widget: mainBar.mainPanelWidget
-            }
+    Component {
+        id: islandComp
 
-            Workspaces {
-            }
-
+        IslandBar {
+            notificationService: mainBar.notificationService
+            mainPanelWidget: mainBar.mainPanelWidget
         }
 
-        ClockButton {
-            id: centerClock
+    }
 
-            anchors.centerIn: parent
-        }
+    Component {
+        id: convexComp
 
-        RowLayout {
-            id: hRightGroup
-
-            anchors.right: parent.right
-            anchors.top: parent.top
-            anchors.bottom: parent.bottom
-            spacing: Constants.sizeLg
-            anchors.rightMargin: 16
-
-            ControlCenterButton {
-                notificationService: mainBar.notificationService
-            }
-
-            Rectangle {
-                Layout.preferredHeight: 32
-                Layout.alignment: Qt.AlignVCenter
-                Layout.maximumWidth: 150 + Constants.sizeSm * 2
-                Layout.preferredWidth: trayRow.implicitWidth > 0 ? Math.min(trayRow.implicitWidth + Constants.sizeSm * 2, Layout.maximumWidth) : 0
-                color: Theme.bgSecondary
-                radius: height / 2
-                visible: trayRow.implicitWidth > 0
-
-                Flickable {
-                    id: trayFlick
-
-                    anchors.fill: parent
-                    anchors.leftMargin: Constants.sizeSm
-                    anchors.rightMargin: Constants.sizeSm
-                    contentWidth: trayRow.implicitWidth
-                    contentHeight: height
-                    boundsBehavior: Flickable.StopAtBounds
-                    flickableDirection: Flickable.HorizontalFlick
-                    clip: true
-
-                    MouseArea {
-                        anchors.fill: parent
-                        acceptedButtons: Qt.NoButton
-                        onWheel: (wheel) => {
-                            trayFlick.contentX = Math.max(0, Math.min(trayFlick.contentX - (wheel.angleDelta.y / 2), trayFlick.contentWidth - trayFlick.width));
-                        }
-                    }
-
-                    RowLayout {
-                        id: trayRow
-
-                        height: parent.height
-                        spacing: Constants.sizeSm
-
-                        Repeater {
-                            model: SystemTray.items
-
-                            delegate: STray.TrayItem {
-                                trayItem: modelData
-                                onClicked: (mouse) => {
-                                    if (mouse.button === Qt.RightButton) {
-                                        if (modelData.menu)
-                                            AppState.togglePopup("systemTray_" + index);
-                                        else if (modelData.secondaryActivate)
-                                            modelData.secondaryActivate();
-                                    }
-                                }
-                            }
-
-                        }
-
-                    }
-
-                }
-
-            }
-
-            PowerButton {
-                popupId: "powerMenu"
-            }
-
+        ConvexBar {
+            notificationService: mainBar.notificationService
+            mainPanelWidget: mainBar.mainPanelWidget
         }
 
     }

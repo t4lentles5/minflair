@@ -14,92 +14,28 @@ Item {
     id: root
 
     property string typedPassword: ""
-    property bool authFailed: false
-    property bool authenticating: false
-    property bool unlocking: false
 
-    function toggleLock() {
-        if (!lockManager.locked) {
-            root.typedPassword = "";
-            root.authFailed = false;
-            root.unlocking = false;
-            lockManager.locked = true;
-        } else {
-            lockManager.locked = false;
-        }
-    }
+    LockScreenIpcController {
+        id: ipcController
 
-    function submitPassword(pwd) {
-        if (root.authenticating)
-            return ;
-
-        authProc.running = false;
-        root.authenticating = true;
-        root.authFailed = false;
-        authProc.command = ["python3", Quickshell.env("HOME") + "/.config/quickshell/Scripts/auth.py", pwd];
-        authProc.running = true;
-    }
-
-    Component.onCompleted: {
-        socketCleanup.running = true;
-    }
-
-    SocketServer {
-        id: server
-
-        path: "/tmp/quickshell_lockScreen"
-        active: false
-
-        handler: Component {
-            Socket {
-                onConnectedChanged: {
-                    if (connected) {
-                        root.toggleLock();
-                        connected = false;
-                    }
-                }
-            }
-
-        }
-
-    }
-
-    Process {
-        id: socketCleanup
-
-        command: ["rm", "-f", "/tmp/quickshell_lockScreen"]
-        onExited: function(exitCode) {
-            server.active = true;
-        }
-    }
-
-    Process {
-        id: authProc
-
-        onExited: function(exitCode) {
-            if (!root.authenticating)
-                return ;
-
-            root.authenticating = false;
-            if (exitCode === 0) {
-                root.unlocking = true;
+        onToggleLockRequested: {
+            if (!lockManager.locked) {
+                ipcController.reset();
+                lockManager.locked = true;
             } else {
-                root.authFailed = true;
-                root.typedPassword = "";
+                lockManager.locked = false;
             }
         }
+        onUnlockRequested: lockManager.locked = false
     }
 
     WlSessionLock {
         id: lockManager
 
         onLockedChanged: {
-            if (locked) {
+            if (locked)
                 root.typedPassword = "";
-                root.authFailed = false;
-                root.authenticating = false;
-                root.unlocking = false;
-            }
+
         }
 
         WlSessionLockSurface {
@@ -114,10 +50,15 @@ Item {
                 anchors.fill: parent
                 color: Theme.bg
                 opacity: 1
-                state: root.unlocking ? "unlocking" : (ready ? "locked" : "hidden")
+                state: ipcController.unlocking ? "unlocking" : (ready ? "locked" : "hidden")
                 states: [
                     State {
                         name: "hidden"
+
+                        PropertyChanges {
+                            target: bgRect
+                            opacity: 0
+                        }
 
                         PropertyChanges {
                             target: dimOverlay
@@ -127,7 +68,17 @@ Item {
                         PropertyChanges {
                             target: mainContent
                             opacity: 0
-                            scale: 1.05
+                        }
+
+                        PropertyChanges {
+                            target: mainContentTranslate
+                            y: 20
+                        }
+
+                        PropertyChanges {
+                            target: mainContentScale
+                            xScale: 0.98
+                            yScale: 0.98
                         }
 
                         PropertyChanges {
@@ -137,7 +88,7 @@ Item {
 
                         PropertyChanges {
                             target: topLeftTranslate
-                            y: -30
+                            y: -15
                         }
 
                         PropertyChanges {
@@ -147,17 +98,17 @@ Item {
 
                         PropertyChanges {
                             target: topRightTranslate
-                            y: -30
+                            y: -15
                         }
 
                         PropertyChanges {
-                            target: middleLeftGroup
+                            target: clockGroup
                             opacity: 0
                         }
 
                         PropertyChanges {
-                            target: middleLeftTranslate
-                            x: -40
+                            target: clockTranslate
+                            y: -20
                         }
 
                         PropertyChanges {
@@ -166,18 +117,8 @@ Item {
                         }
 
                         PropertyChanges {
-                            target: authBoxEntryTranslate
-                            y: 40
-                        }
-
-                        PropertyChanges {
-                            target: bottomRightGroup
-                            opacity: 0
-                        }
-
-                        PropertyChanges {
-                            target: bottomRightTranslate
-                            y: 40
+                            target: authTranslate
+                            y: 24
                         }
 
                     },
@@ -185,6 +126,11 @@ Item {
                         name: "locked"
 
                         PropertyChanges {
+                            target: bgRect
+                            opacity: 1
+                        }
+
+                        PropertyChanges {
                             target: dimOverlay
                             opacity: 0
                         }
@@ -192,7 +138,17 @@ Item {
                         PropertyChanges {
                             target: mainContent
                             opacity: 1
-                            scale: 1
+                        }
+
+                        PropertyChanges {
+                            target: mainContentTranslate
+                            y: 0
+                        }
+
+                        PropertyChanges {
+                            target: mainContentScale
+                            xScale: 1
+                            yScale: 1
                         }
 
                         PropertyChanges {
@@ -216,13 +172,13 @@ Item {
                         }
 
                         PropertyChanges {
-                            target: middleLeftGroup
+                            target: clockGroup
                             opacity: 1
                         }
 
                         PropertyChanges {
-                            target: middleLeftTranslate
-                            x: 0
+                            target: clockTranslate
+                            y: 0
                         }
 
                         PropertyChanges {
@@ -231,17 +187,7 @@ Item {
                         }
 
                         PropertyChanges {
-                            target: authBoxEntryTranslate
-                            y: 0
-                        }
-
-                        PropertyChanges {
-                            target: bottomRightGroup
-                            opacity: 1
-                        }
-
-                        PropertyChanges {
-                            target: bottomRightTranslate
+                            target: authTranslate
                             y: 0
                         }
 
@@ -250,6 +196,11 @@ Item {
                         name: "unlocking"
 
                         PropertyChanges {
+                            target: bgRect
+                            opacity: 1
+                        }
+
+                        PropertyChanges {
                             target: dimOverlay
                             opacity: 0
                         }
@@ -257,103 +208,105 @@ Item {
                         PropertyChanges {
                             target: mainContent
                             opacity: 0
-                            scale: 0.95
                         }
 
                         PropertyChanges {
-                            target: topLeftGroup
-                            opacity: 0
+                            target: mainContentTranslate
+                            y: -40
                         }
 
                         PropertyChanges {
-                            target: topLeftTranslate
-                            y: -20
-                        }
-
-                        PropertyChanges {
-                            target: topRightGroup
-                            opacity: 0
-                        }
-
-                        PropertyChanges {
-                            target: topRightTranslate
-                            y: -20
-                        }
-
-                        PropertyChanges {
-                            target: middleLeftGroup
-                            opacity: 0
-                        }
-
-                        PropertyChanges {
-                            target: middleLeftTranslate
-                            x: -20
-                        }
-
-                        PropertyChanges {
-                            target: authBox
-                            opacity: 0
-                        }
-
-                        PropertyChanges {
-                            target: authBoxEntryTranslate
-                            y: 20
-                        }
-
-                        PropertyChanges {
-                            target: bottomRightGroup
-                            opacity: 0
-                        }
-
-                        PropertyChanges {
-                            target: bottomRightTranslate
-                            y: 20
+                            target: mainContentScale
+                            xScale: 1.02
+                            yScale: 1.02
                         }
 
                     }
                 ]
                 transitions: [
                     Transition {
-                        from: "hidden"
                         to: "locked"
 
                         SequentialAnimation {
                             ParallelAnimation {
                                 NumberAnimation {
+                                    target: bgRect
+                                    property: "opacity"
+                                    duration: Constants.animExpressive
+                                    easing.type: Easing.OutCubic
+                                }
+
+                                NumberAnimation {
                                     target: dimOverlay
                                     property: "opacity"
-                                    duration: Constants.animExpressive * 1.5
+                                    duration: Constants.animNormal
                                     easing.type: Easing.OutExpo
                                 }
 
                                 NumberAnimation {
                                     target: mainContent
-                                    properties: "opacity,scale"
-                                    duration: Constants.animExpressive * 1.5
-                                    easing.type: Easing.OutExpo
-                                }
-
-                                NumberAnimation {
-                                    targets: [topLeftGroup, topRightGroup, middleLeftGroup, authBox, bottomRightGroup]
                                     property: "opacity"
-                                    duration: Constants.animExpressive * 1.5
-                                    easing.type: Easing.OutExpo
+                                    duration: Constants.animNormal
+                                    easing.type: Easing.OutCubic
                                 }
 
                                 NumberAnimation {
-                                    targets: [topLeftTranslate, topRightTranslate, authBoxEntryTranslate, bottomRightTranslate]
+                                    target: mainContentTranslate
                                     property: "y"
-                                    duration: Constants.animExpressive * 1.5
-                                    easing.type: Easing.OutBack
-                                    easing.overshoot: 1.2
+                                    duration: Constants.animExpressive
+                                    easing.type: Easing.OutCubic
                                 }
 
                                 NumberAnimation {
-                                    target: middleLeftTranslate
-                                    property: "x"
-                                    duration: Constants.animExpressive * 1.5
+                                    targets: [mainContentScale]
+                                    properties: "xScale,yScale"
+                                    duration: Constants.animExpressive
+                                    easing.type: Easing.OutCubic
+                                }
+
+                                NumberAnimation {
+                                    target: clockGroup
+                                    property: "opacity"
+                                    duration: Constants.animExpressive
+                                    easing.type: Easing.OutCubic
+                                }
+
+                                NumberAnimation {
+                                    target: clockTranslate
+                                    property: "y"
+                                    duration: Math.round(Constants.animExpressive * 1.1)
                                     easing.type: Easing.OutBack
-                                    easing.overshoot: 1.2
+                                    easing.overshoot: 1.08
+                                }
+
+                                NumberAnimation {
+                                    target: authBox
+                                    property: "opacity"
+                                    duration: Constants.animSlow
+                                    easing.type: Easing.OutCubic
+                                }
+
+                                NumberAnimation {
+                                    target: authTranslate
+                                    property: "y"
+                                    duration: Math.round(Constants.animExpressive * 1.1)
+                                    easing.type: Easing.OutBack
+                                    easing.overshoot: 1.15
+                                }
+
+                                NumberAnimation {
+                                    targets: [topLeftGroup, topRightGroup]
+                                    property: "opacity"
+                                    duration: Constants.animNormal
+                                    easing.type: Easing.OutCubic
+                                }
+
+                                NumberAnimation {
+                                    targets: [topLeftTranslate, topRightTranslate]
+                                    property: "y"
+                                    duration: Constants.animSlow
+                                    easing.type: Easing.OutBack
+                                    easing.overshoot: 1.1
                                 }
 
                             }
@@ -372,29 +325,22 @@ Item {
                             ParallelAnimation {
                                 NumberAnimation {
                                     target: mainContent
-                                    properties: "opacity,scale"
-                                    duration: Constants.animExpressive
-                                    easing.type: Easing.OutCubic
-                                }
-
-                                NumberAnimation {
-                                    targets: [dimOverlay, topLeftGroup, topRightGroup, middleLeftGroup, authBox, bottomRightGroup]
                                     property: "opacity"
-                                    duration: Constants.animExpressive
+                                    duration: Math.round(Constants.animNormal * 0.9)
                                     easing.type: Easing.OutCubic
                                 }
 
                                 NumberAnimation {
-                                    targets: [topLeftTranslate, topRightTranslate, authBoxEntryTranslate, bottomRightTranslate]
+                                    target: mainContentTranslate
                                     property: "y"
-                                    duration: Constants.animExpressive
+                                    duration: Constants.animNormal
                                     easing.type: Easing.OutCubic
                                 }
 
                                 NumberAnimation {
-                                    target: middleLeftTranslate
-                                    property: "x"
-                                    duration: Constants.animExpressive
+                                    targets: [mainContentScale]
+                                    properties: "xScale,yScale"
+                                    duration: Constants.animNormal
                                     easing.type: Easing.OutCubic
                                 }
 
@@ -427,13 +373,24 @@ Item {
                     id: mainContent
 
                     anchors.fill: parent
+                    transform: [
+                        Translate {
+                            id: mainContentTranslate
+                        },
+                        Scale {
+                            id: mainContentScale
+
+                            origin.x: mainContent.width / 2
+                            origin.y: mainContent.height / 2
+                        }
+                    ]
 
                     TopLeftGroup {
                         id: topLeftGroup
 
                         anchors.top: parent.top
                         anchors.left: parent.left
-                        anchors.margins: Constants.size5Xl * 1.2
+                        anchors.margins: Constants.size2Xl
 
                         transform: Translate {
                             id: topLeftTranslate
@@ -446,7 +403,7 @@ Item {
 
                         anchors.top: parent.top
                         anchors.right: parent.right
-                        anchors.margins: Constants.size5Xl * 1.2
+                        anchors.margins: Constants.size2Xl
 
                         transform: Translate {
                             id: topRightTranslate
@@ -454,60 +411,52 @@ Item {
 
                     }
 
-                    ClockGroup {
-                        id: middleLeftGroup
+                    ColumnLayout {
+                        id: centerGroup
 
-                        anchors.left: parent.left
-                        anchors.leftMargin: Constants.size5Xl * 1.2
-                        anchors.verticalCenter: parent.verticalCenter
-                        anchors.verticalCenterOffset: -Constants.size5Xl * 1.5
+                        anchors.centerIn: parent
+                        anchors.verticalCenterOffset: -Constants.sizeLg
+                        spacing: Constants.size2Xl
+                        width: Math.min(parent.width - 48, 480)
 
-                        transform: Translate {
-                            id: middleLeftTranslate
-                        }
+                        ClockGroup {
+                            id: clockGroup
 
-                    }
+                            Layout.alignment: Qt.AlignHCenter
 
-                    AuthBox {
-                        id: authBox
-
-                        anchors.left: parent.left
-                        anchors.bottom: parent.bottom
-                        anchors.margins: Constants.size5Xl * 1.2
-                        backgroundItem: bgRect
-                        typedPassword: root.typedPassword
-                        authFailed: root.authFailed
-                        authenticating: root.authenticating
-                        locked: lockManager.locked
-                        onPasswordChanged: (text) => {
-                            root.typedPassword = text;
-                            if (text.length > 0)
-                                root.authFailed = false;
-
-                        }
-                        onSubmitPassword: (pwd) => {
-                            root.submitPassword(pwd);
-                        }
-                        onClearRequested: () => {
-                            root.typedPassword = "";
-                            root.authFailed = false;
-                        }
-                        transform: [
-                            Translate {
-                                id: authBoxEntryTranslate
+                            transform: Translate {
+                                id: clockTranslate
                             }
-                        ]
-                    }
 
-                    QuoteGroup {
-                        id: bottomRightGroup
+                        }
 
-                        anchors.right: parent.right
-                        anchors.bottom: parent.bottom
-                        anchors.margins: Constants.size5Xl * 1.2
+                        AuthBox {
+                            id: authBox
 
-                        transform: Translate {
-                            id: bottomRightTranslate
+                            Layout.alignment: Qt.AlignHCenter
+                            backgroundItem: bgRect
+                            typedPassword: root.typedPassword
+                            authFailed: ipcController.authFailed
+                            authenticating: ipcController.authenticating
+                            locked: lockManager.locked
+                            onPasswordChanged: (text) => {
+                                root.typedPassword = text;
+                                if (text.length > 0)
+                                    ipcController.authFailed = false;
+
+                            }
+                            onSubmitPassword: (pwd) => {
+                                ipcController.submitPassword(pwd);
+                            }
+                            onClearRequested: () => {
+                                root.typedPassword = "";
+                                ipcController.authFailed = false;
+                            }
+
+                            transform: Translate {
+                                id: authTranslate
+                            }
+
                         }
 
                     }
@@ -517,7 +466,7 @@ Item {
                         z: -1
                         onClicked: {
                             root.typedPassword = "";
-                            root.authFailed = false;
+                            ipcController.authFailed = false;
                             authBox.forceFocus();
                         }
                     }

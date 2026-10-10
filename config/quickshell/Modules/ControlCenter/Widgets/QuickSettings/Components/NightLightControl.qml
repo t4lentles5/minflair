@@ -5,13 +5,15 @@ import qs.Core
 import qs.Core.Components
 import qs.Core.Services
 
-SvgIconButton {
+QuickSettingsTile {
     id: root
 
-    icon: HyprlandService.nightLightActive ? "moon-filled" : "moon"
-    iconColor: HyprlandService.nightLightActive ? Theme.accent : Theme.muted
-    iconSize: Constants.sizeXl
+    isActive: DisplayProfileService.nightLightActive
+    icon: isActive ? "moon-filled" : "moon"
+    label: "Night Light"
+    subtitle: isActive ? "On" : "Off"
+    onMenuClicked: clicked()
     onClicked: {
-        HyprlandService.nightLightActive = !HyprlandService.nightLightActive;
+        DisplayProfileService.nightLightActive = !DisplayProfileService.nightLightActive;
     }
 }

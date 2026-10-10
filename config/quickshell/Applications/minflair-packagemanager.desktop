@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Minflair Package Manager
+Comment=Search, install, and manage packages
+Exec=sh -c $HOME/.config/quickshell/Modules/PackageManager/scripts/toggle_minflair_packagemanager.sh
+Icon=$HOME/.config/quickshell/assets/packagemanager-icon.svg
+Terminal=false
+Categories=System;Utility;

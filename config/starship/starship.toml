@@ -1,6 +1,6 @@
 format = """
-[╭──](fg:accent) $username$directory $git_branch$git_status
-[╰──](fg:accent)$character
+$username$directory $git_branch$git_status
+$character
 """
 
 command_timeout = 5001
@@ -19,8 +19,8 @@ style = "bg:accent fg:bg"
 format = '󰜥 [](bold fg:accent)[󰉋 $path]($style)[](bold fg:accent)'
 
 [character]
-success_symbol = "[](bold fg:accent)"
-error_symbol = "[](bold fg:accentComplementary)"
+success_symbol = "[](bold fg:accent)"
+error_symbol = "[](bold fg:accentComplementary)"
 
 [git_branch]
 style = "bg: accent"

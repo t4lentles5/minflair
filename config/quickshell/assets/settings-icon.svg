@@ -6,8 +6,8 @@
 >
   <defs>
     <linearGradient id="minflair-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#b7bfe0" />
-      <stop offset="100%" stop-color="#cdb7e0" />
+      <stop offset="0%" stop-color="#ccb565" />
+      <stop offset="100%" stop-color="#95cc64" />
     </linearGradient>
     <mask id="minflair-cutout">
       <rect width="24" height="24" fill="white" />
@@ -17,7 +17,7 @@
           fill="black"
         />
         <path
-          transform="translate(12 12) rotate(45) scale(0.78) translate(-12 -12)"
+          transform="translate(12 12) rotate(45) translate(-12 -12)"
           d="M 11.6 2.5 Q 12 1.2 12.4 2.5 L 14 10 L 21.5 11.6 Q 22.8 12 21.5 12.4 L 14 14 L 12.4 21.5 Q 12 22.8 11.6 21.5 L 10 14 L 2.5 12.4 Q 1.2 12 2.5 11.6 L 10 10 Z"
           fill="black"
         />

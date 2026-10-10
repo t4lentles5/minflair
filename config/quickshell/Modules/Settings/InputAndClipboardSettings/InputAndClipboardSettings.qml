@@ -1,32 +1,102 @@
 import QtQuick
+import QtQuick.Layouts
+import qs.Core
+import qs.Core.Components
 import qs.Core.Services
 import qs.Modules.Settings.Components
 
-SettingContainer {
+AppContainer {
     id: root
 
-    SettingGroup {
-        title: "Keyboard Layout"
+    AppGroup {
+        title: "Keyboard Layouts"
         icon: "keyboard"
+        showDividers: false
 
-        SettingSelect {
-            label: "Keyboard Layout"
-            description: "Select active layout for system input"
-            model: ["English (US)", "Español (LatAm)"]
-            currentIndex: HyprlandService.keyboardLayout === "latam" ? 1 : 0
-            onActivated: (index) => {
-                let code = index === 1 ? "latam" : "us";
-                HyprlandService.keyboardLayout = code;
+        Repeater {
+            model: SettingsService.enabledKbLayouts
+
+            ColumnLayout {
+                Layout.fillWidth: true
+                spacing: Constants.sizeSm
+
+                SettingRowTemplate {
+                    label: {
+                        let nameMap = {
+                            "us": "English (US)",
+                            "latam": "Spanish (LatAm)",
+                            "es": "Spanish (ES)",
+                            "fr": "French",
+                            "de": "German",
+                            "it": "Italian",
+                            "pt": "Portuguese",
+                            "ru": "Russian"
+                        };
+                        return nameMap[modelData] || modelData;
+                    }
+                    description: index === 0 ? "Primary Layout" : "Secondary Layout"
+
+                    SvgIconButton {
+                        icon: "trash"
+                        visible: SettingsService.enabledKbLayouts.length > 1
+                        onClicked: {
+                            let layouts = [...SettingsService.enabledKbLayouts];
+                            let idx = layouts.indexOf(modelData);
+                            if (idx !== -1) {
+                                layouts.splice(idx, 1);
+                                SettingsService.enabledKbLayouts = layouts;
+                            }
+                        }
+                    }
+                }
+
+                Divider {
+                    Layout.fillWidth: true
+                    visible: true
+                }
             }
         }
 
+        ThemedSelect {
+            label: "Add Layout"
+            description: "Select a language to add"
+            searchable: true
+            model: [
+                "None",
+                "English (US)",
+                "Spanish (LatAm)",
+                "Spanish (ES)",
+                "French",
+                "German",
+                "Italian",
+                "Portuguese",
+                "Russian"
+            ]
+            currentIndex: 0
+            onActivated: (index) => {
+                if (index === 0) return;
+                
+                let codeMap = [
+                    "", "us", "latam", "es", "fr", "de", "it", "pt", "ru"
+                ];
+                let code = codeMap[index];
+                if (SettingsService.enabledKbLayouts.indexOf(code) === -1) {
+                    let layouts = [...SettingsService.enabledKbLayouts];
+                    layouts.push(code);
+                    SettingsService.enabledKbLayouts = layouts;
+                }
+                
+                // Reset the select back to "None"
+                currentIndex = Qt.binding(() => 0);
+            }
+        }
     }
 
-    SettingGroup {
+    AppGroup {
         title: "Clipboard"
         icon: "clipboard"
 
-        SettingSelect {
+        ThemedSelect {
             label: "Clipboard Max History Items"
             description: "Limit number of clipboard entries displayed"
             model: ["25 items", "50 items", "100 items", "200 items", "500 items"]

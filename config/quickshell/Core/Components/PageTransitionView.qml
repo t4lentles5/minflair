@@ -5,7 +5,8 @@ Rectangle {
     id: root
 
     property int activeIndex: 0
-    property int lastIndex: 0
+    property int lastIndex: activeIndex
+    property var order: []
     property int animOff: 0
     property var updateCallback: null
     default property alias content: contentContainer.data
@@ -13,21 +14,38 @@ Rectangle {
     signal contentNeedsUpdate(int newIndex)
 
     function triggerTransition(direction, callback) {
-        switchAnim.complete();
-        root.animOff = 40 * direction;
+        if (switchAnim.running) {
+            switchAnim.stop();
+            contentContainer.opacity = 0;
+        }
+        root.animOff = 20 * direction;
         root.updateCallback = callback;
         switchAnim.start();
     }
 
-    color: Theme.bgSecondary
+    color: "transparent"
     onActiveIndexChanged: {
         if (activeIndex === lastIndex)
             return ;
 
-        switchAnim.complete();
-        root.animOff = 40 * (root.activeIndex > root.lastIndex ? 1 : -1);
-        switchAnim.start();
+        let dir = 1;
+        if (order && order.length > 0) {
+            let prevPos = order.indexOf(lastIndex);
+            let nextPos = order.indexOf(activeIndex);
+            if (prevPos !== -1 && nextPos !== -1)
+                dir = nextPos > prevPos ? 1 : -1;
+            else
+                dir = activeIndex > lastIndex ? 1 : -1;
+        } else {
+            dir = activeIndex > lastIndex ? 1 : -1;
+        }
+        if (switchAnim.running) {
+            switchAnim.stop();
+            contentContainer.opacity = 0;
+        }
+        root.animOff = 20 * dir;
         root.lastIndex = root.activeIndex;
+        switchAnim.start();
     }
 
     SequentialAnimation {
@@ -38,7 +56,7 @@ Rectangle {
             property: "opacity"
             to: 0
             duration: Constants.animFast
-            easing.type: Easing.InQuad
+            easing.type: Easing.OutQuad
         }
 
         ScriptAction {
@@ -53,21 +71,9 @@ Rectangle {
         }
 
         PropertyAction {
-            target: contentContainer
-            property: "anchors.topMargin"
+            target: contentTranslate
+            property: "y"
             value: root.animOff
-        }
-
-        PropertyAction {
-            target: contentContainer
-            property: "anchors.bottomMargin"
-            value: -root.animOff
-        }
-
-        PropertyAction {
-            target: contentContainer
-            property: "scale"
-            value: 0.95
         }
 
         ParallelAnimation {
@@ -77,43 +83,31 @@ Rectangle {
                 from: 0
                 to: 1
                 duration: Constants.animNormal
-                easing.type: Easing.OutQuint
+                easing.type: Easing.OutQuad
             }
 
             NumberAnimation {
-                target: contentContainer
-                properties: "anchors.topMargin,anchors.bottomMargin"
+                target: contentTranslate
+                property: "y"
                 to: 0
-                duration: Constants.animSlow
-                easing.type: Easing.OutBack
-            }
-
-            NumberAnimation {
-                target: contentContainer
-                property: "scale"
-                to: 1
-                duration: Constants.animSlow
-                easing.type: Easing.OutBack
+                duration: Constants.animNormal
+                easing.type: Easing.OutQuint
             }
 
         }
 
     }
 
-    Rectangle {
-        id: bgRect
+    Item {
+        id: contentContainer
 
         anchors.fill: parent
-        anchors.margins: Constants.sizeLg
-        anchors.leftMargin: 0
-        color: Theme.bg
-        radius: Constants.sizeLg
+        clip: true
 
-        Item {
-            id: contentContainer
+        transform: Translate {
+            id: contentTranslate
 
-            anchors.fill: parent
-            clip: true
+            y: 0
         }
 
     }

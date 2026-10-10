@@ -15,7 +15,7 @@ QtObject {
     property int size3Xl: 32
     property int size4Xl: 40
     property int size5Xl: 48
-    readonly property real durationFactor: HyprlandService.enableAnimations ? (1 / Math.max(0.1, HyprlandService.animationSpeedFactor)) : 0
+    readonly property real durationFactor: (HyprlandService.enableAnimations && !DisplayProfileService.gameModeActive && SystemInfoService.powerProfile !== "power-saver") ? (1 / Math.max(0.1, HyprlandService.animationSpeedFactor)) : 0
     property int animUltraFast: Math.round(100 * durationFactor)
     property int animFast: Math.round(150 * durationFactor)
     property int animNormal: Math.round(250 * durationFactor)

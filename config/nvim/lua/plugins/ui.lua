@@ -4,7 +4,7 @@ return {
     dependencies = { "nvim-tree/nvim-web-devicons" },
     opts = {
       options = {
-        theme = "auto",
+        theme = "luna",
         section_separators = { left = "", right = "" },
         component_separators = { left = "", right = "" },
         globalstatus = true,
@@ -70,6 +70,7 @@ return {
     config = function()
       require("neo-tree").setup({
         close_if_last_window = true,
+        use_popups_for_input = false,
         window = { width = 30 },
       })
     end,
@@ -96,7 +97,7 @@ return {
       {
         "rcarriga/nvim-notify",
         config = function()
-          require("notify").setup({ background_colour = "#1a1b26" })
+          require("notify").setup({ background_colour = "Normal" })
         end,
       },
     },
@@ -168,8 +169,7 @@ return {
         [[                                  ]],
       }
 
-      vim.api.nvim_set_hl(0, "AlphaHeaderPurple", { fg = "#bb9af7" })
-      dashboard.section.header.opts.hl = "AlphaHeaderPurple"
+      dashboard.section.header.opts.hl = "AlphaHeader"
 
       dashboard.section.buttons.val = {
         dashboard.button("f", "  Find file", ":Telescope find_files <CR>"),
@@ -188,5 +188,22 @@ return {
     "ravibrock/spellwarn.nvim",
     event = "VeryLazy",
     config = true,
+  },
+
+  {
+    "stevearc/dressing.nvim",
+    event = "VeryLazy",
+    opts = {
+      input = {
+        border = "rounded",
+        title_pos = "left",
+        relative = "editor",
+        prefer_width = 60,
+        min_width = 60,
+      },
+      select = {
+        backend = { "telescope", "builtin" },
+      },
+    },
   },
 }

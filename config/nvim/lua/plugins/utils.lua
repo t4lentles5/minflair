@@ -8,6 +8,9 @@ return {
     end,
     opts = {
       preset = "modern",
+      expand = function()
+        return true
+      end,
     },
   },
 

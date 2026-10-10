@@ -2,24 +2,27 @@ import Qt5Compat.GraphicalEffects
 import QtQuick
 import Quickshell
 import qs.Core
+import qs.Core.Services
 
 Rectangle {
     id: root
 
     property string icon: ""
-    property color iconColor: Theme.fg
+    property bool isActive: false
+    property color iconColor: isActive ? Theme.fg : Theme.fg
     property bool flat: false
-    property color bgColor: flat ? "transparent" : Theme.bg
+    property color bgColor: isActive ? Theme.accent : (flat ? "transparent" : Theme.bg)
     property int iconSize: Constants.sizeLg
     property bool isCircle: false
     property bool useOriginalColors: false
+    readonly property int scaledIconSize: Math.round(iconSize * SettingsService.fontScale)
     readonly property int status: iconImage.status
 
     signal clicked(var mouse)
 
     color: root.bgColor
-    implicitWidth: flat ? iconSize : iconSize + Constants.sizeLg
-    implicitHeight: flat ? iconSize : iconSize + Constants.sizeLg
+    implicitWidth: flat ? scaledIconSize : scaledIconSize + Constants.sizeLg
+    implicitHeight: flat ? scaledIconSize : scaledIconSize + Constants.sizeLg
     radius: isCircle ? implicitWidth / 2 : Constants.sizeXs
 
     Image {
@@ -35,10 +38,10 @@ Rectangle {
 
             return `${Quickshell.shellDir}/assets/${root.icon}.svg`;
         }
-        width: root.iconSize
-        height: root.iconSize
-        sourceSize.width: root.iconSize
-        sourceSize.height: root.iconSize
+        width: root.scaledIconSize
+        height: root.scaledIconSize
+        sourceSize.width: root.scaledIconSize
+        sourceSize.height: root.scaledIconSize
         visible: root.useOriginalColors
     }
 

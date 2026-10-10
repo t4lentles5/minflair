@@ -5,13 +5,15 @@ import qs.Core
 import qs.Core.Components
 import qs.Core.Services
 
-SvgIconButton {
+QuickSettingsTile {
     id: root
 
-    icon: !HyprlandService.caffeineActive ? "coffee" : "coffee-filled"
-    iconColor: !HyprlandService.caffeineActive ? Theme.muted : Theme.accent
-    iconSize: Constants.sizeXl
+    isActive: DisplayProfileService.caffeineActive
+    icon: !isActive ? "coffee" : "coffee-filled"
+    label: "Caffeine"
+    subtitle: isActive ? "Screen on" : "Off"
+    onMenuClicked: clicked()
     onClicked: {
-        HyprlandService.caffeineActive = !HyprlandService.caffeineActive;
+        DisplayProfileService.caffeineActive = !DisplayProfileService.caffeineActive;
     }
 }
