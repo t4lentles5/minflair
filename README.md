@@ -4,7 +4,15 @@
 
 **A modular, aesthetic Hyprland desktop environment for Arch Linux, powered by Quickshell and dynamic system-wide theming.**
 
-<img src="https://res.cloudinary.com/diu2godjy/image/upload/v1790797262/output_xfx0s3.webp" alt="Preview" />
+<br />
+
+<a href="#gallery">
+  <img src="https://img.shields.io/badge/📸_Gallery-Explore_Styles_%26_Widgets-7f65cc?style=for-the-badge&logoColor=white" alt="View Gallery" />
+</a>
+
+<br /><br />
+
+<img src="./assets/preview.webp" alt="Preview" />
 
 </div>
 
@@ -12,17 +20,18 @@
 
 ## ✨ Features
 
-- 🎨 **Multi-Style Shell Architecture** — Seamlessly switch between 4 distinct visual styles: **Convex**, **Island**, **Notch**, and **Minflair**.
-- 🌈 **Modular Dynamic Theming** — Generate and auto-apply harmonious color schemes from your current wallpaper across GTK, Qt, Neovim, Starship, Kitty, Hyprland, LazyGit, and Btop.
-- 🎛️ **Mouse & Touchpad Settings** — Configure pointer sensitivity (DPI), acceleration profile (`flat` raw 1:1 vs `adaptive`), natural scrolling, and touchpad tap/drag gestures natively from Settings.
-- 🔤 **Font & Cursor Management** — Easily customize and apply global system fonts, font sizes, and cursor themes directly from the Settings UI.
-- 🎵 **Dedicated Music & Visualizer** — Standalone music popup featuring a live Cava audio visualizer, synchronized auto-scrolling lyrics, and media playback controls.
-- 🔔 **Decoupled Notification Center** — Dedicated notification center and status bar trigger with unread badge counter and full notification history.
-- 📦 **Rich Package Manager** — Native graphical package manager with debounced instant search, deep package inspection (dependencies, relations, specs, resources) and AUR support.
-- 🖼️ **Wallpaper Selector** — Browse, search, and apply wallpapers directly from an interactive grid widget.
-- 🔒 **Lock Screen** — Custom Lock Screen built in Quickshell with IPC controller support and robust PAM authentication.
-- ⚡ **Zsh & Neovim** — Fully configured developer environment with Starship, fzf-tab, LazyGit, and Neovim (lazy.nvim) auto-synced with your theme.
-- 🔋 **Battery Life Optimization** — Integrated 80% charge limit toggle supporting major laptop vendors (ASUS, Lenovo, Dell, Acer, Apple Silicon, etc.).
+- 🎨 **Unique Shell Styles** — Switch effortlessly between **Convex** (organic curved frames where widgets flow naturally into the screen contours) and **Island** (a floating pill bar with dynamic expandable widgets).
+- 🎮 **One-Click Gaming Mode** — Maximize game performance instantly: strips away animations, blur, and borders while activating variable refresh rate (VRR) and ultra-low latency.
+- 🌈 **Adaptive Wallpaper Theming** — Pick any wallpaper and watch your entire system adapt harmoniously—synchronizing your bar, terminals, Neovim, GTK, Qt, and apps in real time.
+- 🖼️ **Wallpaper Framing & Cropping** — Crop, align, and preview wallpapers directly from settings with live aspect-ratio framing, scaling options, and smooth auto-shuffle transitions.
+- 🎛️ **Intuitive Settings Center** — Customize mouse sensitivity, touchpad gestures, system fonts, and bar appearance through an elegant graphical interface without editing config files.
+- 🎵 **Music Player & Visualizer** — A standalone media widget with live audio visualizer bars, album art, interactive seek bar, and playback controls.
+- 🔔 **Notification Center** — Stay organized with a dedicated notification panel, status bar unread badge, and one-click clear-all.
+- 📦 **Modern Package Manager** — Discover, inspect, install, and update official Arch Linux and AUR packages through a clean, searchable graphical store.
+- 🖼️ **Wallpaper Selector** — Browse and switch your wallpaper collection on the fly from an interactive grid.
+- 🔒 **Aesthetic Lock Screen** — A sleek lock screen that matches your active wallpaper and theme with quick system metrics.
+- ⚡ **Developer-Ready Terminal** — Out-of-the-box developer environment featuring Zsh, Starship prompt, fast directory jumping, LazyGit, and a theme-synced Neovim setup.
+- 🔋 **Battery Health Protection** — Built-in toggle to limit laptop battery charging to 80% to prolong battery lifespan.
 
 ---
 
@@ -42,8 +51,8 @@ chmod +x install.sh
 
 > [!IMPORTANT]
 >
-> - This script is exclusively designed for **Arch Linux** based distributions (it uses `pacman` natively).
-> - **NOTE:** Run the script as your **normal user**. The script will ask for `sudo` permissions on its own when strictly necessary to install system packages.
+> - This script is designed exclusively for **Arch Linux** distributions.
+> - Run the script as your **normal user**. It will ask for `sudo` only when needed to install system packages.
 
 ---
 
@@ -51,7 +60,7 @@ chmod +x install.sh
 
 ### 1. Reboot
 
-Once the script finishes, **reboot your computer** to ensure your new `zsh` shell, global variables, themes, and system daemons are fully loaded:
+Once installation completes, **reboot your computer** so all services, themes, and shell environments take effect:
 
 ```bash
 sudo reboot
@@ -59,106 +68,89 @@ sudo reboot
 
 ### 2. Set your profile picture (`.face`)
 
-The Quickshell dashboard displays your user avatar from `~/.face`. Place a **square image** (PNG or JPG, 256×256 recommended) in your home directory:
+To display your personal avatar on the dashboard and lock screen, place a square image (`PNG` or `JPG`) at `~/.face`:
 
 ```bash
-# Copy your desired profile picture
 cp /path/to/your/avatar.png ~/.face
 ```
 
-### 3. Set your wallpaper
+### 3. Add your wallpapers
 
-Wallpapers are stored in `~/Pictures/Wallpapers/`. You can add your own wallpapers to this directory and use the wallpaper selector widget (`Ctrl + Alt + W`) to apply them.
+Wallpapers are stored in `~/Pictures/Wallpapers/`. Add your favorite images there and use the wallpaper selector (`Ctrl + Alt + W`) to switch between them instantly.
 
 ### 4. Monitor Configuration
 
-The default monitor config is set to auto-detect. If you need custom resolution, refresh rate, or multi-monitor setup, edit:
+Displays are configured to auto-detect by default. If you need a custom resolution, refresh rate, or multi-monitor arrangement, configure:
 
 ```bash
 ~/.config/hypr/monitors.lua
 ```
 
-Refer to the [Hyprland Wiki — Monitors](https://wiki.hyprland.org/Configuring/Monitors/) for syntax details.
-
 ### 5. Restore from Backup
 
-If anything goes wrong, the installer creates a timestamped backup of your previous configuration:
+If needed, the installer preserves a timestamped backup of your previous configuration at:
 
 ```
 ~/.dotfiles_backup/<timestamp>/
 ```
 
-### 6. OCR Language Support
+### 6. OCR Text Extraction Languages
 
-The built-in Optical Character Recognition (OCR) feature comes with English (`tesseract-data-eng`) and Spanish (`tesseract-data-spa`) support installed by default. If you need support for other languages, you must install the respective `tesseract-data-*` package via pacman. For example, for French:
+The screen capture OCR feature comes with English and Spanish language packs preinstalled. To add other languages (such as French, German, or Japanese), install the corresponding package:
 
 ```bash
+# Example for French
 sudo pacman -S tesseract-data-fra
 ```
 
 ### 7. Battery Charge Limit (Laptops)
 
-The Sidebar Control Center includes a quick toggle to cap your battery charge (typically at 80%) to prolong battery lifespan. The installer automatically configures hardware detection and passwordless toggle permissions for supported laptop vendors:
-
-- **Acer**: Automatically installs `acer-wmi-battery-dkms`.
-- **ASUS** (ROG, TUF, ZenBook): Handled natively via the `asus-wmi` kernel driver.
-- **Lenovo** (ThinkPad, IdeaPad, Legion): Handled natively via `thinkpad_acpi` / `ideapad_laptop` conservation mode.
-- **Dell**: Supported with `libsmbios` / kernel sysfs.
-- **Framework, LG Gram, Samsung, Sony Vaio, Huawei, Apple Silicon, System76**: Supported natively through Linux kernel battery drivers.
+The Control Center includes an 80% charge limit toggle to prolong battery lifespan. The installer automatically detects your hardware and configures support for major laptop brands (ASUS, Lenovo, Dell, Acer, Apple Silicon, Framework, HP, and others).
 
 ---
 
-## 🖥️ Quickshell Interface
+<a id="gallery"></a>
 
-This rice features a collection of custom widgets, standalone applications, and shell utilities built with Quickshell, designed to be fast, interactive, and completely integrated with the system's dynamic styling:
+## 🖥️ Shell Styles & Desktop Experience
 
-### 📱 Applications
+Minflair is designed around distinct bar architectures and a unified suite of desktop utilities. You can switch styles anytime directly from the Settings app:
 
-- **Settings App**: A modular graphical interface built on `SidebarAppWindow` to configure your rice, bar styles, mouse & touchpad preferences, credentials, and integrations effortlessly without manually editing files.
-  <img src="https://res.cloudinary.com/diu2godjy/image/upload/v1790798194/output_dcqjbq.webp" alt="Settings App Widget" width="650" />
+### 🌟 Convex Style
+The signature desktop layout. Features an organic curved bezel frame where top widgets (Control Center, Notifications, Music, Dashboard) and bottom tools (Launcher, Clipboard, Wallpaper Selector) connect directly into the screen contours.
 
-- **Package Manager**: A rich graphical utility with debounced instant search to view package details, dependencies, relations, install, update, and remove official Arch Linux and AUR packages.
-  <img src="https://res.cloudinary.com/diu2godjy/image/upload/v1790799689/output_dctpih.webp" alt="Package Manager Widget" width="650" />
+<img src="./assets/convex.webp" alt="Convex Style Preview" />
 
-- **Keybinds Cheat Sheet**: A built-in, searchable overlay built on `SearchAppWindow` that displays all your configured shortcuts directly on your desktop.
-  <img src="https://res.cloudinary.com/diu2godjy/image/upload/v1790798490/output_jttms4.webp" alt="Keybinds Cheat Sheet Widget" width="650" />
+### 🏝️ Island Style
+A modern, floating pill bar with an expandable dynamic island center. Notifications, media playback, and quick controls expand smoothly from the island while preserving maximum screen real estate.
 
-### 🎛️ Bar Widgets & Popups
+<img src="./assets/island.webp" alt="Island Style Preview" />
 
-- **Dashboard**: An integrated dashboard featuring your GitHub contributions graph, system statistics, package updates, and daily quotes.
-  <img src="https://res.cloudinary.com/diu2godjy/image/upload/v1790797606/output_q20adt.webp" alt="Dashboard Widget" />
+### 🎮 Gaming Mode
+An ultra-clean, zero-overhead bar dedicated to gaming sessions. Strips away all blur, animations, and rounded frames, activating tear-free variable refresh rate (VRR) and minimal latency for maximum performance.
 
-- **Control Center**: A unified control center featuring quick toggles (Wifi, Bluetooth, Night Light, Game Mode, Caffeine, Battery Limit), interactive network/bluetooth pickers, and dedicated volume and brightness slider cards.
-  <img src="https://res.cloudinary.com/diu2godjy/image/upload/v1790799108/output_dbypbk.webp" alt="Sidebar Control Center Widget" />
+<img src="./assets/gaming.webp" alt="Gaming Mode Preview" />
 
-- **Notification Center**: A dedicated notification panel decoupled from quick settings, featuring unread badge status bar synchronization, individual dismissals, and clear-all actions.
-  <img src="https://res.cloudinary.com/diu2godjy/image/upload/v1790798869/output_q7qoy8.webp" alt="Notification Center Widget" />
+### 📱 Standalone Applications
+Deep graphical customization built natively for Arch Linux:
 
-- **Music & Lyrics**: A standalone media interface with a real-time Cava audio visualizer, synchronized auto-scrolling lyrics via `LyricsService`, progress wave, and full playback controls.
-  <img src="https://res.cloudinary.com/diu2godjy/image/upload/v1790797863/output_qpicjl.webp" alt="Music and Lyrics Popup Widget" />
+| **Settings App** | **Package Manager** | **Keybinds Cheat Sheet** |
+| :---: | :---: | :---: |
+| <img src="./assets/settings.png" alt="Settings App" /> | <img src="./assets/package-manager.png" alt="Package Manager" /> | <img src="./assets/keybinds.png" alt="Keybinds Cheat Sheet" /> |
+| Complete control over wallpapers, cropping, touchpad, and desktop effects. | Searchable GUI store to inspect, install, and update Arch & AUR packages. | Interactive shortcut browser accessible anytime with `Super + K`. |
 
-- **System Tray**: A minimalist system tray popup to manage active background applications and status indicators with styled context menus.
-  <img src="https://res.cloudinary.com/diu2godjy/image/upload/v1790799325/output_jrzdx2.webp" alt="System Tray Widget" />
+### 🔒 Lock Screen
+A clean, wallpaper-matched lock screen featuring PAM authentication, smooth unlock transitions, and real-time battery and system status.
 
-### 🚀 Shell Overlays & Utilities
+<img src="./assets/lockscreen.webp" alt="Lock Screen Preview" />
 
-- **Application Launcher**: A clean, keyboard-navigable menu to search and run applications.
-  <img src="https://res.cloudinary.com/diu2godjy/image/upload/v1790799502/output_zyufi5.webp" alt="Application Launcher Widget" />
+### 🎛️ Shell Utilities & Overlays
+All desktop styles share a cohesive, shared set of utilities:
 
-- **Wallpaper Selector**: An interactive grid browser that lets you preview and apply wallpapers from `~/Pictures/Wallpapers/` on the fly.
-  <img src="https://res.cloudinary.com/diu2godjy/image/upload/v1790798652/output_pht25o.webp" alt="Wallpaper Selector Widget" />
-
-- **Clipboard History**: A handy widget to browse and paste from your clipboard history.
-  <img src="https://res.cloudinary.com/diu2godjy/image/upload/v1790799938/output_r3v0x7.webp" alt="Clipboard History Widget" />
-
-- **Screen Capture**: A dedicated tool for taking screenshots (full, area, window, 3-second delay, OCR text extraction) and recording your screen with completion notifications.
-  <img src="https://res.cloudinary.com/diu2godjy/image/upload/v1790800109/output_j4y10n.webp" alt="Screen Capture Widget" />
-
-- **Power Menu**: A sleek menu for session management (shutdown, reboot, suspend, lock, logout).
-  <img src="https://res.cloudinary.com/diu2godjy/image/upload/v1790800283/output_crspkb.webp" alt="Power Menu Widget" />
-
-- **Lock Screen**: A fully functional custom lock screen with external IPC controller and PAM authentication, fully integrated with your dynamic theme.
-  <img src="https://res.cloudinary.com/diu2godjy/image/upload/v1790798334/output_stk3db.webp" alt="Lock Screen Widget" />
+- **Notification Center**: Dedicated panel for alert history with an unread badge on the bar.
+- **Music & Visualizer**: Sleek media player with album artwork, live audio bars, and seek control.
+- **Launcher & Clipboard**: Fast keyboard-driven app search and clipboard history manager.
+- **Screen Capture**: All-in-one screenshot tool (region/window/delay/OCR) and screen recorder.
+- **Power Menu**: Minimal session controls for sleep, reboot, and shutdown.
 
 ## ⌨️ Keybinds
 
@@ -245,5 +237,5 @@ This project is licensed under the [GNU General Public License v3.0](LICENSE).
 - **Tabler Icons**: Licensed under the [MIT License](https://github.com/tabler/tabler-icons/blob/master/LICENSE).
 - **Material Symbols (Google Fonts)**: Licensed under the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0).
 - **Material GNOME Theme**: Custom fork at [t4lentles5/material-gnome-theme](https://github.com/t4lentles5/material-gnome-theme) (upstream: [SakibShahariar/material-gnome-theme](https://github.com/SakibShahariar/material-gnome-theme)), licensed under the [GNU General Public License v3.0](https://github.com/SakibShahariar/material-gnome-theme/blob/main/LICENSE).
-- **luna.nvim**: Custom fork at [t4lentles5/luna.nvim](https://github.com/t4lentles5/luna.nvim) (upstream: [WTFox/luna.nvim](https://github.com/WTFox/luna.nvim)), licensed under the [MIT License](https://github.com/WTFox/luna.nvim/blob/main/LICENSE).
+- **luna.nvim**: Custom fork at [t4lentles5/luna.nvim](https://github.com/t4lentles5/luna.nvim) (upstream: [WTFox/luna.nvim](https://github.com/WTFox/luna.nvim)), licensed under the [MIT License](https://github.com/WTFox/luna.nvim/blob/main/LICENSE). Tailored specifically for Minflair to enable real-time dynamic palette hot-reloading and automatic Lualine synchronization.
 - **Simple Icons**: Licensed under the [CC0 1.0 Universal License](https://creativecommons.org/publicdomain/zero/1.0/).
