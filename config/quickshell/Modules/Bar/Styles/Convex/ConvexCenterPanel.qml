@@ -1,4 +1,5 @@
 import QtQuick
+import qs.Modules.Calendar as CalendarModule
 import qs.Modules.Music as MusicModule
 
 Item {
@@ -28,13 +29,22 @@ Item {
 
         anchors.fill: parent
         active: root.isOpen || root.openProgress > 0.001
-        sourceComponent: root.activeContentType === "music" ? musicComp : null
+        sourceComponent: root.activeContentType === "music" ? musicComp : (root.activeContentType === "calendar" ? calendarComp : null)
     }
 
     Component {
         id: musicComp
 
         MusicModule.MiniMusicWidget {
+            widget: root.centerWidget
+        }
+
+    }
+
+    Component {
+        id: calendarComp
+
+        CalendarModule.CalendarWidget {
             widget: root.centerWidget
         }
 

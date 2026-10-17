@@ -3,6 +3,7 @@ import QtQuick.Layouts
 import qs.Core
 import qs.Core.Components
 import qs.Core.Services
+import qs.Modules.Calendar as CalendarModule
 
 Item {
     id: root
@@ -11,7 +12,7 @@ Item {
     property date now: new Date()
 
     implicitWidth: 300
-    implicitHeight: 95
+    implicitHeight: mainLayout.implicitHeight + Constants.size2Xs * 2
     width: implicitWidth
     height: implicitHeight
 
@@ -24,6 +25,8 @@ Item {
     }
 
     ColumnLayout {
+        id: mainLayout
+
         anchors.fill: parent
         anchors.margins: Constants.size2Xs
         spacing: Constants.sizeXs
@@ -119,6 +122,22 @@ Item {
                 elide: Text.ElideRight
             }
 
+        }
+
+        // Pemisah antara jam dan kalender
+        Rectangle {
+            Layout.fillWidth: true
+            Layout.topMargin: Constants.sizeXs
+            Layout.preferredHeight: 1
+            color: Theme.bgSecondary
+        }
+
+        // Kalender bulanan
+        CalendarModule.CalendarWidget {
+            Layout.alignment: Qt.AlignHCenter
+            Layout.topMargin: Constants.sizeXs
+            widget: root.widget
+            calendarWidth: root.implicitWidth - Constants.size2Xs * 2
         }
 
     }

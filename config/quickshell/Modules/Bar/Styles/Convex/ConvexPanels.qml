@@ -20,7 +20,7 @@ Item {
     readonly property bool hasAnySidebarOpen: (sidebarDashboard && (sidebarDashboard.isOpen || sidebarDashboard._visible)) || (rightHost && (rightHost.isOpen || rightHost._visible))
     readonly property bool hasAnyDrawerOpen: bottomDrawer && (bottomDrawer.isOpen || bottomDrawer._visible)
     readonly property bool hasAnyPanelOpen: hasAnyDrawerOpen || hasAnySidebarOpen
-    readonly property bool isConvexCenterOpen: SettingsService.barConvexMode && AppState.isWidgetOpen("music")
+    readonly property bool isConvexCenterOpen: SettingsService.barConvexMode && (AppState.isWidgetOpen("music") || AppState.isWidgetOpen("calendar"))
 
     anchors.fill: parent
 
