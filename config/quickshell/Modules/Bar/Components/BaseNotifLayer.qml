@@ -95,6 +95,12 @@ Item {
 
     }
 
+    onIsRemovingNotifChanged: {
+        if (isRemovingNotif)
+            removalFallbackTimer.restart();
+        else
+            removalFallbackTimer.stop();
+    }
     onIsHoveredChanged: {
         let d = (activeSlot === "A" ? notifDataA : notifDataB) || currentNotifData;
         if (isHovered) {
@@ -160,6 +166,26 @@ Item {
     }
     visible: opacity > 0.001
     clip: true
+
+    // The active list is normally cleared when the notifProgress animation
+    // finishes. If animations are disabled the Behavior never emits
+    // runningChanged, leaving the notification active and suppressing every
+    // OSD (Caps Lock, volume, brightness) forever.
+    Timer {
+        id: removalFallbackTimer
+
+        // Matches the longest removal animation; it collapses to 0 when
+        // animations are disabled, which is exactly when the Behavior never
+        // runs and the notification would stay stuck.
+        interval: Constants.animExpressive
+        repeat: false
+        onTriggered: {
+            if (root.isRemovingNotif) {
+                root.isRemovingNotif = false;
+                root.dismissActiveNotifications();
+            }
+        }
+    }
 
     Timer {
         id: unhoverDebounceTimer
