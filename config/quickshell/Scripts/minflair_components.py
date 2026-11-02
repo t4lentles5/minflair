@@ -92,6 +92,11 @@ def load_manifest(path: Path | str | None = None) -> dict[str, Component]:
             )
 
         for line_no, row in enumerate(reader, start=2):
+            if None in row or any(value is None for value in row.values()):
+                raise ComponentError(
+                    f"Malformed row at {manifest_file}:{line_no}: "
+                    f"expected {len(MANIFEST_COLUMNS)} columns"
+                )
             component_id = (row.get("id") or "").strip()
             if not component_id:
                 raise ComponentError(

@@ -76,6 +76,17 @@ class ManifestTests(unittest.TestCase):
         )
         self.assertEqual(warnings, [])
 
+    def test_malformed_row_is_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            manifest = Path(tmp) / "components.tsv"
+            manifest.write_text(
+                "\t".join(components.MANIFEST_COLUMNS) + "\n"
+                "kitty\tKitty\tterminal\t0\n",
+                encoding="utf-8",
+            )
+            with self.assertRaises(components.ComponentError):
+                components.load_manifest(manifest)
+
 
 class PreferenceTests(unittest.TestCase):
     def setUp(self):
