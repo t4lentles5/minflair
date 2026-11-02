@@ -61,7 +61,27 @@ yay -S --needed --noconfirm "${aur_dependencies[@]}" ||
   warn "Some AUR packages could not be installed (check the messages above)."
 ok "AUR dependencies processed."
 
-# ── 3.1. Laptop & Vendor specific dependencies (Battery charge limit) ────────
+# ── 3.1. DDC/CI brightness (external monitors) ───────────────────────────────
+log "Configuring DDC/CI brightness support for external monitors..."
+if echo "i2c-dev" | sudo tee /etc/modules-load.d/i2c-dev.conf >/dev/null; then
+  ok "i2c-dev will be loaded on boot."
+else
+  warn "Could not write /etc/modules-load.d/i2c-dev.conf."
+fi
+sudo modprobe i2c-dev 2>/dev/null &&
+  ok "i2c-dev loaded." ||
+  warn "Could not load i2c-dev now; it will load after the reboot."
+
+if id -nG "$USER" | tr ' ' '\n' | grep -qx i2c; then
+  ok "User $USER is already in the i2c group."
+else
+  sudo groupadd -f i2c &&
+    sudo usermod -aG i2c "$USER" &&
+    ok "User $USER added to the i2c group (takes effect after logging out or rebooting)." ||
+    warn "Could not add $USER to the i2c group."
+fi
+
+# ── 3.2. Laptop & Vendor specific dependencies (Battery charge limit) ────────
 VENDOR="$(cat /sys/class/dmi/id/sys_vendor 2>/dev/null || true)"
 CHASSIS="$(cat /sys/class/dmi/id/chassis_type 2>/dev/null || true)"
 IS_LAPTOP=false

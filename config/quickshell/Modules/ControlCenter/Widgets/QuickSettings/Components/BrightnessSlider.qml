@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import Quickshell
 import Quickshell.Io
 import qs.Core
 import qs.Core.Components
@@ -8,6 +9,7 @@ import qs.Core.Components
 ThemedSlider {
     id: root
 
+    readonly property string helper: Quickshell.shellDir + "/Scripts/system/brightness.sh"
     property int brightness: 0
     property bool isVisible: true
     property int _pendingBrightness: 0
@@ -26,13 +28,7 @@ ThemedSlider {
     onMoved: (val) => {
         return root.setBrightness(val);
     }
-    onIconClicked: {
-        let target = (root.brightness <= 5) ? 100 : 5;
-        root.brightness = target;
-        root._pendingBrightness = target;
-        brightSetProc.command = ["brightnessctl", "s", target + "%"];
-        brightSetProc.running = true;
-    }
+    onIconClicked: root.setBrightness(root.brightness <= 5 ? 100 : 5)
 
     Timer {
         id: brightnessThrottleTimer
@@ -41,7 +37,7 @@ ThemedSlider {
         repeat: false
         onTriggered: {
             if (!brightSetProc.running) {
-                brightSetProc.command = ["brightnessctl", "s", root._pendingBrightness + "%"];
+                brightSetProc.command = [root.helper, "set", String(root._pendingBrightness)];
                 brightSetProc.running = true;
             } else {
                 brightnessThrottleTimer.restart();
@@ -51,32 +47,27 @@ ThemedSlider {
 
     Timer {
         interval: 250
-        running: root.isVisible
+        running: root.isVisible && !root.pressed && !brightSetProc.running
         repeat: true
         triggeredOnStart: true
-        onTriggered: brightGetProc.running = true
+        onTriggered: {
+            if (!brightGetProc.running)
+                brightGetProc.running = true;
+
+        }
     }
 
     Process {
         id: brightGetProc
 
-        command: ["brightnessctl", "-m"]
+        command: [root.helper, "get"]
 
         stdout: SplitParser {
             onRead: (data) => {
-                if (!data)
-                    return ;
+                var pct = parseInt(data.trim());
+                if (!isNaN(pct) && !root.pressed && !brightSetProc.running)
+                    root.brightness = Math.max(0, Math.min(100, pct));
 
-                var parts = data.split(",");
-                if (parts.length >= 4) {
-                    var pct = parts[3];
-                    if (pct.endsWith("%"))
-                        pct = pct.substring(0, pct.length - 1);
-
-                    if (!root.pressed)
-                        root.brightness = parseInt(pct);
-
-                }
             }
         }
 

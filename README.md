@@ -19,7 +19,7 @@
 - 🎨 **Unique Shell Styles** — Switch effortlessly between **Convex** (organic curved frames where widgets flow naturally into the screen contours) and **Island** (a floating pill bar with dynamic expandable widgets).
 - 🎮 **One-Click Gaming Mode** — Maximize game performance instantly: strips away animations, blur, and borders while activating variable refresh rate (VRR) and ultra-low latency.
 - 🌈 **Adaptive Wallpaper Theming** — Pick any wallpaper and watch your entire system adapt harmoniously—synchronizing your bar, terminals, Neovim, GTK, Qt, SDDM login screen, Obsidian, and apps in real time.
-- 🎚️ **Unified On-Screen Display (OSD)** — Instant, hardware-synced visual indicators for volume, mic mute, brightness, keyboard locks, touchpad toggles, and power alerts integrated directly into your active bar style.
+- 🎚️ **Unified On-Screen Display (OSD)** — Instant, hardware-synced visual indicators for volume, mic mute, brightness (internal panels and external monitors over DDC/CI), keyboard locks, touchpad toggles, and power alerts integrated directly into your active bar style.
 - 🖼️ **Wallpaper Framing & Cropping** — Crop, align, and preview wallpapers directly from settings with live aspect-ratio framing, scaling options, and smooth auto-shuffle transitions.
 - 🎛️ **Intuitive Settings Center** — Customize mouse sensitivity, touchpad gestures, system fonts, and bar appearance through an elegant graphical interface without editing config files.
 - 🎵 **Music Player & Visualizer** — A standalone media widget with live audio visualizer bars, album art, interactive seek bar, and playback controls.
@@ -152,6 +152,18 @@ sudo pacman -S tesseract-data-fra
 
 The Control Center includes an 80% charge limit toggle to prolong battery lifespan. The installer automatically detects your hardware and configures support for major laptop brands (ASUS, Lenovo, Dell, Acer, Apple Silicon, Framework, HP, and others).
 
+### 8. Brightness on External Monitors (DDC/CI)
+
+Internal laptop panels are controlled with `brightnessctl` out of the box. External monitors are controlled over DDC/CI with `ddcutil`, which the installer installs and configures: the `i2c-dev` module is loaded on boot and your user is added to the `i2c` group.
+
+The group change only takes effect after logging out and back in (the installer already asks you to reboot). To check which backend is active at any time:
+
+```bash
+~/.config/quickshell/Scripts/system/brightness.sh backend
+```
+
+It prints `brightnessctl` for an internal panel, `ddcutil` for external monitors, or `none` when no supported display is found. On a laptop, the internal panel always takes priority over connected external monitors.
+
 ---
 
 <a id="gallery"></a>
@@ -279,6 +291,29 @@ This will output real-time QML errors, warnings, missing components, or script f
 <summary><b>Battery charge limit toggle not working</b></summary>
 
 Ensure your laptop vendor supports charging thresholds via the Linux kernel. Check if your vendor's kernel module is loaded (e.g. `asus_wmi`, `ideapad_laptop`, `thinkpad_acpi`). For Acer laptops, the installer automatically configures `acer-wmi-battery-dkms`.
+
+</details>
+
+<details>
+<summary><b>Brightness slider has no effect on an external monitor</b></summary>
+
+Internal panels use `brightnessctl`, while external monitors use DDC/CI through `ddcutil`. The installer sets this up, but group membership requires a new session. If needed, run it manually and log out afterwards:
+
+```bash
+sudo pacman -S ddcutil
+echo i2c-dev | sudo tee /etc/modules-load.d/i2c-dev.conf
+sudo modprobe i2c-dev
+sudo usermod -aG i2c "$USER"
+```
+
+Check the detected backend and whether the monitor exposes DDC/CI:
+
+```bash
+~/.config/quickshell/Scripts/system/brightness.sh backend
+ddcutil detect
+```
+
+Some monitors ship with DDC/CI disabled in their OSD menu; enable it there. When nothing is detected, Minflair waits 30 seconds before retrying, so give it a moment after connecting a display.
 
 </details>
 

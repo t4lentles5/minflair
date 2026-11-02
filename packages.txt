@@ -68,6 +68,7 @@ zsh-autosuggestions
 zsh-history-substring-search
 zsh-syntax-highlighting
 brightnessctl
+ddcutil
 blueman
 bluez
 bluez-utils

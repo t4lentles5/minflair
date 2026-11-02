@@ -91,6 +91,26 @@ else
   warn "yay is not installed, skipping AUR dependencies."
 fi
 
+# ── 3.1. DDC/CI brightness (external monitors) ───────────────────────────────
+log "Configuring DDC/CI brightness support for external monitors..."
+if echo "i2c-dev" | sudo tee /etc/modules-load.d/i2c-dev.conf >/dev/null; then
+  ok "i2c-dev will be loaded on boot."
+else
+  warn "Could not write /etc/modules-load.d/i2c-dev.conf."
+fi
+sudo modprobe i2c-dev 2>/dev/null &&
+  ok "i2c-dev loaded." ||
+  warn "Could not load i2c-dev now; it will load after the reboot."
+
+if id -nG "$USER" | tr ' ' '\n' | grep -qx i2c; then
+  ok "User $USER is already in the i2c group."
+else
+  sudo groupadd -f i2c &&
+    sudo usermod -aG i2c "$USER" &&
+    ok "User $USER added to the i2c group (takes effect after logging out or rebooting)." ||
+    warn "Could not add $USER to the i2c group."
+fi
+
 # ── 4. SDDM theme ─────────────────────────────────────────────────────────────
 # The theme is cloned as the user and deployed as plain files, so /usr/share
 # never contains a root-owned git repository (no dubious ownership prompts).
