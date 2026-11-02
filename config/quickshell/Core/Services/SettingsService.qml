@@ -259,16 +259,19 @@ Item {
                 "fontFamily": settingsService.fontFamily
             };
             settingsSaver.running = false;
-            settingsSaver.command = ["sh", "-c", "mkdir -p ~/.cache/quickshell /var/tmp/sddm-theme && cat << 'EOF' > ~/.cache/quickshell/settings_prefs.json.tmp
+            settingsSaver.command = ["sh", "-c", "mkdir -p ~/.cache/quickshell && cat << 'EOF' > ~/.cache/quickshell/settings_prefs.json.tmp
 " + JSON.stringify(data) + "
 EOF
 mv -f ~/.cache/quickshell/settings_prefs.json.tmp ~/.cache/quickshell/settings_prefs.json
 chmod 600 ~/.cache/quickshell/settings_prefs.json
-cat << 'EOF' > /var/tmp/sddm-theme/settings_prefs.json.tmp
+if ! grep -qxF sddm \"$HOME/.config/minflair/preferences.conf\" 2>/dev/null; then
+  mkdir -p /var/tmp/sddm-theme
+  cat << 'EOF' > /var/tmp/sddm-theme/settings_prefs.json.tmp
 " + JSON.stringify(sddmData) + "
 EOF
-mv -f /var/tmp/sddm-theme/settings_prefs.json.tmp /var/tmp/sddm-theme/settings_prefs.json
-chmod 644 /var/tmp/sddm-theme/settings_prefs.json || true"];
+  mv -f /var/tmp/sddm-theme/settings_prefs.json.tmp /var/tmp/sddm-theme/settings_prefs.json
+  chmod 644 /var/tmp/sddm-theme/settings_prefs.json || true
+fi"];
             settingsSaver.running = true;
         }
     }

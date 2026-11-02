@@ -146,5 +146,19 @@ class CursorGatingTests(unittest.TestCase):
             self.assertGreaterEqual(run.call_count, 3)
 
 
+class SddmCacheGatingTests(unittest.TestCase):
+    def test_sddm_cache_writes_are_gated_in_qml(self):
+        for relative in (
+            "config/quickshell/Core/Services/WallpaperManager.qml",
+            "config/quickshell/Core/Services/SettingsService.qml",
+        ):
+            text = (REPO_ROOT / relative).read_text(encoding="utf-8")
+            self.assertIn(
+                'grep -qxF sddm \\"$HOME/.config/minflair/preferences.conf\\"',
+                text,
+                f"{relative} does not check the sddm preference",
+            )
+
+
 if __name__ == "__main__":
     unittest.main()
