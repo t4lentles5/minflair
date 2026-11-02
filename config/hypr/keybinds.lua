@@ -55,15 +55,18 @@ hl.bind(mainMod .. " + SPACE", hl.dsp.exec_cmd("$HOME/.config/quickshell/Scripts
 hl.bind(mainMod .. " + R", hl.dsp.exec_cmd("killall qs; qs"))
 
 -- # Caps Lock / Num Lock OSD
+-- ignore_mods is required: Hyprland reports Caps_Lock / Num_Lock as the CAPS and
+-- MOD2 modifiers, and adds the pressed key's own modifier to the event modmask,
+-- so a bind with an empty modmask never matches without it.
 hl.bind(
 	"Caps_Lock",
 	hl.dsp.exec_cmd("$HOME/.config/hypr/scripts/keyboard_lock.sh caps"),
-	{ non_consuming = true, locked = true }
+	{ non_consuming = true, locked = true, ignore_mods = true }
 )
 hl.bind(
 	"Num_Lock",
 	hl.dsp.exec_cmd("$HOME/.config/hypr/scripts/keyboard_lock.sh num"),
-	{ non_consuming = true, locked = true }
+	{ non_consuming = true, locked = true, ignore_mods = true }
 )
 
 -- # Toggle Touchpad
