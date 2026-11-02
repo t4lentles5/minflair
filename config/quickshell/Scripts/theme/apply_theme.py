@@ -5,6 +5,11 @@ sys.dont_write_bytecode = True
 
 import json
 import os
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+import minflair_components as components
 
 from color_utils import blend_hex, get_brightness, resolve_color, sanitize_color
 from theme_appliers import (
@@ -19,6 +24,32 @@ from theme_appliers import (
     sddm,
     starship,
 )
+
+APPLIERS = {
+    "kitty": kitty.apply,
+    "gtk": gtk.apply,
+    "nvim": nvim.apply,
+    "hyprland": hyprland.apply,
+    "starship": starship.apply,
+    "qt": qt.apply,
+    "btop": btop.apply,
+    "lazygit": lazygit.apply,
+    "obsidian": obsidian.apply,
+    "sddm": sddm.apply,
+}
+
+
+def apply_appliers(home, colors, is_enabled=None):
+    """Apply every enabled component's theme.
+
+    A disabled component is skipped entirely, which also skips any reload
+    signal or side effect implemented by its applier.
+    """
+    if is_enabled is None:
+        is_enabled = components.enabled
+    for component_id, apply in APPLIERS.items():
+        if is_enabled(component_id):
+            apply(home, colors)
 
 
 def main():
@@ -90,16 +121,11 @@ def main():
         "is_dark": is_dark,
     }
 
-    kitty.apply(home, colors)
-    gtk.apply(home, colors)
-    nvim.apply(home, colors)
-    hyprland.apply(home, colors)
-    starship.apply(home, colors)
-    qt.apply(home, colors)
-    btop.apply(home, colors)
-    lazygit.apply(home, colors)
-    obsidian.apply(home, colors)
-    sddm.apply(home, colors)
+    try:
+        apply_appliers(home, colors)
+    except components.ComponentError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        sys.exit(1)
 
 
 if __name__ == "__main__":
