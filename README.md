@@ -58,6 +58,12 @@ chmod +x install.sh
 > - This script is designed exclusively for **Arch Linux** distributions.
 > - Run the script as your **normal user**. It will ask for `sudo` only when needed to install system packages.
 
+> [!TIP]
+> On first run, Minflair opens an interactive component selector. You can keep
+> your own Kitty, Neovim, Starship or other configuration and still use the
+> rest of the shell. See [docs/INSTALL.md](docs/INSTALL.md) for the selector
+> controls and non-interactive flags.
+
 ---
 
 ## 🔄 Updating

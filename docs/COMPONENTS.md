@@ -70,6 +70,19 @@ Disabling a component does **not** delete files that are already installed.
 It only prevents Minflair from touching them again. This is deliberate: an
 exclusion must never destroy a user's configuration.
 
+## Installer integration
+
+`install.sh` and `update.sh` source `lib/components.sh`, which implements the
+same manifest and preference rules in bash. This keeps the installer usable on
+a fresh Arch installation where Python is not available yet.
+
+`lib/selector.sh` provides the interactive selector. It reads the manifest with
+`awk`, so it also works before any package is installed. The selector writes
+the same preferences file that the runtime scripts read.
+
+See [INSTALL.md](INSTALL.md) for the selector controls, installer flags and
+examples.
+
 ## Runtime gating
 
 `apply_theme.py` maps every applier to a component id and calls it only when
@@ -98,6 +111,10 @@ propagation to external applications. The shell's own font preference is
 always updated, because it is part of the shell and not an external app.
 
 `apply_cursor.py` returns early when the `cursor` component is disabled.
+
+The SDDM runtime cache under `/var/tmp/sddm-theme` is only written when the
+`sddm` component is enabled. This applies to the Python font applier and to the
+QML services that save the wallpaper and settings.
 
 ## CLI
 
