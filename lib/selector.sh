@@ -95,7 +95,7 @@ selector_run() {
     done
 
     printf '\033[H\033[2J'
-    ui_header "Minflair $version" "Review selection"
+    ui_header "Minflair $version - Review selection"
     printf '\n  %sIncluded (%d)%s\n' "$UI_BOLD" "${#included[@]}" "$UI_RESET"
     components_print_list "    " "$(components_join "${included[@]}")"
     printf '\n'
@@ -143,7 +143,7 @@ selector_run() {
     if (( desc_width < 16 )); then desc_width=16; fi
 
     printf '\033[H\033[2J'
-    ui_header "Minflair $version" "Select components"
+    ui_header "Minflair $version - Select components"
     printf '\n'
 
     if ((${#filtered[@]} == 0)); then
@@ -202,7 +202,6 @@ selector_run() {
     done
 
     printf '\n'
-    ui_rule
     printf '  %s%d/%d optional enabled%s' "$UI_BOLD" "$count" "$optional" "$UI_RESET"
     if (( optional - count > 0 )); then
       printf '   %s%d skipped%s' "$UI_DIM" "$((optional - count))" "$UI_RESET"

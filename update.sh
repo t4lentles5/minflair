@@ -132,7 +132,7 @@ if [ "$(id -u)" -eq 0 ]; then
   error "Run update.sh as your normal user, not as root."
 fi
 
-ui_header "Minflair updater" "Version $(minflair_version)"
+ui_header "Minflair updater $(minflair_version)"
 
 cd "$REPO_DIR"
 

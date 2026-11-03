@@ -133,7 +133,7 @@ if [ "$(id -u)" -eq 0 ]; then
   error "Run install.sh as your normal user, not as root."
 fi
 
-ui_header "Minflair installer" "Version $(minflair_version)"
+ui_header "Minflair installer $(minflair_version)"
 
 # In dry-run mode preferences are written to a temporary copy so the simulated
 # selection is accurate and the real file is never touched.
@@ -460,7 +460,7 @@ elif command -v dunst &>/dev/null; then
     ok "dunst D-Bus activation disabled."
   fi
 
-  ok "dunst disabled — QuickShell will handle notifications."
+  ok "dunst disabled - QuickShell will handle notifications."
 else
   ok "dunst is not installed, no conflicts."
 fi

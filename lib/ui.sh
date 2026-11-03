@@ -110,41 +110,21 @@ ui_refresh_size() {
   fi
 }
 
-ui_rule() {
-  local width="${1:-$UI_WIDTH}"
-  if (( ! UI_TTY || UI_PLAIN )); then
-    printf '%*s\n' "$width" '' | tr ' ' '-'
-    return 0
-  fi
-  printf '%s' "$UI_DIM"
-  printf '%*s' "$width" '' | tr ' ' '─'
-  printf '%s\n' "$UI_RESET"
-}
-
 ui_header() {
   local title="$1"
-  local subtitle="${2:-}"
 
   if (( ! UI_TTY || UI_PLAIN )); then
     printf '\n%s\n' "$title"
-    if [[ -n "$subtitle" ]]; then
-      printf '%s\n' "$subtitle"
-    fi
-    ui_rule
     return 0
   fi
 
   printf '\n%s%s%s%s\n' "$UI_BOLD" "$UI_CYAN" "$title" "$UI_RESET"
-  if [[ -n "$subtitle" ]]; then
-    printf '%s%s%s\n' "$UI_DIM" "$subtitle" "$UI_RESET"
-  fi
-  ui_rule
 }
 
 ui_section() {
   local title="$1"
   if (( UI_TTY && ! UI_PLAIN )); then
-    printf '\n%s%s── %s ──%s\n' "$UI_BOLD" "$UI_CYAN" "$title" "$UI_RESET"
+    printf '\n%s== %s ==%s\n' "$UI_BOLD" "$title" "$UI_RESET"
   else
     printf '\n== %s ==\n' "$title"
   fi
@@ -168,7 +148,7 @@ ui_error() {
 }
 
 ui_done() {
-  printf '\n%s✓ %s%s\n' "$UI_GREEN" "$1" "$UI_RESET"
+  printf '\n%s[OK]%s %s\n' "$UI_GREEN" "$UI_RESET" "$1"
 }
 
 ui_confirm() {

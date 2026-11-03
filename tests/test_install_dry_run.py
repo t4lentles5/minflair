@@ -70,6 +70,8 @@ class InstallerDryRunTests(unittest.TestCase):
         self.assertIn("Enabled (", result.stdout)
         self.assertNotIn("\x1b[", result.stdout)
         self.assertNotIn("\x1b[", result.stderr)
+        self.assertTrue(result.stdout.isascii())
+        self.assertTrue(result.stderr.isascii())
 
     def test_no_packages_skips_package_commands(self):
         result = self.run_script("install.sh", "--no-packages")

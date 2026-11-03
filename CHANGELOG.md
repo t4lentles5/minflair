@@ -21,8 +21,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `Enter` opens a review screen; preferences are saved only after confirmation.
   - `update.sh --select` opens the same selector before updating.
 - **Installer and updater UI**:
-  - New `lib/ui.sh` centralizes headers, sections, status symbols, confirmation prompts and terminal size detection.
-  - Output falls back to plain text when there is no TTY, no color support or `TERM=dumb`.
+  - New `lib/ui.sh` centralizes one-line headers, ASCII section markers, status symbols, confirmation prompts and terminal size detection.
+  - All visible output is ASCII-only. Color is optional and is disabled when there is no TTY, when `NO_COLOR` is set or when `TERM=dumb`.
   - The final summary lists the enabled and skipped components, the backup location and the next steps.
 - **Selection flags for install and update**:
   - `--exclude`, `--only`, `--include`, `--select`, `--no-input`, `--dry-run` and `--no-packages` are available in both scripts.
