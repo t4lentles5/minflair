@@ -176,6 +176,22 @@ To change the selection during an update:
 ./update.sh --dry-run
 ```
 
+### Restoring a backup
+
+The updater writes backups to `~/.dotfiles_backup/<timestamp>/`. To restore
+the files it replaced:
+
+```bash
+cp -a ~/.dotfiles_backup/<timestamp>/config/. ~/.config/
+cp -a ~/.dotfiles_backup/<timestamp>/home/. ~/
+```
+
+To preview the SDDM theme without logging out:
+
+```bash
+sddm-greeter --test-mode --theme /usr/share/sddm/themes/minflair-sddm
+```
+
 ## Dry run
 
 `--dry-run` writes preferences to a temporary file, prints every copy, backup,
