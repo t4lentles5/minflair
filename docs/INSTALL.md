@@ -19,23 +19,11 @@ rules.
 
 ## First install
 
-### From the AUR
-
-```bash
-yay -S minflair          # stable release
-# or: yay -S minflair-git
-minflair install
-```
-
-The package installs the repository in `/usr/share/minflair` and adds the
-`minflair` command. See [AUR.md](AUR.md) for package details and the maintainer
-workflow.
-
 ### From git
 
 ```bash
-git clone https://github.com/t4lentles5/minflair.git
-cd minflair
+git clone https://github.com/t4lentles5/minflair.git ~/.minflair
+cd ~/.minflair
 ./install.sh
 ```
 
@@ -67,7 +55,6 @@ The selector is the recommended way to change components:
 
 ```bash
 ./install.sh --select
-# AUR: minflair install --select
 ```
 
 To disable or re-enable a specific component without opening the selector:
@@ -122,17 +109,10 @@ are.
 
 ## Updating
 
-From the AUR:
-
-```bash
-yay -Syu
-minflair update
-```
-
 From a git clone:
 
 ```bash
-cd minflair
+cd ~/.minflair
 git pull --ff-only
 ./update.sh
 ```

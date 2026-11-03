@@ -41,17 +41,6 @@ cd ~/.minflair
 ./install.sh
 ```
 
-### From the AUR
-
-```bash
-yay -S minflair        # stable release
-# or: yay -S minflair-git
-minflair install
-```
-
-The AUR package installs the files in `/usr/share/minflair` and adds the
-`minflair` command. See [docs/AUR.md](docs/AUR.md) for details.
-
 > [!IMPORTANT]
 >
 > - Minflair is designed exclusively for **Arch Linux** distributions.
@@ -65,13 +54,6 @@ The AUR package installs the files in `/usr/share/minflair` and adds the
 ---
 
 ## 🔄 Updating
-
-From the AUR:
-
-```bash
-yay -Syu
-minflair update
-```
 
 From a git clone:
 
@@ -105,7 +87,6 @@ the updated configuration, installs new dependencies, refreshes the
 | [Components](docs/COMPONENTS.md) | Manifest format and runtime gating |
 | [Post-installation setup](docs/SETUP.md) | Avatar, wallpapers, monitors, OCR and DDC/CI |
 | [Troubleshooting](docs/TROUBLESHOOTING.md) | Logs, brightness, notifications and install errors |
-| [AUR packaging](docs/AUR.md) | Packages, release workflow and maintainer notes |
 
 ---
 

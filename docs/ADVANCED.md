@@ -52,9 +52,6 @@ review the resulting selection in the selector before continuing.
 ./install.sh --no-packages
 ```
 
-If Minflair came from the AUR, replace `./install.sh` with
-`minflair install` and `./update.sh` with `minflair update`.
-
 ## Dry run
 
 `--dry-run` writes preferences to a temporary file, prints every copy, backup,
@@ -102,13 +99,13 @@ to a missing `yay`: AUR packages are skipped with a warning.
 
 ## Editing preferences directly
 
-The `minflair components` command reads and writes the same preferences file:
+The component helper reads and writes the same preferences file:
 
 ```bash
-minflair components list
-minflair components disable obsidian
-minflair components enable obsidian
-minflair components validate
+python config/quickshell/Scripts/minflair_components.py list
+python config/quickshell/Scripts/minflair_components.py disable obsidian
+python config/quickshell/Scripts/minflair_components.py enable obsidian
+python config/quickshell/Scripts/minflair_components.py validate
 ```
 
 See [COMPONENTS.md](COMPONENTS.md) for the manifest and the exact file format.

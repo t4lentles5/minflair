@@ -1,6 +1,6 @@
 # Post-installation setup
 
-After `./install.sh` or `minflair install` finishes, complete these steps.
+After `./install.sh` finishes, complete these steps.
 
 ## 1. Reboot
 

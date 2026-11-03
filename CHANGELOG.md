@@ -33,13 +33,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - The installer filters `packages.txt` and `packages-aur.txt` so disabled applications are not installed or updated.
   - Disabled components are not copied, themed or signalled. Existing files from a disabled component are left untouched.
   - SDDM cache writes are gated in the shell services.
-- **AUR packages**:
-  - New `minflair` package tracks release tags and `minflair-git` tracks the `main` branch.
-  - Both install the repository in `/usr/share/minflair` and provide the `minflair` command for `install`, `update`, `components` and `version`.
-  - Core packages are declared as dependencies; optional application packages are declared as optional dependencies.
 - **Documentation and CI**:
-  - New `docs/COMPONENTS.md`, `docs/INSTALL.md` and `docs/AUR.md` explain the manifest, selector, flags and packaging workflow.
-  - New GitHub Actions workflow runs the unit tests, validates the manifest, checks shell syntax and verifies the AUR metadata.
+  - New `docs/COMPONENTS.md` and `docs/INSTALL.md` explain the manifest, selector and flags.
+  - New GitHub Actions workflow runs the unit tests, validates the manifest and checks shell syntax.
 
 ### Changed
 
