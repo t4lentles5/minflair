@@ -13,6 +13,17 @@ MANIFEST="${MINFLAIR_MANIFEST:-$REPO_DIR/config/quickshell/components.tsv}"
 PREFS_FILE="${MINFLAIR_PREFS:-$HOME/.config/minflair/preferences.conf}"
 DRY_RUN="${DRY_RUN:-0}"
 
+# Read the version from the Quickshell constants so the installer, the updater
+# and the selector always show the same value.
+minflair_version() {
+  local constants="$REPO_DIR/config/quickshell/Core/Constants.qml"
+  if [[ -f "$constants" ]]; then
+    sed -n 's/.*appVersion: "\([^"]*\)".*/\1/p' "$constants" | head -n 1
+  else
+    printf 'unknown'
+  fi
+}
+
 manifest_rows() {
   awk -F'\t' '
     /^[[:space:]]*#/ { next }
@@ -334,6 +345,58 @@ components_list() {
     fi
     printf '%-12s %-10s %-5s %-9s %s\n' "$id" "$category" "$core_label" "$status" "$description"
   done < <(manifest_fields)
+}
+
+components_join() {
+  local out="" item
+  for item in "$@"; do
+    if [[ -n "$out" ]]; then
+      out+=", "
+    fi
+    out+="$item"
+  done
+  printf '%s' "$out"
+}
+
+# Print a comma-separated list indented and wrapped to the terminal width.
+components_print_list() {
+  local indent="$1" text="$2" width="${COLUMNS:-100}"
+  [[ -n "$text" ]] || return 0
+  if [[ ! "$width" =~ ^[0-9]+$ ]] || (( width < 40 )); then
+    width=80
+  fi
+  printf '%s\n' "$text" | fold -s -w "$((width - ${#indent}))" | sed "s/^/${indent}/"
+}
+
+components_summary() {
+  local id label category core paths packages theme font reload description
+  local -a enabled=() skipped=()
+  local enabled_text skipped_text
+
+  while IFS=$'\037' read -r id label category core paths packages theme font reload description; do
+    if component_core "$id" || component_enabled "$id"; then
+      enabled+=("$label")
+    else
+      skipped+=("$label")
+    fi
+  done < <(manifest_fields)
+
+  enabled_text="$(components_join "${enabled[@]}")"
+  if [[ -n "$enabled_text" ]]; then
+    printf '  Enabled (%d):\n' "${#enabled[@]}"
+    components_print_list "    " "$enabled_text"
+  else
+    printf '  Enabled (0): none\n'
+  fi
+
+  if ((${#skipped[@]})); then
+    skipped_text="$(components_join "${skipped[@]}")"
+    printf '  Skipped (%d):\n' "${#skipped[@]}"
+    components_print_list "    " "$skipped_text"
+    printf '  Skipped components keep their existing files.\n'
+  else
+    printf '  Skipped (0): none\n'
+  fi
 }
 
 destination_for_path() {

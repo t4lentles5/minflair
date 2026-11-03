@@ -104,6 +104,22 @@ class BashComponentTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(set(result.stdout.splitlines()), {"kitty", "nvim"})
 
+    def test_components_summary_lists_enabled_and_skipped(self):
+        result = self.run_bash(
+            "components_summary", prefs="kitty\nnvim\n"
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("Enabled (19):", result.stdout)
+        self.assertIn("Quickshell shell", result.stdout)
+        self.assertIn("Skipped (2):", result.stdout)
+        self.assertIn("Kitty terminal", result.stdout)
+        self.assertIn("Skipped components keep their existing files.", result.stdout)
+
+    def test_minflair_version_matches_the_manifest(self):
+        result = self.run_bash("minflair_version")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.stdout.strip(), "2.2.0")
+
     def test_reloads_respect_component_state(self):
         enabled = self.run_bash(
             "component_reloads --non-core", prefs=""
