@@ -12,8 +12,9 @@ installation, use the selector described in [INSTALL.md](INSTALL.md).
 | `--include IDS` | Re-enable the listed components. |
 | `--select` | Open the interactive selector. |
 | `--no-input` | Never prompt; use the saved preferences. |
+| `--aur-helper NAME` | Use `yay` or `paru` as the AUR helper and save the choice. |
 | `--dry-run` | Print every action without writing files or running package changes. |
-| `--no-packages` | Skip `pacman`/`yay`; useful for configuration-only installs. |
+| `--no-packages` | Skip `pacman` and the AUR helper; useful for configuration-only installs. |
 | `--help` | Show the built-in help. |
 
 Lists are comma-separated. Flags can be combined and repeated:
@@ -50,6 +51,9 @@ review the resulting selection in the selector before continuing.
 
 # Install configuration only; do not touch packages
 ./install.sh --no-packages
+
+# Use paru for the AUR and save the choice
+./install.sh --aur-helper paru
 ```
 
 ## Dry run

@@ -28,6 +28,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `--exclude`, `--only`, `--include`, `--select`, `--no-input`, `--dry-run` and `--no-packages` are available in both scripts.
   - Selection flags persist the choice and make the run non-interactive.
   - `--dry-run` reports the exact files, packages and reloads without changing the system.
+- **Selectable AUR helper**:
+  - The first interactive install asks whether to use `yay` or `paru`; the choice is saved in `~/.config/minflair/aur-helper` and reused later.
+  - `install.sh` and `update.sh` accept `--aur-helper yay|paru`, so the helper can be changed without editing files.
+  - The Package Manager, the update counter and the package search script read the same saved value, so AUR actions work with either helper.
+  - `MINFLAIR_AUR_HELPER` and `MINFLAIR_AUR_HELPER_FILE` override the saved value for automation and tests.
 - **Runtime gating**:
   - Theme, font and cursor appliers skip disabled components instead of writing their configuration.
   - The installer filters `packages.txt` and `packages-aur.txt` so disabled applications are not installed or updated.
@@ -41,6 +46,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - The installer now copies only enabled component paths and backs up only the files it is about to replace.
 - The update script keeps the saved selection and does not re-enable components that were disabled earlier.
+- AUR packages are installed and updated with the selected helper instead of a hardcoded `yay`.
 - The git clone path in the documentation is now `~/.minflair`, replacing the old `~/.dotfiles` path.
 - New backups are written to `~/.minflair_backup/<timestamp>/`. Backups from older versions remain in `~/.dotfiles_backup/<timestamp>/` and the restore guide covers both locations.
 - The version shown in Settings → System Information is now `2.2.0`.

@@ -8,6 +8,12 @@ import os
 import re
 import subprocess
 
+_SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
+_SHELL_DIR = os.path.dirname(os.path.dirname(os.path.dirname(_SCRIPT_DIR)))
+sys.path.insert(0, os.path.join(_SHELL_DIR, "Scripts"))
+
+import aur_helper
+
 os.environ["LC_ALL"] = "C"
 
 
@@ -81,7 +87,7 @@ def search_packages(query: str) -> list[dict]:
 
     try:
         result = subprocess.run(
-            ["yay", "-Ss", query],
+            [aur_helper.helper(), "-Ss", query],
             capture_output=True,
             text=True,
             timeout=15,
@@ -175,7 +181,9 @@ def get_updates() -> list[dict]:
 
     try:
         res = subprocess.run(
-            ["yay", "-Qua", "--color=never"], capture_output=True, text=True
+            [aur_helper.helper(), "-Qua", "--color=never"],
+            capture_output=True,
+            text=True,
         )
         if res.stdout:
             for line in res.stdout.strip().split("\n"):
@@ -269,9 +277,9 @@ def get_featured_packages(category_id: str = "featured") -> list[dict]:
         )
         installed_set = set(installed_proc.stdout.split())
 
-        # Get info for all popular packages at once using yay -Si
+        # Get info for all popular packages at once using the selected helper.
         result = subprocess.run(
-            ["yay", "-Si"] + popular_names,
+            [aur_helper.helper(), "-Si"] + popular_names,
             capture_output=True,
             text=True,
             timeout=15,

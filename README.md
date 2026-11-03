@@ -49,7 +49,9 @@ cd ~/.minflair
 
 > [!TIP]
 > On first run, the interactive selector lets you keep your own Kitty, Neovim,
-> Starship or other configuration. See [docs/INSTALL.md](docs/INSTALL.md).
+> Starship or other configuration. You can also choose `yay` or `paru` as the
+> AUR helper; the choice is used by the installer, the updater and the Package
+> Manager. See [docs/INSTALL.md](docs/INSTALL.md).
 
 ---
 

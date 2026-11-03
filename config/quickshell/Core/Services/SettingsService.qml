@@ -9,6 +9,7 @@ Item {
 
     property bool settingsLoaded: false
     property string packageManagerMode: "install"
+    property string aurHelper: "yay"
     property int clipboardMaxItems: 100
     property var enabledKbLayouts: ["us", "latam"]
     property string githubUsername: ""
@@ -84,6 +85,7 @@ Item {
     Component.onCompleted: {
         load();
         browsersProc.running = true;
+        aurHelperProc.running = true;
     }
     onClipboardMaxItemsChanged: {
         if (settingsLoaded)
@@ -454,6 +456,22 @@ fi"];
 
     Process {
         id: settingsSaver
+    }
+
+    Process {
+        id: aurHelperProc
+
+        command: ["python3", Quickshell.shellDir + "/Scripts/aur_helper.py"]
+
+        stdout: SplitParser {
+            onRead: data => {
+                let value = data.trim();
+                if (value === "yay" || value === "paru")
+                    settingsService.aurHelper = value;
+
+            }
+        }
+
     }
 
     Process {

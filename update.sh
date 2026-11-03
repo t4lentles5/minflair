@@ -9,6 +9,7 @@ DRY_RUN=0
 NO_INPUT=0
 NO_PACKAGES=0
 SELECT=0
+AUR_HELPER=""
 EXCLUDE_IDS=()
 INCLUDE_IDS=()
 ONLY_IDS=()
@@ -53,14 +54,16 @@ Selection:
   --no-input       Never prompt; use the saved preferences
 
 Behaviour:
-  --dry-run        Show what would happen without changing anything
-  --no-packages    Do not install or update packages
-  -h, --help       Show this help
+  --aur-helper NAME  Use yay or paru as the AUR helper (default: saved value)
+  --dry-run          Show what would happen without changing anything
+  --no-packages      Do not install or update packages
+  -h, --help         Show this help
 
 Examples:
   ./update.sh --dry-run
   ./update.sh --exclude nvim
   ./update.sh --include kitty
+  ./update.sh --aur-helper paru
   ./update.sh --select
 EOF
 }
@@ -70,6 +73,10 @@ EOF
   error "lib/components.sh not found. Are you running this from the Minflair repository?"
 # shellcheck source=lib/components.sh
 source "$REPO_DIR/lib/components.sh"
+# shellcheck source=lib/aur.sh
+[ -f "$REPO_DIR/lib/aur.sh" ] ||
+  error "lib/aur.sh not found. Are you running this from the Minflair repository?"
+source "$REPO_DIR/lib/aur.sh"
 # shellcheck source=lib/selector.sh
 source "$REPO_DIR/lib/selector.sh"
 
@@ -108,6 +115,15 @@ while (($#)); do
       ;;
     --no-input)
       NO_INPUT=1
+      shift
+      ;;
+    --aur-helper)
+      [[ $# -ge 2 ]] || error "--aur-helper requires yay or paru."
+      AUR_HELPER="$2"
+      shift 2
+      ;;
+    --aur-helper=*)
+      AUR_HELPER="${1#*=}"
       shift
       ;;
     --no-packages)
@@ -153,6 +169,10 @@ fi
 
 components_validate || error "The component manifest or preferences are invalid."
 
+if [[ -n "$AUR_HELPER" ]]; then
+  aur_helper_valid "$AUR_HELPER" || error "--aur-helper must be yay or paru."
+fi
+
 apply_selection_flags() {
   if ((${#ONLY_IDS[@]})); then
     validate_selection_ids "${ONLY_IDS[@]}" || error "Invalid --only list."
@@ -190,6 +210,17 @@ fi
 
 ui_section "Component selection"
 components_summary
+
+if [[ -n "$AUR_HELPER" ]]; then
+  if ((DRY_RUN)); then
+    printf '[dry-run] would save AUR helper: %s\n' "$AUR_HELPER"
+  else
+    aur_helper_set "$AUR_HELPER" || error "Could not save the AUR helper."
+    log "AUR helper set to $AUR_HELPER."
+  fi
+else
+  AUR_HELPER="$(aur_helper)"
+fi
 
 if ((DRY_RUN)); then
   log "Dry run: sudo and package changes are skipped."
@@ -254,13 +285,12 @@ else
 
   mapfile -t aur_dependencies < <(filter_package_file "$REPO_DIR/packages-aur.txt")
   if ((${#aur_dependencies[@]})); then
-    if command -v yay >/dev/null 2>&1; then
-      run yay -S --needed --noconfirm "${aur_dependencies[@]}" ||
+    if ((DRY_RUN)) || aur_helper_installed; then
+      log "Installing AUR dependencies with $AUR_HELPER..."
+      run "$AUR_HELPER" -S --needed --noconfirm "${aur_dependencies[@]}" ||
         warn "Some AUR packages could not be installed."
-    elif ((DRY_RUN)); then
-      printf '[dry-run] yay is not installed; would skip AUR packages\n'
     else
-      warn "yay is not installed, skipping AUR dependencies."
+      warn "$AUR_HELPER is not installed, skipping AUR dependencies."
     fi
   fi
 fi

@@ -10,6 +10,7 @@ NO_PACKAGES=0
 SELECT=0
 SKIP_CHSH=0
 CHSH_READY=0
+AUR_HELPER=""
 EXCLUDE_IDS=()
 INCLUDE_IDS=()
 ONLY_IDS=()
@@ -54,13 +55,15 @@ Selection:
   --no-input       Never prompt; use the saved preferences
 
 Behaviour:
-  --dry-run        Show what would happen without changing anything
-  --no-packages    Do not install or update packages
-  -h, --help       Show this help
+  --aur-helper NAME  Use yay or paru as the AUR helper (default: yay)
+  --dry-run          Show what would happen without changing anything
+  --no-packages      Do not install or update packages
+  -h, --help         Show this help
 
 Examples:
   ./install.sh --exclude kitty,nvim,starship
   ./install.sh --only quickshell,hyprland,kitty
+  ./install.sh --aur-helper paru
   ./install.sh --dry-run --exclude nvim
   ./install.sh --no-input --no-packages
 EOF
@@ -71,6 +74,10 @@ EOF
   error "lib/components.sh not found. Are you running this from the Minflair repository?"
 # shellcheck source=lib/components.sh
 source "$REPO_DIR/lib/components.sh"
+# shellcheck source=lib/aur.sh
+[ -f "$REPO_DIR/lib/aur.sh" ] ||
+  error "lib/aur.sh not found. Are you running this from the Minflair repository?"
+source "$REPO_DIR/lib/aur.sh"
 # shellcheck source=lib/selector.sh
 source "$REPO_DIR/lib/selector.sh"
 
@@ -111,6 +118,15 @@ while (($#)); do
       NO_INPUT=1
       shift
       ;;
+    --aur-helper)
+      [[ $# -ge 2 ]] || error "--aur-helper requires yay or paru."
+      AUR_HELPER="$2"
+      shift 2
+      ;;
+    --aur-helper=*)
+      AUR_HELPER="${1#*=}"
+      shift
+      ;;
     --no-packages)
       NO_PACKAGES=1
       shift
@@ -146,6 +162,10 @@ if ((DRY_RUN)); then
 fi
 
 components_validate || error "The component manifest or preferences are invalid."
+
+if [[ -n "$AUR_HELPER" ]]; then
+  aur_helper_valid "$AUR_HELPER" || error "--aur-helper must be yay or paru."
+fi
 
 apply_selection_flags() {
   if ((${#ONLY_IDS[@]})); then
@@ -200,7 +220,7 @@ ui_section "Component selection"
 components_summary
 
 # ── preflight ────────────────────────────────────────────────────────────────
-for cmd in awk grep sed cut sort mktemp; do
+for cmd in awk grep sed cut sort mktemp head; do
   command -v "$cmd" >/dev/null 2>&1 ||
     error "Missing required command: $cmd"
 done
@@ -223,23 +243,69 @@ ERROR_LOG="$HOME/install_errors.log"
 exec 3>&2
 exec 2> >(tee /dev/fd/3 | sed -u -r 's/\x1b\[[0-9;]*[mK]//g; s/\r/\n/g' | sed -u 's/^[[:space:]]*//; /^$/d' | grep --line-buffered -iE 'error|fail|warn|conflict|fatal' >>"$ERROR_LOG")
 
-# ── 1. yay ───────────────────────────────────────────────────────────────────
+# ── 1. AUR helper ────────────────────────────────────────────────────────────
 ui_section "Packages"
-if ((NO_PACKAGES)); then
-  warn "Skipping yay and package installation (--no-packages)."
-else
-  log "Installing yay (AUR helper)..."
+
+# Resolve the helper even when packages are skipped, so --aur-helper persists
+# for the package manager and future updates.
+if [[ -n "$AUR_HELPER" ]]; then
   if ((DRY_RUN)); then
-    printf '[dry-run] would install yay if it is missing\n'
-  elif ! command -v yay &>/dev/null; then
-    run sudo pacman -S --needed --noconfirm git base-devel
-    tmp=$(mktemp -d)
-    git clone https://aur.archlinux.org/yay.git "$tmp/yay"
-    (cd "$tmp/yay" && makepkg -si --noconfirm)
-    rm -rf "$tmp"
-    ok "yay installed."
+    printf '[dry-run] would save AUR helper: %s\n' "$AUR_HELPER"
   else
-    ok "yay is already installed, skipping."
+    aur_helper_set "$AUR_HELPER" || error "Could not save the AUR helper."
+    log "AUR helper set to $AUR_HELPER."
+  fi
+elif [[ -n "${MINFLAIR_AUR_HELPER:-}" ]]; then
+  AUR_HELPER="$(aur_helper)"
+  log "Using AUR helper from MINFLAIR_AUR_HELPER: $AUR_HELPER."
+elif [[ -f "$AUR_HELPER_FILE" ]]; then
+  AUR_HELPER="$(aur_helper)"
+  log "Using saved AUR helper: $AUR_HELPER."
+elif ((NO_PACKAGES)) || ((NO_INPUT)) || ((UI_TTY == 0)); then
+  AUR_HELPER="$(aur_helper)"
+  if ((!DRY_RUN)); then
+    aur_helper_set "$AUR_HELPER" || error "Could not save the AUR helper."
+  fi
+  log "Using default AUR helper: $AUR_HELPER."
+else
+  printf '\n  %sAUR helper%s\n  1) yay\n  2) paru\n' "$UI_BOLD" "$UI_RESET"
+  printf '  Choose [1/2] (default: 1): '
+  choice=""
+  read -r choice || true
+  case "$choice" in
+    2 | paru | PARU) AUR_HELPER="paru" ;;
+    1 | yay | YAY | "") AUR_HELPER="yay" ;;
+    *)
+      warn "Invalid choice; using yay."
+      AUR_HELPER="yay"
+      ;;
+  esac
+  if ((DRY_RUN)); then
+    printf '[dry-run] would save AUR helper: %s\n' "$AUR_HELPER"
+  else
+    aur_helper_set "$AUR_HELPER" || error "Could not save the AUR helper."
+    log "AUR helper set to $AUR_HELPER."
+  fi
+fi
+
+if ((NO_PACKAGES)); then
+  warn "Skipping AUR helper and package installation (--no-packages)."
+else
+  log "Installing $AUR_HELPER (AUR helper)..."
+  if ((DRY_RUN)); then
+    printf '[dry-run] would install %s if it is missing\n' "$AUR_HELPER"
+  elif ! aur_helper_installed; then
+    run sudo pacman -S --needed --noconfirm git base-devel
+    tmp="$(mktemp -d)"
+    if git clone "https://aur.archlinux.org/$AUR_HELPER.git" "$tmp/$AUR_HELPER" &&
+      (cd "$tmp/$AUR_HELPER" && makepkg -si --noconfirm); then
+      ok "$AUR_HELPER installed."
+    else
+      warn "Could not install $AUR_HELPER; AUR packages will be skipped."
+    fi
+    rm -rf "$tmp"
+  else
+    ok "$AUR_HELPER is already installed, skipping."
   fi
 
   # ── 2. official dependencies ────────────────────────────────────────────────
@@ -254,12 +320,16 @@ else
   fi
 
   # ── 3. AUR dependencies ─────────────────────────────────────────────────────
-  log "Installing AUR dependencies..."
+  log "Installing AUR dependencies with $AUR_HELPER..."
   mapfile -t aur_dependencies < <(filter_package_file "$REPO_DIR/packages-aur.txt")
   if ((${#aur_dependencies[@]})); then
-    run yay -S --needed --noconfirm "${aur_dependencies[@]}" ||
-      warn "Some AUR packages could not be installed (check the messages above)."
-    ok "AUR dependencies processed."
+    if ((DRY_RUN)) || aur_helper_installed; then
+      run "$AUR_HELPER" -S --needed --noconfirm "${aur_dependencies[@]}" ||
+        warn "Some AUR packages could not be installed (check the messages above)."
+      ok "AUR dependencies processed."
+    else
+      warn "$AUR_HELPER is not installed; skipping AUR dependencies."
+    fi
   else
     warn "No AUR packages selected."
   fi
@@ -318,7 +388,7 @@ elif [ "$IS_LAPTOP" = true ]; then
       if echo "$VENDOR" | grep -qi "acer"; then
         log "Acer laptop detected. Installing linux-headers and acer-wmi-battery-dkms..."
         sudo pacman -S --needed --noconfirm linux-headers || warn "Could not install linux-headers."
-        yay -S --needed --noconfirm acer-wmi-battery-dkms || warn "Could not install acer-wmi-battery-dkms."
+        "$AUR_HELPER" -S --needed --noconfirm acer-wmi-battery-dkms || warn "Could not install acer-wmi-battery-dkms."
       fi
 
       # Dell laptops

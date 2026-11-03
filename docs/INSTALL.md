@@ -30,6 +30,14 @@ cd ~/.minflair
 With no options and an interactive terminal, the component selector opens
 before anything is changed. This is the recommended way to install Minflair.
 
+The first interactive install also asks whether to use `yay` or `paru` as the
+AUR helper. The choice is saved in `~/.config/minflair/aur-helper` and is used
+by the installer, the updater and the Package Manager. To change it later:
+
+```bash
+./install.sh --aur-helper paru
+```
+
 ### Selector controls
 
 | Key | Action |

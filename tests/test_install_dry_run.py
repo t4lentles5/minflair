@@ -39,6 +39,7 @@ class InstallerDryRunTests(unittest.TestCase):
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertIn("--exclude", result.stdout)
             self.assertIn("--only", result.stdout)
+            self.assertIn("--aur-helper", result.stdout)
             self.assertIn("--dry-run", result.stdout)
 
     def test_install_dry_run_skips_disabled_components(self):
@@ -78,7 +79,18 @@ class InstallerDryRunTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertNotIn("pacman -S", result.stdout)
         self.assertNotIn("yay -S", result.stdout)
-        self.assertIn("Skipping yay and package installation", result.stderr)
+        self.assertNotIn("paru -S", result.stdout)
+        self.assertIn("Skipping AUR helper and package installation", result.stderr)
+
+    def test_aur_helper_flag_is_used_and_not_persisted_in_dry_run(self):
+        result = self.run_script("install.sh", "--aur-helper", "paru")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("would save AUR helper: paru", result.stdout)
+        self.assertIn("would install paru if it is missing", result.stdout)
+        self.assertIn("[dry-run] paru -S", result.stdout)
+        self.assertFalse(
+            (self.home / ".config" / "minflair" / "aur-helper").exists()
+        )
 
     def test_update_requires_an_existing_install(self):
         result = self.run_script("update.sh")
