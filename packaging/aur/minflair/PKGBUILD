@@ -1,0 +1,71 @@
+# Maintainer: t4lentles5 <t4lentles5@users.noreply.github.com>
+pkgname=minflair
+pkgver=2.2.0
+pkgrel=1
+pkgdesc="Modular, aesthetic Hyprland desktop environment powered by Quickshell"
+arch=('any')
+url="https://github.com/t4lentles5/minflair"
+license=('GPL-3.0-or-later')
+depends=(
+  'quickshell'
+  'hyprland'
+  'hypridle'
+  'hyprpicker'
+  'hyprsunset'
+  'xdg-desktop-portal-hyprland'
+  'awww'
+  'python'
+  'git'
+)
+optdepends=(
+  'zsh: Zsh configuration and default shell'
+  'zsh-autosuggestions: Zsh autosuggestions'
+  'zsh-history-substring-search: Zsh history search'
+  'zsh-syntax-highlighting: Zsh syntax highlighting'
+  'fzf-tab-git: Zsh completion menu'
+  'kitty: Terminal emulator'
+  'neovim: Text editor'
+  'starship: Shell prompt'
+  'lazygit: Git TUI'
+  'btop: System monitor'
+  'cava: Audio visualizer'
+  'fastfetch: System information'
+  'nwg-look: GTK appearance editor'
+  'papirus-icon-theme: Icon theme'
+  'tela-circle-icon-theme-dracula-git: Icon theme'
+  'qt5ct: Qt5 configuration'
+  'qt6ct: Qt6 configuration'
+  'sddm: Login manager and Minflair SDDM theme'
+  'bibata-cursor-theme-bin: Cursor theme'
+  'obsidian: Note theme synchronization'
+  'ddcutil: External monitor brightness'
+  'yay: AUR helper used by the installer'
+)
+conflicts=('minflair-git')
+install="$pkgname.install"
+source=("$pkgname-$pkgver.tar.gz::https://github.com/t4lentles5/minflair/archive/refs/tags/v$pkgver.tar.gz")
+# Run packaging/aur/update-checksum.sh after pushing the release tag. It
+# replaces SKIP with the real checksum and refreshes .SRCINFO.
+sha256sums=('SKIP')
+
+package() {
+  local _src="$srcdir/$pkgname-$pkgver"
+
+  install -dm755 "$pkgdir/usr/share/minflair"
+  cp -a \
+    "$_src/config" \
+    "$_src/home" \
+    "$_src/etc" \
+    "$_src/lib" \
+    "$_src/install.sh" \
+    "$_src/update.sh" \
+    "$_src/packages.txt" \
+    "$_src/packages-aur.txt" \
+    "$_src/README.md" \
+    "$_src/LICENSE" \
+    "$_src/CHANGELOG.md" \
+    "$_src/docs" \
+    "$pkgdir/usr/share/minflair/"
+
+  install -Dm755 "$_src/packaging/minflair" "$pkgdir/usr/bin/minflair"
+}

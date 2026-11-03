@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+# Minflair command wrapper installed by the AUR packages.
+#
+# The package ships the repository in /usr/share/minflair. This wrapper keeps
+# the user-facing commands short while still running the same install.sh and
+# update.sh used by a git clone.
+
+set -euo pipefail
+
+PREFIX="${MINFLAIR_PREFIX:-/usr/share/minflair}"
+
+usage() {
+  cat <<'EOF'
+Usage: minflair <command> [options]
+
+Commands:
+  install [options]     Deploy Minflair to ~/.config and ~/
+  update [options]      Update an existing installation
+  components [args]     Inspect or edit component preferences
+  version               Print the installed Minflair version
+  help                  Show this help
+
+Examples:
+  minflair install
+  minflair install --exclude kitty,nvim
+  minflair update --no-input
+  minflair components list
+  minflair components disable obsidian
+
+The install and update commands accept the same flags as install.sh and
+update.sh. Run them as your normal user, not as root.
+EOF
+}
+
+case "${1:-help}" in
+  install)
+    shift
+    exec "$PREFIX/install.sh" "$@"
+    ;;
+  update)
+    shift
+    exec "$PREFIX/update.sh" "$@"
+    ;;
+  components)
+    shift
+    exec python3 "$PREFIX/config/quickshell/Scripts/minflair_components.py" "$@"
+    ;;
+  version | --version | -V)
+    version="$(sed -n 's/.*appVersion: "\([^"]*\)".*/\1/p' \
+      "$PREFIX/config/quickshell/Core/Constants.qml" | head -n 1)"
+    printf '%s\n' "${version:-unknown}"
+    ;;
+  help | --help | -h)
+    usage
+    ;;
+  *)
+    printf 'Unknown command: %s\n\n' "$1" >&2
+    usage >&2
+    exit 2
+    ;;
+esac

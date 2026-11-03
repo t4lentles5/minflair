@@ -1,0 +1,77 @@
+# Maintainer: t4lentles5 <t4lentles5@users.noreply.github.com>
+pkgname=minflair-git
+pkgver=2.2.0.r0.g0
+pkgrel=1
+pkgdesc="Modular, aesthetic Hyprland desktop environment powered by Quickshell (git)"
+arch=('any')
+url="https://github.com/t4lentles5/minflair"
+license=('GPL-3.0-or-later')
+depends=(
+  'quickshell'
+  'hyprland'
+  'hypridle'
+  'hyprpicker'
+  'hyprsunset'
+  'xdg-desktop-portal-hyprland'
+  'awww'
+  'python'
+  'git'
+)
+optdepends=(
+  'zsh: Zsh configuration and default shell'
+  'zsh-autosuggestions: Zsh autosuggestions'
+  'zsh-history-substring-search: Zsh history search'
+  'zsh-syntax-highlighting: Zsh syntax highlighting'
+  'fzf-tab-git: Zsh completion menu'
+  'kitty: Terminal emulator'
+  'neovim: Text editor'
+  'starship: Shell prompt'
+  'lazygit: Git TUI'
+  'btop: System monitor'
+  'cava: Audio visualizer'
+  'fastfetch: System information'
+  'nwg-look: GTK appearance editor'
+  'papirus-icon-theme: Icon theme'
+  'tela-circle-icon-theme-dracula-git: Icon theme'
+  'qt5ct: Qt5 configuration'
+  'qt6ct: Qt6 configuration'
+  'sddm: Login manager and Minflair SDDM theme'
+  'bibata-cursor-theme-bin: Cursor theme'
+  'obsidian: Note theme synchronization'
+  'ddcutil: External monitor brightness'
+  'yay: AUR helper used by the installer'
+)
+provides=('minflair')
+conflicts=('minflair')
+install="$pkgname.install"
+source=("$pkgname::git+https://github.com/t4lentles5/minflair.git")
+sha256sums=('SKIP')
+
+pkgver() {
+  cd "$srcdir/$pkgname"
+  git describe --long --tags --abbrev=7 2>/dev/null |
+    sed 's/^v//;s/\([^-]*-g\)/r\1/;s/-/./g' ||
+    printf 'r%s.%s' "$(git rev-list --count HEAD)" "$(git rev-parse --short=7 HEAD)"
+}
+
+package() {
+  cd "$srcdir/$pkgname"
+
+  install -dm755 "$pkgdir/usr/share/minflair"
+  cp -a \
+    config \
+    home \
+    etc \
+    lib \
+    install.sh \
+    update.sh \
+    packages.txt \
+    packages-aur.txt \
+    README.md \
+    LICENSE \
+    CHANGELOG.md \
+    docs \
+    "$pkgdir/usr/share/minflair/"
+
+  install -Dm755 packaging/minflair "$pkgdir/usr/bin/minflair"
+}

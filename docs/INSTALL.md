@@ -19,6 +19,21 @@ rules.
 
 ## First install
 
+### From the AUR
+
+```bash
+yay -S minflair          # stable release
+# or: yay -S minflair-git
+minflair install
+```
+
+The package installs the repository in `/usr/share/minflair` and adds the
+`minflair` command. `minflair install` accepts the same selection flags as
+`./install.sh`. See [AUR.md](AUR.md) for package details and the maintainer
+workflow.
+
+### From git
+
 ```bash
 git clone https://github.com/t4lentles5/minflair.git
 cd minflair
@@ -43,6 +58,10 @@ Core components (`quickshell` and `hyprland`) are always enabled and cannot be
 toggled. The selection is saved to `~/.config/minflair/preferences.conf`.
 
 ## Non-interactive installs
+
+The examples below use the git checkout. If Minflair came from the AUR,
+replace `./install.sh` with `minflair install` and `./update.sh` with
+`minflair update`.
 
 ```bash
 # Disable a few applications and keep everything else
@@ -128,6 +147,15 @@ you can try a component, disable it, and your previous files stay where they
 are.
 
 ## Updating
+
+From the AUR:
+
+```bash
+yay -Syu
+minflair update
+```
+
+From a git clone:
 
 ```bash
 cd minflair

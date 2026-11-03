@@ -41,6 +41,8 @@
 
 ## 🚀 Quick Install
 
+### From git
+
 ```bash
 # Clone this repository (shallow clone to save space and time)
 git clone --depth 1 https://github.com/t4lentles5/minflair.git ~/.dotfiles
@@ -52,6 +54,18 @@ cd ~/.dotfiles
 chmod +x install.sh
 ./install.sh
 ```
+
+### From the AUR
+
+```bash
+yay -S minflair        # stable release
+# or: yay -S minflair-git
+minflair install
+```
+
+The AUR package installs the files in `/usr/share/minflair` and adds the
+`minflair` command. `minflair install` and `minflair update` accept the same
+component flags as the scripts. See [docs/AUR.md](docs/AUR.md) for details.
 
 > [!IMPORTANT]
 >
@@ -68,7 +82,14 @@ chmod +x install.sh
 
 ## 🔄 Updating
 
-Already using Minflair? Pull the latest changes and run the update script:
+Already using Minflair? From the AUR:
+
+```bash
+yay -Syu
+minflair update
+```
+
+From a git clone:
 
 ```bash
 cd ~/.dotfiles

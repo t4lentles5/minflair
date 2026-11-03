@@ -5,6 +5,42 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.0] - 2026-11-02
+
+### Added
+
+- **Component manifest and persistent preferences**:
+  - New `config/quickshell/components.tsv` manifest is the single source of truth for component ids, paths, packages, theme appliers, font targets and reload commands.
+  - Preferences are stored in `~/.config/minflair/preferences.conf` as a plain list of disabled components, so they work before Python or `jq` are available.
+  - Components are opt-out: a component is enabled unless it is listed in the preferences file. `quickshell` and `hyprland` are core and cannot be disabled.
+  - New `minflair_components.py` CLI and shared `lib/components.sh` helpers read the manifest from both the installer and the runtime scripts.
+- **Interactive component selector**:
+  - `install.sh` opens a keyboard-driven selector by default when no selection flags are passed.
+  - The selector can toggle optional components, enable everything, or cancel without changing anything.
+  - `update.sh --select` opens the same selector before updating.
+- **Selection flags for install and update**:
+  - `--exclude`, `--only`, `--include`, `--select`, `--no-input`, `--dry-run` and `--no-packages` are available in both scripts.
+  - Selection flags persist the choice and make the run non-interactive.
+  - `--dry-run` reports the exact files, packages and reloads without changing the system.
+- **Runtime gating**:
+  - Theme, font and cursor appliers skip disabled components instead of writing their configuration.
+  - The installer filters `packages.txt` and `packages-aur.txt` so disabled applications are not installed or updated.
+  - Disabled components are not copied, themed or signalled. Existing files from a disabled component are left untouched.
+  - SDDM cache writes are gated in the shell services.
+- **AUR packages**:
+  - New `minflair` package tracks release tags and `minflair-git` tracks the `main` branch.
+  - Both install the repository in `/usr/share/minflair` and provide the `minflair` command for `install`, `update`, `components` and `version`.
+  - Core packages are declared as dependencies; optional application packages are declared as optional dependencies.
+- **Documentation and CI**:
+  - New `docs/COMPONENTS.md`, `docs/INSTALL.md` and `docs/AUR.md` explain the manifest, selector, flags and packaging workflow.
+  - New GitHub Actions workflow runs the unit tests, validates the manifest, checks shell syntax and verifies the AUR metadata.
+
+### Changed
+
+- The installer now copies only enabled component paths and backs up only the files it is about to replace.
+- The update script keeps the saved selection and does not re-enable components that were disabled earlier.
+- The version shown in Settings → System Information is now `2.2.0`.
+
 ## [2.1.0] - 2026-10-28
 
 ### Added

@@ -1,0 +1,77 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - 'feat/**'
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    name: Tests and lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Python tests
+        run: python -m unittest discover -s tests -v
+
+      - name: Validate component manifest
+        run: python config/quickshell/Scripts/minflair_components.py validate --repo-root .
+
+      - name: Compile Python sources
+        run: python -m compileall -q config/quickshell/Scripts tests
+
+      - name: Bash syntax
+        run: |
+          bash -n install.sh update.sh lib/*.sh packaging/minflair
+          bash -n packaging/aur/update-checksum.sh packaging/aur/update-srcinfo.sh
+
+      - name: ShellCheck
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y shellcheck
+          shellcheck --severity=error \
+            install.sh update.sh lib/*.sh packaging/minflair \
+            packaging/aur/update-checksum.sh packaging/aur/update-srcinfo.sh
+
+  packaging:
+    name: AUR metadata
+    runs-on: ubuntu-latest
+    container: archlinux:latest
+    steps:
+      - name: Install build tools
+        run: pacman -Syu --noconfirm base-devel git python
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Prepare unprivileged builder
+        run: |
+          useradd -m builder
+          chown -R builder:builder "$GITHUB_WORKSPACE"
+
+      - name: Verify minflair .SRCINFO
+        run: |
+          su builder -c "cd '$GITHUB_WORKSPACE/packaging/aur/minflair' && makepkg --printsrcinfo > /tmp/minflair.srcinfo"
+          diff -u packaging/aur/minflair/.SRCINFO /tmp/minflair.srcinfo
+
+      - name: Verify minflair-git .SRCINFO
+        run: |
+          su builder -c "cd '$GITHUB_WORKSPACE/packaging/aur/minflair-git' && makepkg --printsrcinfo > /tmp/minflair-git.srcinfo"
+          diff -u packaging/aur/minflair-git/.SRCINFO /tmp/minflair-git.srcinfo
+
+      - name: Smoke-test the command wrapper
+        run: |
+          MINFLAIR_PREFIX="$GITHUB_WORKSPACE" ./packaging/minflair version
+          MINFLAIR_PREFIX="$GITHUB_WORKSPACE" ./packaging/minflair components list
