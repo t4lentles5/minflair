@@ -48,8 +48,10 @@ resolution, refresh rate or multi-monitor arrangement, configure:
 The installer preserves a timestamped backup of your previous configuration at:
 
 ```text
-~/.dotfiles_backup/<timestamp>/
+~/.minflair_backup/<timestamp>/
 ```
+
+Backups created by older versions remain in `~/.dotfiles_backup/<timestamp>/`.
 
 ## 6. OCR text extraction languages
 

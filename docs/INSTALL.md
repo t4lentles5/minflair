@@ -153,13 +153,18 @@ For a dry run or automation, see [ADVANCED.md](ADVANCED.md).
 
 ### Restoring a backup
 
-The updater writes backups to `~/.dotfiles_backup/<timestamp>/`. To restore
+The updater writes backups to `~/.minflair_backup/<timestamp>/`. To restore
 the files it replaced:
 
 ```bash
-cp -a ~/.dotfiles_backup/<timestamp>/config/. ~/.config/
-cp -a ~/.dotfiles_backup/<timestamp>/home/. ~/
+backup=~/.minflair_backup/<timestamp>
+[[ -d "$backup" ]] || backup=~/.dotfiles_backup/<timestamp>
+cp -a "$backup/config/." ~/.config/
+cp -a "$backup/home/." ~/
 ```
+
+The second line keeps backups made by older versions restorable: they remain
+in `~/.dotfiles_backup/<timestamp>/` and are not deleted.
 
 To preview the SDDM theme without logging out:
 
@@ -170,10 +175,11 @@ sddm-greeter --test-mode --theme /usr/share/sddm/themes/minflair-sddm
 ## Compatibility with an existing setup
 
 - Files that conflict with an enabled component are backed up to
-  `~/.dotfiles_backup/<timestamp>/` before being replaced.
+  `~/.minflair_backup/<timestamp>/` before being replaced.
 - Files that belong to disabled components are never read, copied or backed
   up by Minflair.
-- Backups are written under `~/.dotfiles_backup/<timestamp>/`.
+- Backups are written under `~/.minflair_backup/<timestamp>/`. Backups from
+  older versions stay in `~/.dotfiles_backup/<timestamp>/` and are not deleted.
 - `update.sh` preserves `~/.config/zsh/zhistory` when the `zsh` component is
   enabled.
 

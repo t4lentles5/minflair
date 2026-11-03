@@ -36,8 +36,8 @@
 
 ```bash
 # Shallow clone to save space and time
-git clone --depth 1 https://github.com/t4lentles5/minflair.git ~/.dotfiles
-cd ~/.dotfiles
+git clone --depth 1 https://github.com/t4lentles5/minflair.git ~/.minflair
+cd ~/.minflair
 ./install.sh
 ```
 
@@ -76,12 +76,15 @@ minflair update
 From a git clone:
 
 ```bash
-cd ~/.dotfiles
+cd ~/.minflair
 git pull
 ./update.sh
 ```
 
-`update.sh` backs up replaced files to `~/.dotfiles_backup/<timestamp>/`, copies
+> If you cloned Minflair before 2.2.0, the repository may still be in
+> `~/.dotfiles`. The folder name does not affect `install.sh` or `update.sh`.
+
+`update.sh` backs up replaced files to `~/.minflair_backup/<timestamp>/`, copies
 the updated configuration, installs new dependencies, refreshes the
 `minflair-sddm` theme and reloads Hyprland and Quickshell.
 

@@ -45,6 +45,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - The installer now copies only enabled component paths and backs up only the files it is about to replace.
 - The update script keeps the saved selection and does not re-enable components that were disabled earlier.
+- The git clone path in the documentation is now `~/.minflair`, replacing the old `~/.dotfiles` path.
+- New backups are written to `~/.minflair_backup/<timestamp>/`. Backups from older versions remain in `~/.dotfiles_backup/<timestamp>/` and the restore guide covers both locations.
 - The version shown in Settings → System Information is now `2.2.0`.
 
 ## [2.1.0] - 2026-10-28
@@ -90,7 +92,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added full-tile click interaction, hover animations, and improved click handling for inactive tiles in `QuickSettingsTile`.
   - Unified gaming bar dimensions through a shared `gamingBarHeight` constant and added the app version to Settings → System Information.
 - **Configuration Update Script (`update.sh`)**:
-  - New updater for existing installations: backs up replaced files to `~/.dotfiles_backup/<timestamp>/`, syncs `config/` and `home/` (preserving Zsh history), installs new dependencies, refreshes the `minflair-sddm` theme without root-owned Git repositories, and reloads Hyprland and Quickshell.
+  - New updater for existing installations: backs up replaced files to `~/.minflair_backup/<timestamp>/`, syncs `config/` and `home/` (preserving Zsh history), installs new dependencies, refreshes the `minflair-sddm` theme without root-owned Git repositories, and reloads Hyprland and Quickshell.
 
 ### Changed
 

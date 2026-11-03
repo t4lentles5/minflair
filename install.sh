@@ -3,7 +3,7 @@
 set -e
 
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-BACKUP_DIR="$HOME/.dotfiles_backup/$(date +%Y%m%d_%H%M%S)"
+BACKUP_DIR="$HOME/.minflair_backup/$(date +%Y%m%d_%H%M%S)"
 DRY_RUN=0
 NO_INPUT=0
 NO_PACKAGES=0

@@ -60,6 +60,7 @@ class InstallerDryRunTests(unittest.TestCase):
             self.assertNotIn(f" {package} ", f" {package_line} ")
         self.assertIn(" hyprland ", f" {package_line} ")
         self.assertFalse((self.home / ".config").exists())
+        self.assertFalse((self.home / ".minflair_backup").exists())
         self.assertFalse((self.home / ".dotfiles_backup").exists())
 
     def test_non_tty_output_is_plain_text(self):
@@ -89,6 +90,7 @@ class InstallerDryRunTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("would copy config/kitty", result.stdout)
         self.assertNotIn("would copy config/nvim", result.stdout)
+        self.assertFalse((self.home / ".minflair_backup").exists())
         self.assertFalse((self.home / ".dotfiles_backup").exists())
 
 
