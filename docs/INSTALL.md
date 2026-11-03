@@ -14,8 +14,8 @@ rules.
 - A normal user account. `install.sh` and `update.sh` refuse to run as root.
 - `git`, `base-devel` and `pacman`. The installer bootstraps `yay` when it is
   missing.
-- An interactive terminal for the selector. Non-interactive runs use the saved
-  preferences and are fully supported with `--no-input`.
+- An interactive terminal for the selector. Automation and non-interactive
+  usage are documented in [ADVANCED.md](ADVANCED.md).
 
 ## First install
 
@@ -28,8 +28,7 @@ minflair install
 ```
 
 The package installs the repository in `/usr/share/minflair` and adds the
-`minflair` command. `minflair install` accepts the same selection flags as
-`./install.sh`. See [AUR.md](AUR.md) for package details and the maintainer
+`minflair` command. See [AUR.md](AUR.md) for package details and the maintainer
 workflow.
 
 ### From git
@@ -41,7 +40,7 @@ cd minflair
 ```
 
 With no options and an interactive terminal, the component selector opens
-before anything is changed.
+before anything is changed. This is the recommended way to install Minflair.
 
 ### Selector controls
 
@@ -57,58 +56,28 @@ before anything is changed.
 Core components (`quickshell` and `hyprland`) are always enabled and cannot be
 toggled. The selection is saved to `~/.config/minflair/preferences.conf`.
 
-## Non-interactive installs
+## Change the selection later
 
-The examples below use the git checkout. If Minflair came from the AUR,
-replace `./install.sh` with `minflair install` and `./update.sh` with
-`minflair update`.
+The selector is the recommended way to change components:
 
 ```bash
-# Disable a few applications and keep everything else
-./install.sh --exclude kitty,nvim,starship
+./install.sh --select
+# AUR: minflair install --select
+```
 
-# Install only the core shell plus Kitty and Zsh
-./install.sh --only quickshell,hyprland,kitty,zsh
+To disable or re-enable a specific component without opening the selector:
 
-# Re-enable components that were disabled before
+```bash
+# Keep everything except Kitty and Neovim
+./install.sh --exclude kitty,nvim
+
+# Re-enable Kitty
 ./install.sh --include kitty
-
-# Use the saved preferences, never prompt
-./install.sh --no-input
-
-# Show the full plan without changing the system
-./install.sh --dry-run
-
-# Install configuration only; do not touch packages
-./install.sh --no-packages
 ```
 
-Flags can be combined and repeated:
-
-```bash
-./install.sh --exclude kitty --exclude nvim --no-input
-./install.sh --exclude=kitty,nvim --dry-run
-```
-
-`--exclude` and `--only` persist the selection. `--include` removes ids from
-the disabled list. If both `--only` and `--exclude` are given, `--exclude` is
-applied last and wins.
-
-Selection flags make the run non-interactive. Add `--select` if you want to
-review the resulting selection in the selector before continuing.
-
-### Flag reference
-
-| Flag | Effect |
-| --- | --- |
-| `--exclude IDS` | Disable the listed components and save the preference. |
-| `--only IDS` | Enable only the listed optional components (core is always on). |
-| `--include IDS` | Re-enable the listed components. |
-| `--select` | Open the interactive selector. |
-| `--no-input` | Never prompt; use the saved preferences. |
-| `--dry-run` | Print every action without writing files or running package changes. |
-| `--no-packages` | Skip `pacman`/`yay`; useful for configuration-only installs. |
-| `--help` | Show the built-in help. |
+`--exclude` and `--include` persist the choice. For `--only`, `--dry-run`,
+`--no-input`, `--no-packages` and the complete flag reference, see
+[ADVANCED.md](ADVANCED.md).
 
 ## Preferences
 
@@ -173,8 +142,9 @@ To change the selection during an update:
 ./update.sh --select
 ./update.sh --exclude nvim
 ./update.sh --include kitty
-./update.sh --dry-run
 ```
+
+For a dry run or automation, see [ADVANCED.md](ADVANCED.md).
 
 ### Restoring a backup
 
@@ -192,26 +162,6 @@ To preview the SDDM theme without logging out:
 sddm-greeter --test-mode --theme /usr/share/sddm/themes/minflair-sddm
 ```
 
-## Dry run
-
-`--dry-run` writes preferences to a temporary file, prints every copy, backup,
-package and reload action, and exits without changing the system. It is the
-recommended way to check a selection before applying it:
-
-```bash
-./install.sh --dry-run --only quickshell,hyprland,kitty,zsh
-./update.sh --dry-run --exclude nvim
-```
-
-## Configuration only
-
-`--no-packages` skips all package operations. This is useful when the packages
-are already installed or managed by another tool.
-
-If the `chsh` component is enabled and `zsh` is missing, the installer prints a
-warning and skips the login shell change instead of failing. The same applies
-to a missing `yay`: AUR packages are skipped with a warning.
-
 ## Compatibility with an existing setup
 
 - Files that conflict with an enabled component are backed up to
@@ -225,7 +175,8 @@ to a missing `yay`: AUR packages are skipped with a warning.
 ## Troubleshooting
 
 **The selector does not appear.** It needs an interactive terminal. Run
-`./install.sh --select` from a terminal, or pass `--exclude`/`--only`.
+`./install.sh --select` from a terminal. If the terminal is not interactive,
+use `--exclude`/`--include` or see [ADVANCED.md](ADVANCED.md).
 
 **A component I disabled is still themed.** Check that the preference file
 contains the component id and re-run `./update.sh`. Files already written by an

@@ -36,6 +36,9 @@ minflair install --dry-run
 minflair update --no-input
 ```
 
+See [ADVANCED.md](ADVANCED.md) for the complete flag reference and automation
+recipes.
+
 Run these commands as your normal user. `install.sh` and `update.sh` refuse to
 run as root and ask for `sudo` only when they need it.
 
