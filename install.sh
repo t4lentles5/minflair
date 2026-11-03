@@ -14,19 +14,29 @@ EXCLUDE_IDS=()
 INCLUDE_IDS=()
 ONLY_IDS=()
 
-CYAN='\033[0;36m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-RED='\033[0;31m'
-NC='\033[0m'
+# ── shared UI helpers ────────────────────────────────────────────────────────
+[ -f "$REPO_DIR/lib/ui.sh" ] ||
+  { printf '[ERROR] lib/ui.sh not found. Are you running this from the Minflair repository?\n' >&2; exit 1; }
+# shellcheck source=lib/ui.sh
+source "$REPO_DIR/lib/ui.sh"
+ui_init
 
-log() { echo -e "${CYAN}[INFO]${NC} $1"; }
-ok() { echo -e "${GREEN}[OK]${NC} $1"; }
-warn() { echo -e "${YELLOW}[WARN]${NC} $1" >&2; }
-error() {
-  echo -e "${RED}[ERROR]${NC} $1" >&2
-  exit 1
+cleanup() {
+  if [[ -n "${DRY_PREFS:-}" ]]; then
+    rm -f "$DRY_PREFS"
+  fi
+  if [[ -n "${TMP_DIR:-}" ]]; then
+    rm -rf "$TMP_DIR"
+  fi
+  ui_cleanup
 }
+trap cleanup EXIT
+trap 'cleanup; exit 130' INT TERM
+
+log() { ui_info "$1"; }
+ok() { ui_ok "$1"; }
+warn() { ui_warn "$1"; }
+error() { ui_error "$1"; }
 
 usage() {
   cat <<'EOF'
@@ -123,6 +133,8 @@ if [ "$(id -u)" -eq 0 ]; then
   error "Run install.sh as your normal user, not as root."
 fi
 
+ui_header "Minflair installer" "Version $(minflair_version)"
+
 # In dry-run mode preferences are written to a temporary copy so the simulated
 # selection is accurate and the real file is never touched.
 if ((DRY_RUN)); then
@@ -131,7 +143,6 @@ if ((DRY_RUN)); then
     cp "$PREFS_FILE" "$DRY_PREFS"
   fi
   PREFS_FILE="$DRY_PREFS"
-  trap 'rm -f "$DRY_PREFS"' EXIT
 fi
 
 components_validate || error "The component manifest or preferences are invalid."
@@ -185,8 +196,8 @@ else
   fi
 fi
 
-log "Component selection:"
-components_list
+ui_section "Component selection"
+components_summary
 
 # ── preflight ────────────────────────────────────────────────────────────────
 for cmd in awk grep sed cut sort mktemp; do
@@ -213,6 +224,7 @@ exec 3>&2
 exec 2> >(tee /dev/fd/3 | sed -u -r 's/\x1b\[[0-9;]*[mK]//g; s/\r/\n/g' | sed -u 's/^[[:space:]]*//; /^$/d' | grep --line-buffered -iE 'error|fail|warn|conflict|fatal' >>"$ERROR_LOG")
 
 # ── 1. yay ───────────────────────────────────────────────────────────────────
+ui_section "Packages"
 if ((NO_PACKAGES)); then
   warn "Skipping yay and package installation (--no-packages)."
 else
@@ -254,6 +266,7 @@ else
 fi
 
 # ── 3.1. DDC/CI brightness (external monitors) ───────────────────────────────
+ui_section "System integration"
 if component_enabled ddc; then
   log "Configuring DDC/CI brightness support for external monitors..."
   if ((DRY_RUN)); then
@@ -326,6 +339,7 @@ else
 fi
 
 # ── 4. backup & copy dotfiles ─────────────────────────────────────────────────
+ui_section "Dotfiles"
 log "Backing up existing dotfiles to $BACKUP_DIR ..."
 if ((!DRY_RUN)); then
   mkdir -p "$BACKUP_DIR"
@@ -338,6 +352,7 @@ copy_enabled_paths
 ok "Enabled component files copied."
 
 # ── 5. apply GTK theme via gsettings ──────────────────────────────────────────
+ui_section "Theme and desktop"
 if component_enabled gtk; then
   log "Installing Material-Gnome theme..."
   if ((DRY_RUN)); then
@@ -495,6 +510,7 @@ else
 fi
 
 # ── 10. Enable system services ────────────────────────────────────────────────
+ui_section "Services"
 if ! component_enabled services; then
   log "Skipping system services (services component disabled)."
 else
@@ -515,27 +531,28 @@ run_reloads --non-core
 
 if ((DRY_RUN)); then
   echo ""
-  ok "Dry run complete. No files or packages were changed."
+  ui_done "Dry run complete. No files or packages were changed."
   log "Preferences that would be used: $PREFS_FILE"
+  ui_section "Selection preview"
+  components_summary
   exit 0
 fi
 
 echo ""
-echo -e "${GREEN}╔══════════════════════════════════════════╗${NC}"
-echo -e "${GREEN}║  Installation completed successfully     ║${NC}"
-echo -e "${GREEN}╚══════════════════════════════════════════╝${NC}"
+ui_section "Installation complete"
+ui_ok "Backup saved at: $BACKUP_DIR"
+components_summary
 echo ""
-log "Backup saved at: $BACKUP_DIR"
+ui_info "Next steps:"
+printf '  1. Reboot to apply every change.\n'
+printf '  2. Add wallpapers and review docs/SETUP.md.\n'
+printf '  3. Pull new changes and run ./update.sh when needed.\n'
 echo ""
 if ((NO_INPUT)); then
-  warn "Please remember to reboot your computer later for all changes to take effect."
+  ui_warn "Please remember to reboot later for all changes to take effect."
+elif ui_confirm "Reboot now?" n; then
+  log "Rebooting system..."
+  sudo reboot
 else
-  read -p "$(echo -e "${YELLOW}[?] Do you want to reboot now? [y/N] ${NC}")" -n 1 -r
-  echo
-  if [[ $REPLY =~ ^[Yy]$ ]]; then
-    log "Rebooting system..."
-    sudo reboot
-  else
-    warn "Please remember to reboot your computer later for all changes to take effect."
-  fi
+  ui_warn "Please remember to reboot later for all changes to take effect."
 fi

@@ -62,6 +62,14 @@ class InstallerDryRunTests(unittest.TestCase):
         self.assertFalse((self.home / ".config").exists())
         self.assertFalse((self.home / ".dotfiles_backup").exists())
 
+    def test_non_tty_output_is_plain_text(self):
+        result = self.run_script("install.sh", "--no-packages")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("Minflair installer", result.stdout)
+        self.assertIn("Enabled (", result.stdout)
+        self.assertNotIn("\x1b[", result.stdout)
+        self.assertNotIn("\x1b[", result.stderr)
+
     def test_no_packages_skips_package_commands(self):
         result = self.run_script("install.sh", "--no-packages")
         self.assertEqual(result.returncode, 0, result.stderr)

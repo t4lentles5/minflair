@@ -13,19 +13,29 @@ EXCLUDE_IDS=()
 INCLUDE_IDS=()
 ONLY_IDS=()
 
-CYAN='\033[0;36m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-RED='\033[0;31m'
-NC='\033[0m'
+# ── shared UI helpers ────────────────────────────────────────────────────────
+[ -f "$REPO_DIR/lib/ui.sh" ] ||
+  { printf '[ERROR] lib/ui.sh not found. Are you running this from the Minflair repository?\n' >&2; exit 1; }
+# shellcheck source=lib/ui.sh
+source "$REPO_DIR/lib/ui.sh"
+ui_init
 
-log() { echo -e "${CYAN}[INFO]${NC} $1"; }
-ok() { echo -e "${GREEN}[OK]${NC} $1"; }
-warn() { echo -e "${YELLOW}[WARN]${NC} $1" >&2; }
-error() {
-  echo -e "${RED}[ERROR]${NC} $1" >&2
-  exit 1
+cleanup() {
+  if [[ -n "${DRY_PREFS:-}" ]]; then
+    rm -f "$DRY_PREFS"
+  fi
+  if [[ -n "${TMP_DIR:-}" ]]; then
+    rm -rf "$TMP_DIR"
+  fi
+  ui_cleanup
 }
+trap cleanup EXIT
+trap 'cleanup; exit 130' INT TERM
+
+log() { ui_info "$1"; }
+ok() { ui_ok "$1"; }
+warn() { ui_warn "$1"; }
+error() { ui_error "$1"; }
 
 usage() {
   cat <<'EOF'
@@ -122,6 +132,8 @@ if [ "$(id -u)" -eq 0 ]; then
   error "Run update.sh as your normal user, not as root."
 fi
 
+ui_header "Minflair updater" "Version $(minflair_version)"
+
 cd "$REPO_DIR"
 
 [ -f "$REPO_DIR/packages.txt" ] || error "packages.txt not found. Are you running this from the Minflair repository?"
@@ -137,7 +149,6 @@ if ((DRY_RUN)); then
     cp "$PREFS_FILE" "$DRY_PREFS"
   fi
   PREFS_FILE="$DRY_PREFS"
-  trap 'rm -f "$DRY_PREFS"' EXIT
 fi
 
 components_validate || error "The component manifest or preferences are invalid."
@@ -177,8 +188,8 @@ if ((SELECT && !NO_INPUT)); then
   fi
 fi
 
-log "Component selection:"
-components_list
+ui_section "Component selection"
+components_summary
 
 if ((DRY_RUN)); then
   log "Dry run: sudo and package changes are skipped."
@@ -187,6 +198,7 @@ else
 fi
 
 # ── 1. backup ─────────────────────────────────────────────────────────────────
+ui_section "Backup"
 log "Backing up the files that will be replaced to $BACKUP_DIR ..."
 if ((!DRY_RUN)); then
   mkdir -p "$BACKUP_DIR"
@@ -213,6 +225,7 @@ fi
 ok "Backup saved."
 
 # ── 2. copy configuration ─────────────────────────────────────────────────────
+ui_section "Dotfiles"
 log "Copying enabled components to ~/.config and ~/ ..."
 copy_enabled_paths
 
@@ -228,6 +241,7 @@ fi
 ok "Configuration updated."
 
 # ── 3. dependencies ───────────────────────────────────────────────────────────
+ui_section "Packages"
 if ((NO_PACKAGES)); then
   warn "Skipping package updates (--no-packages)."
 else
@@ -280,6 +294,7 @@ else
 fi
 
 # ── 4. SDDM theme ─────────────────────────────────────────────────────────────
+ui_section "Theme and desktop"
 # The theme is cloned as the user and deployed as plain files, so /usr/share
 # never contains a root-owned git repository (no dubious ownership prompts).
 if ! component_enabled sddm; then
@@ -291,7 +306,6 @@ elif ((DRY_RUN)); then
 else
   log "Updating SDDM theme (minflair-sddm)..."
   TMP_DIR="$(mktemp -d)"
-  trap 'rm -rf "$TMP_DIR"' EXIT
 
   git clone --depth 1 https://github.com/t4lentles5/tokyo-night-sddm.git "$TMP_DIR/theme" ||
     error "Failed to clone the SDDM theme."
@@ -312,6 +326,7 @@ else
 fi
 
 # ── 5. reapply theme & reload ─────────────────────────────────────────────────
+ui_section "Reload"
 if [ -f "$HOME/.cache/quickshell/colorscheme.json" ]; then
   log "Reapplying theme..."
   if ((DRY_RUN)); then
@@ -329,8 +344,10 @@ run_reloads --non-core
 
 if ((DRY_RUN)); then
   echo ""
-  ok "Dry run complete. No files or packages were changed."
+  ui_done "Dry run complete. No files or packages were changed."
   log "Preferences that would be used: $PREFS_FILE"
+  ui_section "Selection preview"
+  components_summary
   exit 0
 fi
 
@@ -347,5 +364,10 @@ else
 fi
 
 echo ""
-ok "Update completed."
-log "Backup saved at: $BACKUP_DIR"
+ui_section "Update complete"
+ui_ok "Backup saved at: $BACKUP_DIR"
+components_summary
+echo ""
+ui_info "Next steps:"
+printf '  1. Restart your session if the reload was skipped.\n'
+printf '  2. Review docs/SETUP.md after major updates.\n'

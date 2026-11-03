@@ -78,10 +78,12 @@ a fresh Arch installation where Python is not available yet.
 
 `lib/selector.sh` provides the interactive selector. It reads the manifest with
 `awk`, so it also works before any package is installed. The selector writes
-the same preferences file that the runtime scripts read.
+the same preferences file that the runtime scripts read. `lib/ui.sh` provides
+the shared headers, sections and status helpers used by the selector, installer
+and updater.
 
-See [INSTALL.md](INSTALL.md) for the selector controls, installer flags and
-examples.
+See [INSTALL.md](INSTALL.md) for the selector controls and common flows, and
+[ADVANCED.md](ADVANCED.md) for non-interactive flags and automation.
 
 ## Runtime gating
 

@@ -50,11 +50,16 @@ before anything is changed. This is the recommended way to install Minflair.
 | `Down` / `j` | Move down |
 | `Space` | Enable or disable the highlighted component |
 | `a` | Enable every optional component |
-| `Enter` | Confirm the selection |
+| `n` | Disable every optional component |
+| `/` | Search by id or description |
+| `Esc` | Clear the search |
+| `Enter` | Review the selection and continue |
 | `q` | Cancel without changing anything |
 
 Core components (`quickshell` and `hyprland`) are always enabled and cannot be
-toggled. The selection is saved to `~/.config/minflair/preferences.conf`.
+toggled. On wide terminals the selector shows a description panel next to the
+list. `Enter` opens a review screen with the components that will be installed
+and skipped; preferences are saved only after you confirm.
 
 ## Change the selection later
 

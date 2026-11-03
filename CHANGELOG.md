@@ -16,8 +16,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - New `minflair_components.py` CLI and shared `lib/components.sh` helpers read the manifest from both the installer and the runtime scripts.
 - **Interactive component selector**:
   - `install.sh` opens a keyboard-driven selector by default when no selection flags are passed.
-  - The selector can toggle optional components, enable everything, or cancel without changing anything.
+  - The selector can toggle optional components, enable everything, disable everything, search by id or description, and cancel without changing anything.
+  - Wide terminals show a two-pane layout with the description of the highlighted component.
+  - `Enter` opens a review screen; preferences are saved only after confirmation.
   - `update.sh --select` opens the same selector before updating.
+- **Installer and updater UI**:
+  - New `lib/ui.sh` centralizes headers, sections, status symbols, confirmation prompts and terminal size detection.
+  - Output falls back to plain text when there is no TTY, no color support or `TERM=dumb`.
+  - The final summary lists the enabled and skipped components, the backup location and the next steps.
 - **Selection flags for install and update**:
   - `--exclude`, `--only`, `--include`, `--select`, `--no-input`, `--dry-run` and `--no-packages` are available in both scripts.
   - Selection flags persist the choice and make the run non-interactive.
