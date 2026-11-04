@@ -24,6 +24,8 @@ Item {
     property real barConvexWidth: 220
     property real barConvexHeight: Constants.size4Xl
     property var activeTrayItem: null
+    property bool activeTrayItemPinned: false
+    readonly property var trayItems: SystemTray.items
     property bool hasActiveNotification: false
     property real activeNotificationWidth: 0
     property real activeNotificationHeight: 0
@@ -36,7 +38,17 @@ Item {
         const idx = parseInt(activeWidget.split("_")[1]);
         return isNaN(idx) ? -1 : idx;
     }
-    readonly property var resolvedTrayItem: activeTrayItem || trayItemAt(activeTrayIndex)
+    readonly property var resolvedTrayItem: {
+        if (isTrayItemPresent(activeTrayItem))
+            return activeTrayItem;
+
+        // The pinned item was destroyed (its application quit). Do not fall
+        // back to the index: it now points at a different tray item.
+        if (activeTrayItemPinned)
+            return null;
+
+        return trayItemAt(activeTrayIndex);
+    }
 
     signal toggleWidget(string widgetId)
     signal openWidget(string widgetId)
@@ -75,6 +87,67 @@ Item {
             return items[index];
 
         return null;
+    }
+
+    function isTrayItemValid(item) {
+        if (!item)
+            return false;
+
+        try {
+            return item.id !== undefined;
+        } catch (e) {
+            return false;
+        }
+    }
+
+    function isTrayItemPresent(item) {
+        if (!isTrayItemValid(item))
+            return false;
+
+        const items = SystemTray.items;
+        if (!items)
+            return false;
+
+        const list = items.values ? items.values : items;
+        for (let i = 0; i < list.length; i++) {
+            if (list[i] === item)
+                return true;
+
+        }
+        return false;
+    }
+
+    function validateTrayWidgets() {
+        let ids = [];
+        for (let i = 0; i < activeWidgetsList.length; i++) {
+            const id = activeWidgetsList[i];
+            if (id && id.startsWith("systemTray_"))
+                ids.push(id);
+
+        }
+        if (activeWidget && activeWidget.startsWith("systemTray_") && ids.indexOf(activeWidget) === -1)
+            ids.push(activeWidget);
+
+        if (ids.length === 0) {
+            // Drop a stale pin left by an item that died while its menu was
+            // already closed (e.g. another widget replaced it).
+            if (activeTrayItemPinned && !isTrayItemPresent(activeTrayItem))
+                activeTrayItemPinned = false;
+
+            return ;
+        }
+        if (activeTrayItemPinned) {
+            if (!isTrayItemPresent(activeTrayItem)) {
+                for (let i = 0; i < ids.length; i++) closeWidget(ids[i])
+            }
+            return ;
+        }
+        for (let i = 0; i < ids.length; i++) {
+            const idx = parseInt(ids[i].split("_")[1]);
+            if (isNaN(idx) || !trayItemAt(idx))
+                closeWidget(ids[i]);
+
+        }
     }
 
     function trayTitle(item) {
@@ -132,9 +205,10 @@ Item {
         if (!widgetId)
             return ;
 
-        if (widgetId.startsWith("systemTray_") || activeWidget === widgetId)
+        if (widgetId.startsWith("systemTray_") || activeWidget === widgetId) {
             activeTrayItem = null;
-
+            activeTrayItemPinned = false;
+        }
         let idx = activeWidgetsList.indexOf(widgetId);
         if (idx !== -1) {
             let next = activeWidgetsList.slice();
@@ -148,6 +222,7 @@ Item {
 
     function closeAllWidgets() {
         activeTrayItem = null;
+        activeTrayItemPinned = false;
         activeWidgetsList = [];
         activeWidget = "";
     }
@@ -156,6 +231,16 @@ Item {
         if (!widgetId || isStandaloneWindow(widgetId))
             return ;
 
+        // Opening a tray widget by index (IPC/keybind) has no item reference
+        // yet. Pin the current item so closing its application also closes
+        // the menu instead of showing whichever item takes over the index.
+        if (widgetId.startsWith("systemTray_") && !isTrayItemValid(activeTrayItem)) {
+            const index = parseInt(widgetId.split("_")[1]);
+            const item = isNaN(index) ? null : trayItemAt(index);
+            if (item)
+                activeTrayItem = item;
+
+        }
         let slot = getSlot(widgetId);
         // Rule 1: Focus widgets close each other, but do NOT close bar widgets
         if (slot === "focus") {
@@ -202,6 +287,11 @@ Item {
             openWidgetInternal(widgetId);
     }
 
+    onActiveTrayItemChanged: {
+        if (isTrayItemValid(activeTrayItem))
+            activeTrayItemPinned = true;
+
+    }
     onActiveWidgetChanged: {
         if (activeWidget === "") {
             let next = [];
@@ -226,4 +316,13 @@ Item {
     onOpenWidget: (widgetId) => {
         openWidgetInternal(widgetId);
     }
+
+    Connections {
+        function onValuesChanged() {
+            appState.validateTrayWidgets();
+        }
+
+        target: appState.trayItems
+    }
+
 }

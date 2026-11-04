@@ -61,8 +61,8 @@ PanelWindow {
         if (!isTray)
             return null;
 
-        if (AppState.activeTrayItem)
-            return AppState.activeTrayItem;
+        if (AppState.activeTrayItemPinned)
+            return AppState.resolvedTrayItem;
 
         return getTrayItem(activeTrayIndex);
     }
