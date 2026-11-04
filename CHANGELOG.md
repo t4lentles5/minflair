@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.2.0] - 2026-11-02
+## [2.2.0] - 2026-11-04
 
 ### Added
 
@@ -33,6 +33,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `install.sh` and `update.sh` accept `--aur-helper yay|paru`, so the helper can be changed without editing files.
   - The Package Manager, the update counter and the package search script read the same saved value, so AUR actions work with either helper.
   - `MINFLAIR_AUR_HELPER` and `MINFLAIR_AUR_HELPER_FILE` override the saved value for automation and tests.
+- **DDC/CI brightness for external monitors**:
+  - New `Scripts/system/brightness.sh` helper uses `brightnessctl` for internal panels and falls back to `ddcutil` over DDC/CI for external monitors.
+  - The helper caches the detected backend, the buses and the last value in `$XDG_RUNTIME_DIR`, serializes bus access with `flock` and skips detection for 30 seconds when no display supports DDC/CI.
+  - `BrightnessSlider` and the Hyprland brightness keybinds share the helper, so the keys and the slider stay in sync.
+  - `install.sh` and `update.sh` install `ddcutil`, load `i2c-dev` on boot and add the user to the `i2c` group.
+- **System tray item pinning**:
+  - Pinned tray items are validated against the live `SystemTray` list in `AppState`.
+  - When a pinned application quits, the stale pin is dropped instead of falling back to an index that now points at a different tray item.
 - **Runtime gating**:
   - Theme, font and cursor appliers skip disabled components instead of writing their configuration.
   - The installer filters `packages.txt` and `packages-aur.txt` so disabled applications are not installed or updated.
@@ -40,6 +48,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - SDDM cache writes are gated in the shell services.
 - **Documentation and CI**:
   - New `docs/COMPONENTS.md` and `docs/INSTALL.md` explain the manifest, selector and flags.
+  - The README now links to dedicated setup, advanced usage and troubleshooting guides (`docs/SETUP.md`, `docs/ADVANCED.md`, `docs/TROUBLESHOOTING.md`).
   - New GitHub Actions workflow runs the unit tests, validates the manifest and checks shell syntax.
 
 ### Changed
@@ -50,6 +59,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The git clone path in the documentation is now `~/.minflair`, replacing the old `~/.dotfiles` path.
 - New backups are written to `~/.minflair_backup/<timestamp>/`. Backups from older versions remain in `~/.dotfiles_backup/<timestamp>/` and the restore guide covers both locations.
 - The version shown in Settings → System Information is now `2.2.0`.
+
+### Fixed
+
+- **Caps Lock and Num Lock OSD bindings**: the Hyprland bindings now use `ignore_mods = true`. Hyprland reports both keys as their own modifiers and adds them to the event mask, so the bindings never matched before.
+- **Stuck notification toasts**: `BaseNotifLayer` now has a fallback timer that removes notifications when the closing animation never completes.
 
 ## [2.1.0] - 2026-10-28
 
