@@ -9,6 +9,7 @@
 </a>
 
 <br />
+<br />
 
 <img src="./assets/preview.webp" alt="Preview" />
 
@@ -82,12 +83,12 @@ the updated configuration, installs new dependencies, refreshes the
 
 ## 📚 Documentation
 
-| Guide | Contents |
-| --- | --- |
-| [Install and update](docs/INSTALL.md) | Selector, preferences and partial adoption |
-| [Advanced usage](docs/ADVANCED.md) | Non-interactive flags, dry runs and automation |
-| [Components](docs/COMPONENTS.md) | Manifest format and runtime gating |
-| [Post-installation setup](docs/SETUP.md) | Avatar, wallpapers, monitors, OCR and DDC/CI |
+| Guide                                      | Contents                                           |
+| ------------------------------------------ | -------------------------------------------------- |
+| [Install and update](docs/INSTALL.md)      | Selector, preferences and partial adoption         |
+| [Advanced usage](docs/ADVANCED.md)         | Non-interactive flags, dry runs and automation     |
+| [Components](docs/COMPONENTS.md)           | Manifest format and runtime gating                 |
+| [Post-installation setup](docs/SETUP.md)   | Avatar, wallpapers, monitors, OCR and DDC/CI       |
 | [Troubleshooting](docs/TROUBLESHOOTING.md) | Logs, brightness, notifications and install errors |
 
 ---
