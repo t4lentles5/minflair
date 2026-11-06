@@ -93,13 +93,19 @@ setopt COMPLETE_IN_WORD    # Complete from both ends of a word.
 #  ┌─┐┬  ┬ ┬┌─┐┬┌┐┌┌─┐
 #  ├─┘│  │ ││ ┬││││└─┐
 #  ┴  ┴─┘└─┘└─┘┴┘└┘└─┘
-source /usr/share/zsh/plugins/fzf-tab-git/fzf-tab.zsh
-source /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh
-source /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
-source /usr/share/zsh/plugins/zsh-history-substring-search/zsh-history-substring-search.zsh
+for _minflair_plugin in \
+  /usr/share/zsh/plugins/fzf-tab-git/fzf-tab.zsh \
+  /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh \
+  /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh \
+  /usr/share/zsh/plugins/zsh-history-substring-search/zsh-history-substring-search.zsh; do
+  [[ -r "$_minflair_plugin" ]] && source "$_minflair_plugin"
+done
+unset _minflair_plugin
 
-bindkey '^[[A' history-substring-search-up
-bindkey '^[[B' history-substring-search-down
+if (( $+widgets[history-substring-search-up] )); then
+  bindkey '^[[A' history-substring-search-up
+  bindkey '^[[B' history-substring-search-down
+fi
 bindkey '^[[3~' delete-char
 bindkey "^[[H" beginning-of-line
 bindkey "^[[F" end-of-line
@@ -131,17 +137,45 @@ alias ls='eza --icons=always --color=always -a'
 alias ll='eza --icons=always --color=always -la'
 alias clear='command clear; unset _NEW_LINE_BEFORE_PROMPT'
 alias cls='clear'
-alias fastfetch='command clear && fastfetch'
-alias update='sudo pacman -Syu --noconfirm && yay -Syu --noconfirm'
+if command -v fastfetch >/dev/null 2>&1; then
+  alias fastfetch='command clear && fastfetch'
+fi
+
+_minflair_update() {
+  sudo pacman -Syu --noconfirm || return
+  local helper
+  helper="$(head -n 1 "$HOME/.config/minflair/aur-helper" 2>/dev/null)"
+  if [[ "$helper" != "yay" && "$helper" != "paru" ]]; then
+    if command -v paru >/dev/null 2>&1; then
+      helper="paru"
+    elif command -v yay >/dev/null 2>&1; then
+      helper="yay"
+    else
+      return 0
+    fi
+  fi
+  command "$helper" -Syu --noconfirm
+}
+alias update='_minflair_update'
 
 #  ┌─┐┬ ┬┌┬┐┌─┐  ┌─┐┌┬┐┌─┐┬─┐┌┬┐
 #  ├─┤│ │ │ │ │  └─┐ │ ├─┤├┬┘ │ 
 #  ┴ ┴└─┘ ┴ └─┘  └─┘ ┴ ┴ ┴┴└─ ┴ 
 
 export STARSHIP_CONFIG="$HOME/.config/starship/starship.toml"
-eval "$(starship init zsh)"
-eval "$(fnm env --use-on-cd --shell zsh)"
-eval "$(zoxide init zsh)"
+if command -v starship >/dev/null 2>&1; then
+  eval "$(starship init zsh)"
+else
+  PROMPT='%n@%m %~ %# '
+fi
+
+if command -v fnm >/dev/null 2>&1; then
+  eval "$(fnm env --use-on-cd --shell zsh)"
+fi
+
+if command -v zoxide >/dev/null 2>&1; then
+  eval "$(zoxide init zsh)"
+fi
 
 # Add an empty line before each prompt, except the first one
 function add_newline_precmd() {

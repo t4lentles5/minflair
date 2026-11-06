@@ -109,6 +109,14 @@ selector_run() {
       printf '  %sSkipped (0)%s: none\n\n' "$UI_BOLD" "$UI_RESET"
     fi
 
+    if [[ "${selected[zsh]:-0}" == "1" ]]; then
+      printf '  %sNote:%s zsh will be set as your login shell.\n' "$UI_BOLD" "$UI_RESET"
+      if [[ "${selected[starship]:-0}" != "1" ]]; then
+        printf '  %sNote:%s Starship is disabled; zsh will use a basic prompt.\n' "$UI_BOLD" "$UI_RESET"
+      fi
+      printf '\n'
+    fi
+
     ui_show_cursor
     if ui_confirm "Apply this selection?" y; then
       local -a enabled_ids=()

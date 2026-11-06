@@ -109,7 +109,7 @@ class BashComponentTests(unittest.TestCase):
             "components_summary", prefs="kitty\nnvim\n"
         )
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertIn("Enabled (19):", result.stdout)
+        self.assertIn("Enabled (18):", result.stdout)
         self.assertIn("Quickshell shell", result.stdout)
         self.assertIn("Skipped (2):", result.stdout)
         self.assertIn("Kitty terminal", result.stdout)
@@ -144,6 +144,35 @@ class BashComponentTests(unittest.TestCase):
         result = self.run_bash("components_validate", prefs="does-not-exist\n")
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("unknown component", result.stderr)
+
+    def test_old_chsh_preference_is_a_warning(self):
+        result = self.run_bash("components_validate", prefs="chsh\n")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("part of zsh", result.stderr)
+
+    def test_zsh_login_shell_dry_run_prints_chsh(self):
+        bin_dir = self.home / "bin"
+        bin_dir.mkdir()
+        zsh = bin_dir / "zsh"
+        zsh.write_text("#!/bin/sh\n", encoding="utf-8")
+        zsh.chmod(0o755)
+        result = self.run_bash(
+            f'PATH="{bin_dir}:$PATH"\n'
+            "DRY_RUN=1\n"
+            "USER=test\n"
+            "getent() { echo 'test:x:1000:1000::/home/test:/bin/bash'; }\n"
+            "ensure_zsh_login_shell"
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("sudo chsh -s", result.stdout)
+        self.assertIn(str(zsh), result.stdout)
+
+    def test_zsh_login_shell_requires_zsh(self):
+        result = self.run_bash(
+            "PATH=/nonexistent\nensure_zsh_login_shell"
+        )
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("zsh is not installed", result.stderr)
 
     def test_core_component_cannot_be_disabled(self):
         result = self.run_bash("validate_disable_ids quickshell")

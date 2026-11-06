@@ -59,11 +59,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The git clone path in the documentation is now `~/.minflair`, replacing the old `~/.dotfiles` path.
 - New backups are written to `~/.minflair_backup/<timestamp>/`. Backups from older versions remain in `~/.dotfiles_backup/<timestamp>/` and the restore guide covers both locations.
 - The version shown in Settings → System Information is now `2.2.0`.
+- The `chsh` component is now part of `zsh`: selecting zsh also sets it as the login shell, and old `chsh` preferences are ignored with a warning.
 
 ### Fixed
 
 - **Caps Lock and Num Lock OSD bindings**: the Hyprland bindings now use `ignore_mods = true`. Hyprland reports both keys as their own modifiers and adds them to the event mask, so the bindings never matched before.
 - **Stuck notification toasts**: `BaseNotifLayer` now has a fallback timer that removes notifications when the closing animation never completes.
+- **zsh startup without optional components**: zsh now falls back to a basic prompt when Starship is disabled and skips missing plugins instead of printing `command not found`.
+- **`update` alias with paru**: the zsh alias now reads the selected AUR helper instead of always calling `yay`.
 
 ## [2.1.0] - 2026-10-28
 

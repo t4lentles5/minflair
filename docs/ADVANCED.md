@@ -81,9 +81,10 @@ installed and which reload commands would run.
 `--no-packages` skips all package operations. This is useful when the packages
 are already installed or managed by another tool.
 
-If the `chsh` component is enabled and `zsh` is missing, the installer prints a
-warning and skips the login shell change instead of failing. The same applies
-to a missing `yay`: AUR packages are skipped with a warning.
+The `zsh` component also sets zsh as the login shell. If zsh is missing (for
+example when using `--no-packages`), the installer prints a warning and skips
+the login shell change instead of failing. The same applies to a missing
+`yay`: AUR packages are skipped with a warning.
 
 ## Automation recipes
 

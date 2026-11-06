@@ -21,11 +21,15 @@ class ManifestTests(unittest.TestCase):
         self.manifest = components.load_manifest(MANIFEST)
 
     def test_ids_are_unique(self):
-        self.assertEqual(len(self.manifest), 21)
+        self.assertEqual(len(self.manifest), 20)
 
     def test_core_components_are_expected(self):
         core = {c.id for c in self.manifest.values() if c.core}
         self.assertEqual(core, {"quickshell", "hyprland"})
+
+    def test_chsh_is_folded_into_zsh(self):
+        self.assertNotIn("chsh", self.manifest)
+        self.assertIn("login shell", self.manifest["zsh"].description.lower())
 
     def test_every_config_directory_is_mapped_once(self):
         mapped = {}
@@ -131,6 +135,14 @@ class PreferenceTests(unittest.TestCase):
             self.manifest, repo_root=REPO_ROOT, disabled=disabled
         )
         self.assertTrue(any("does-not-exist" in warning for warning in warnings))
+
+    def test_old_chsh_preference_is_reported_as_migrated(self):
+        self.prefs.write_text("chsh\n", encoding="utf-8")
+        disabled = components.load_disabled(self.prefs)
+        warnings = components.validate(
+            self.manifest, repo_root=REPO_ROOT, disabled=disabled
+        )
+        self.assertTrue(any("part of zsh" in warning for warning in warnings))
 
     def test_write_and_read_roundtrip(self):
         components.write_disabled(["kitty", "starship"], self.prefs)

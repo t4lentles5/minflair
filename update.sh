@@ -210,6 +210,12 @@ fi
 
 ui_section "Component selection"
 components_summary
+if component_enabled zsh; then
+  log "zsh will be set as your login shell."
+  if ! component_enabled starship; then
+    warn "Starship is disabled; zsh will use a basic prompt."
+  fi
+fi
 
 if [[ -n "$AUR_HELPER" ]]; then
   if ((DRY_RUN)); then
@@ -295,7 +301,19 @@ else
   fi
 fi
 
-# ── 3.1. DDC/CI brightness (external monitors) ───────────────────────────────
+# ── 3.1. zsh login shell ─────────────────────────────────────────────────────
+if ! component_enabled zsh; then
+  log "Skipping zsh login shell (zsh component disabled)."
+else
+  log "Checking zsh login shell..."
+  if ensure_zsh_login_shell; then
+    ok "zsh is the default shell."
+  else
+    warn "Could not set zsh as the default shell. Run: sudo chsh -s $(command -v zsh || echo zsh) ${USER:-$(id -un)}"
+  fi
+fi
+
+# ── 3.2. DDC/CI brightness (external monitors) ───────────────────────────────
 if component_enabled ddc; then
   log "Configuring DDC/CI brightness support for external monitors..."
   if ((DRY_RUN)); then

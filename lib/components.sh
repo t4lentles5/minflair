@@ -304,7 +304,11 @@ components_validate() {
   # blocking an update after a component is renamed or removed.
   while IFS= read -r id; do
     if ! component_exists "$id"; then
-      printf 'warning: preferences contain an unknown component: %s\n' "$id" >&2
+      if [[ "$id" == "chsh" ]]; then
+        printf 'warning: chsh is now part of zsh; ignoring the old preference\n' >&2
+      else
+        printf 'warning: preferences contain an unknown component: %s\n' "$id" >&2
+      fi
     elif component_core "$id"; then
       printf 'warning: preferences contain a core component: %s\n' "$id" >&2
     fi
@@ -490,6 +494,33 @@ run_reloads() {
       bash -c "$reload" >/dev/null 2>&1 || true
     fi
   done < <(component_reloads "$mode")
+}
+
+# zsh is the only supported login shell. Keep the change in one place so the
+# installer and the updater behave the same way.
+ensure_zsh_login_shell() {
+  local zsh_path current user
+  zsh_path="$(command -v zsh 2>/dev/null || true)"
+  if [[ -z "$zsh_path" ]]; then
+    printf 'zsh is not installed; skipping the login shell change.\n' >&2
+    return 1
+  fi
+
+  user="${USER:-$(id -un)}"
+  current="$(getent passwd "$user" 2>/dev/null | cut -d: -f7)"
+  if [[ -z "$current" ]]; then
+    current="${SHELL:-}"
+  fi
+  if [[ "$(basename "$current")" == "zsh" ]]; then
+    return 0
+  fi
+
+  if (( DRY_RUN )); then
+    printf '[dry-run] would run sudo chsh -s %s %s\n' "$zsh_path" "$user"
+    return 0
+  fi
+
+  sudo chsh -s "$zsh_path" "$user"
 }
 
 append_csv() {

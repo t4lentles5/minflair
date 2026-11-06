@@ -57,6 +57,9 @@ toggled. On wide terminals the selector shows a description panel next to the
 list. `Enter` opens a review screen with the components that will be installed
 and skipped; preferences are saved only after you confirm.
 
+The `zsh` component includes the login shell change: selecting it sets zsh as
+your default shell. If Starship is disabled, zsh falls back to a basic prompt.
+
 ## Change the selection later
 
 The selector is the recommended way to change components:

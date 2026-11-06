@@ -8,8 +8,6 @@ DRY_RUN=0
 NO_INPUT=0
 NO_PACKAGES=0
 SELECT=0
-SKIP_CHSH=0
-CHSH_READY=0
 AUR_HELPER=""
 EXCLUDE_IDS=()
 INCLUDE_IDS=()
@@ -218,6 +216,12 @@ fi
 
 ui_section "Component selection"
 components_summary
+if component_enabled zsh; then
+  log "zsh will be set as your login shell."
+  if ! component_enabled starship; then
+    warn "Starship is disabled; zsh will use a basic prompt."
+  fi
+fi
 
 # ── preflight ────────────────────────────────────────────────────────────────
 for cmd in awk grep sed cut sort mktemp head; do
@@ -535,31 +539,15 @@ else
   ok "dunst is not installed, no conflicts."
 fi
 
-# ── 8. zsh shell ──────────────────────────────────────────────────────────────
-if ! component_enabled chsh; then
-  log "Skipping login shell change (chsh component disabled)."
-elif command -v zsh >/dev/null 2>&1; then
-  CHSH_READY=1
-elif ((NO_PACKAGES)); then
-  warn "zsh is not installed and --no-packages is set; skipping the login shell change."
-  SKIP_CHSH=1
+# ── 8. zsh login shell ────────────────────────────────────────────────────────
+if ! component_enabled zsh; then
+  log "Skipping zsh login shell (zsh component disabled)."
 else
-  log "Installing zsh for the login shell change..."
-  run sudo pacman -S --needed --noconfirm zsh || warn "Could not install zsh."
-  if ((DRY_RUN)) || command -v zsh >/dev/null 2>&1; then
-    CHSH_READY=1
-  fi
-fi
-
-if component_enabled chsh && ((!SKIP_CHSH)) && ((CHSH_READY)); then
-  log "Setting zsh as default shell..."
-  if ((DRY_RUN)); then
-    printf '[dry-run] would run chsh -s %s\n' "$(command -v zsh || echo zsh)"
-  elif [ "$SHELL" != "$(command -v zsh)" ]; then
-    chsh -s "$(command -v zsh)" || error "Could not change shell to zsh. Run manually: chsh -s \$(which zsh)"
-    ok "Shell changed to zsh."
+  log "Setting zsh as the default shell..."
+  if ensure_zsh_login_shell; then
+    ok "zsh is the default shell."
   else
-    ok "zsh is already the default shell."
+    warn "Could not set zsh as the default shell. Run: sudo chsh -s $(command -v zsh || echo zsh) ${USER:-$(id -un)}"
   fi
 fi
 

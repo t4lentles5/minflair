@@ -4,8 +4,7 @@
 id	label	category	core	paths	packages	theme	font	reload	description
 quickshell	Quickshell shell	core	1	config/quickshell	quickshell				Core shell, bar and widgets
 hyprland	Hyprland	core	1	config/hypr	hyprland,hypridle,hyprpicker,hyprsunset,xdg-desktop-portal-hyprland,awww	hyprland		hyprctl reload	Hyprland configuration, colors and keybinds
-zsh	Zsh configuration	terminal	0	config/zsh,home/.zshrc	zsh,zsh-autosuggestions,zsh-history-substring-search,zsh-syntax-highlighting,fzf-tab-git				Zsh configuration and .zshrc
-chsh	Change default shell	terminal	0						Change the login shell to zsh (requires zsh)
+zsh	Zsh shell	terminal	0	config/zsh,home/.zshrc	zsh,zsh-autosuggestions,zsh-history-substring-search,zsh-syntax-highlighting,fzf-tab-git				Zsh configuration, .zshrc and login shell
 kitty	Kitty terminal	terminal	0	config/kitty	kitty	kitty	kitty	killall -USR1 kitty	Terminal, colors, font and live reload
 nvim	Neovim	terminal	0	config/nvim	neovim	nvim			Neovim configuration and theme
 starship	Starship prompt	terminal	0	config/starship	starship	starship			Prompt theme
