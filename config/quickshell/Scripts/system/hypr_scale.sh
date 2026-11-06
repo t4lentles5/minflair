@@ -1,13 +1,6 @@
 #!/bin/bash
-SCALE="${1:-1}"
-TARGET_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/hypr/monitors.lua"
-mkdir -p "$(dirname "$TARGET_FILE")"
-
-cat <<EOL >"$TARGET_FILE"
-hl.monitor({
-  output = "",
-  mode = "preferred",
-  position = "auto",
-  scale = "$SCALE",
-})
-EOL
+# Hyprland applies monitors.lua on every reload, so writing the scale there
+# would wipe the per-monitor mode chosen in Settings. Delegate to the helper
+# that stores overrides in monitors_user.lua instead.
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+exec python3 "$SCRIPT_DIR/hypr_monitors.py" set-scale "${1:-1}"
