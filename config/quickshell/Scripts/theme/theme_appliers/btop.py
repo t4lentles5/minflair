@@ -65,3 +65,9 @@ theme[upload_end]="{sanitize_color(accentComplementary)}"
         os.system(
             f"sed -i 's/^color_theme = .*/color_theme = \"quickshell\"/' '{btop_conf}'"
         )
+    else:
+        # btop writes its own btop.conf on first run with the default theme, so
+        # the generated theme would never be selected. Seed a minimal config
+        # that points at it; btop fills in the remaining defaults itself.
+        with open(btop_conf, "w") as f2:
+            f2.write('color_theme = "quickshell"\n')
