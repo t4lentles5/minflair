@@ -12,6 +12,8 @@ MINFLAIR_COMPONENTS_SH=1
 MANIFEST="${MINFLAIR_MANIFEST:-$REPO_DIR/config/quickshell/components.tsv}"
 PREFS_FILE="${MINFLAIR_PREFS:-$HOME/.config/minflair/preferences.conf}"
 DRY_RUN="${DRY_RUN:-0}"
+GTK_THEME_URL="${MINFLAIR_GTK_THEME_URL:-https://github.com/t4lentles5/material-gnome-theme.git}"
+GTK_THEME_DIR="${MINFLAIR_GTK_THEME_DIR:-$HOME/.themes/Material-Gnome}"
 
 # Read the version from the Quickshell constants so the installer, the updater
 # and the selector always show the same value.
@@ -22,6 +24,62 @@ minflair_version() {
   else
     printf 'unknown'
   fi
+}
+
+_gtk_css_is_valid() {
+  local css="$1" size
+  [[ -f "$css" ]] || return 1
+  size="$(wc -c <"$css" 2>/dev/null || printf '0')"
+  if ! [[ "$size" =~ ^[0-9]+$ ]] || (( size <= 1024 )); then
+    return 1
+  fi
+  grep -q 'colors.css' "$css" || return 1
+  return 0
+}
+
+# The GTK applier writes colors.css but relies on the Material-Gnome theme's
+# gtk.css importing it. An empty or missing gtk.css makes the palette useless
+# (GTK falls back to Adwaita while dark/light still changes via gsettings).
+# gtk.py also links gtk-4.0/gtk-dark.css, so a theme missing it loses the
+# palette in dark mode only.
+gtk_theme_valid() {
+  local theme_dir="${1:-$GTK_THEME_DIR}"
+  _gtk_css_is_valid "$theme_dir/gtk-3.0/gtk.css" || return 1
+  _gtk_css_is_valid "$theme_dir/gtk-4.0/gtk.css" || return 1
+  _gtk_css_is_valid "$theme_dir/gtk-4.0/gtk-dark.css" || return 1
+  return 0
+}
+
+# /etc/sddm.conf points SDDM at a theme directory. Writing it after a failed
+# clone leaves the login screen pointing at files that do not exist.
+sddm_theme_ready() {
+  local theme_dir="${1:-${SDDM_THEME_DIR:-/usr/share/sddm/themes/minflair-sddm}}"
+  [[ -f "$theme_dir/theme.conf" ]]
+}
+
+# Install or repair the theme used by the GTK applier. The clone goes to a
+# temporary directory first, so a failed download never destroys an existing
+# installation.
+ensure_gtk_theme() {
+  local theme_dir="${1:-$GTK_THEME_DIR}" url="${2:-$GTK_THEME_URL}" tmp
+  if gtk_theme_valid "$theme_dir"; then
+    return 0
+  fi
+  if (( DRY_RUN )); then
+    printf '[dry-run] would install Material-Gnome into %s\n' "$theme_dir"
+    return 0
+  fi
+  mkdir -p "$(dirname "$theme_dir")" || return 1
+  tmp="$(mktemp -d "${theme_dir}.tmp.XXXXXX")" || return 1
+  if git clone --depth 1 "$url" "$tmp/theme"; then
+    rm -rf "$theme_dir"
+    mv "$tmp/theme" "$theme_dir"
+    rm -rf "$tmp"
+    return 0
+  fi
+  rm -rf "$tmp"
+  printf 'Could not clone the Material-Gnome theme from %s.\n' "$url" >&2
+  return 1
 }
 
 manifest_rows() {

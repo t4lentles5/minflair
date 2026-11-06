@@ -429,14 +429,10 @@ ok "Enabled component files copied."
 ui_section "Theme and desktop"
 if component_enabled gtk; then
   log "Installing Material-Gnome theme..."
-  if ((DRY_RUN)); then
-    printf '[dry-run] would install Material-Gnome theme if missing\n'
-  elif [ ! -d "$HOME/.themes/Material-Gnome" ]; then
-    mkdir -p "$HOME/.themes"
-    git clone https://github.com/t4lentles5/material-gnome-theme.git "$HOME/.themes/Material-Gnome"
-    ok "Material-Gnome theme installed."
+  if ensure_gtk_theme; then
+    ok "Material-Gnome theme is ready."
   else
-    ok "Material-Gnome theme already installed."
+    warn "Could not install the Material-Gnome theme; GTK colors may not apply."
   fi
 
   log "Applying GTK theme..."
@@ -499,7 +495,9 @@ else
     fi
   fi
 
-  if [ -f "$REPO_DIR/etc/sddm.conf" ]; then
+  if ! sddm_theme_ready "$SDDM_THEME_DIR"; then
+    warn "SDDM theme files are missing; keeping the current /etc/sddm.conf."
+  elif [ -f "$REPO_DIR/etc/sddm.conf" ]; then
     if [ -f /etc/sddm.conf ]; then
       cp /etc/sddm.conf "$BACKUP_DIR/sddm.conf.bak"
       ok "Existing /etc/sddm.conf backed up."

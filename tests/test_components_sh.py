@@ -44,6 +44,60 @@ class BashComponentTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(result.stdout.strip(), "Core shell, bar and widgets")
 
+    def test_gtk_theme_valid_accepts_a_complete_theme(self):
+        theme = self.home / ".themes" / "Material-Gnome"
+        for gtk_ver in ("gtk-3.0", "gtk-4.0"):
+            directory = theme / gtk_ver
+            directory.mkdir(parents=True)
+            (directory / "gtk.css").write_text(
+                '@import url("colors.css");\n' + ("x" * 1100),
+                encoding="utf-8",
+            )
+        (theme / "gtk-4.0" / "gtk-dark.css").write_text(
+            '@import url("colors.css");\n' + ("x" * 1100),
+            encoding="utf-8",
+        )
+        result = self.run_bash("gtk_theme_valid")
+        self.assertEqual(result.returncode, 0, result.stderr)
+
+    def test_gtk_theme_valid_rejects_empty_theme(self):
+        theme = self.home / ".themes" / "Material-Gnome"
+        for gtk_ver in ("gtk-3.0", "gtk-4.0"):
+            (theme / gtk_ver).mkdir(parents=True)
+        (theme / "gtk-3.0" / "gtk.css").write_text("", encoding="utf-8")
+        result = self.run_bash("gtk_theme_valid")
+        self.assertNotEqual(result.returncode, 0)
+
+    def test_gtk_theme_valid_rejects_a_missing_dark_variant(self):
+        theme = self.home / ".themes" / "Material-Gnome"
+        for gtk_ver in ("gtk-3.0", "gtk-4.0"):
+            directory = theme / gtk_ver
+            directory.mkdir(parents=True)
+            (directory / "gtk.css").write_text(
+                '@import url("colors.css");\n' + ("x" * 1100),
+                encoding="utf-8",
+            )
+        result = self.run_bash("gtk_theme_valid")
+        self.assertNotEqual(result.returncode, 0)
+
+    def test_sddm_theme_ready_requires_theme_conf(self):
+        theme = self.home / "sddm-theme"
+        theme.mkdir()
+        missing = self.run_bash(f'sddm_theme_ready "{theme}"')
+        self.assertNotEqual(missing.returncode, 0)
+        (theme / "theme.conf").write_text("[General]\n", encoding="utf-8")
+        present = self.run_bash(f'sddm_theme_ready "{theme}"')
+        self.assertEqual(present.returncode, 0, present.stderr)
+
+    def test_ensure_gtk_theme_repairs_an_empty_theme_in_dry_run(self):
+        theme = self.home / ".themes" / "Material-Gnome"
+        for gtk_ver in ("gtk-3.0", "gtk-4.0"):
+            (theme / gtk_ver).mkdir(parents=True)
+        (theme / "gtk-3.0" / "gtk.css").write_text("", encoding="utf-8")
+        result = self.run_bash("DRY_RUN=1\nensure_gtk_theme")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("would install Material-Gnome", result.stdout)
+
     def test_enabled_paths_skip_disabled_components(self):
         result = self.run_bash(
             "component_paths --enabled", prefs="kitty\nnvim\n"

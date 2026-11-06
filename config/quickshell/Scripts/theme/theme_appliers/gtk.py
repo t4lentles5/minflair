@@ -86,14 +86,14 @@ def apply(home, colors):
     gtk4_colors = ":root {\n"
     for k, v in mapping.items():
         gtk4_colors += f"  --{k}: {sanitize_color(v)};\n"
-    gtk4_colors += "}\n\nselection,\n:selected {\n  background-color: var(--accent);\n  color: var(--bg);\n}\n"
+    gtk4_colors += "}\n\nselection,\n:selected {\n  background-color: var(--accent);\n  color: var(--background);\n}\n"
     gtk4_colors += "\n.background,\niconview:not(:selected),\n.view:not(:selected) {\n  color: var(--on_surface);\n}\n"
 
     gtk3_colors = ""
     for k, v in mapping.items():
         gtk3_colors += f"@define-color {k} {sanitize_color(v)};\n"
     gtk3_colors += (
-        "\nselection,\n:selected {\n  background-color: @accent;\n  color: @bg;\n}\n"
+        "\nselection,\n:selected {\n  background-color: @accent;\n  color: @background;\n}\n"
     )
     gtk3_colors += "\n.background,\niconview:not(:selected),\n.view:not(:selected) {\n  color: @on_surface;\n}\n"
 
@@ -109,24 +109,17 @@ def apply(home, colors):
         f.write(gtk3_colors)
 
     def safe_symlink(src, dst):
+        # Never replace a real file with a dangling link. The theme clone can
+        # be missing (for example when gtk was enabled after the install), and
+        # an empty theme would silently discard the generated palette.
         try:
+            if not os.path.isfile(src) or os.path.getsize(src) == 0:
+                return
             if os.path.islink(dst) or os.path.exists(dst):
                 os.remove(dst)
             os.symlink(src, dst)
         except OSError:
             pass
-
-    def safe_touch(path):
-        try:
-            with open(path, "a"):
-                pass
-        except OSError:
-            pass
-
-    safe_touch(os.path.join(theme_dir, "gtk-3.0", "gtk.css"))
-    safe_touch(os.path.join(theme_dir, "gtk-3.0", "gtk-dark.css"))
-    safe_touch(os.path.join(home, ".config", "gtk-4.0", "gtk.css"))
-    safe_touch(os.path.join(home, ".config", "gtk-4.0", "gtk-dark.css"))
 
     safe_symlink(
         os.path.join(theme_dir, "gtk-3.0", "gtk.css"),
