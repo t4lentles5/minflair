@@ -341,10 +341,87 @@ else
   log "Skipping DDC/CI support (ddc component disabled)."
 fi
 
-# ── 4. SDDM theme ─────────────────────────────────────────────────────────────
+# ── 3.3. Laptop battery charge limit ─────────────────────────────────────────
+# install.sh provisions this on a fresh system. An update must do the same so
+# enabling the battery component later still creates the sudoers rule and the
+# vendor packages the toggle script needs.
+if ! component_enabled battery; then
+  log "Skipping battery management (battery component disabled)."
+else
+  VENDOR="$(cat /sys/class/dmi/id/sys_vendor 2>/dev/null || true)"
+  CHASSIS="$(cat /sys/class/dmi/id/chassis_type 2>/dev/null || true)"
+  IS_LAPTOP=false
+  if [[ "$CHASSIS" =~ ^(8|9|10|14|30|31|32)$ ]] ||
+    [ -d /sys/class/power_supply/BAT0 ] ||
+    [ -d /sys/class/power_supply/BAT1 ] ||
+    [ -d /sys/class/power_supply/BAT ]; then
+    IS_LAPTOP=true
+  fi
+
+  if [ "$IS_LAPTOP" != true ]; then
+    log "No laptop battery detected, skipping battery management."
+  elif ((DRY_RUN)); then
+    printf '[dry-run] would configure battery management for %s\n' "${VENDOR:-Generic}"
+  else
+    if ((NO_PACKAGES)); then
+      warn "Skipping vendor battery packages (--no-packages)."
+    else
+      if echo "$VENDOR" | grep -qi "acer"; then
+        log "Acer laptop detected. Installing linux-headers and acer-wmi-battery-dkms..."
+        sudo pacman -S --needed --noconfirm linux-headers || warn "Could not install linux-headers."
+        "$AUR_HELPER" -S --needed --noconfirm acer-wmi-battery-dkms ||
+          warn "Could not install acer-wmi-battery-dkms."
+      fi
+
+      if echo "$VENDOR" | grep -qi "dell"; then
+        log "Dell laptop detected. Installing libsmbios for battery management support..."
+        sudo pacman -S --needed --noconfirm libsmbios || warn "Could not install libsmbios."
+      fi
+    fi
+
+    log "Configuring sudoers for battery charge limit script..."
+    echo "$USER ALL=(ALL) NOPASSWD: $HOME/.config/quickshell/Scripts/system/toggle_battery_limit.sh" |
+      sudo tee /etc/sudoers.d/quickshell-battery >/dev/null
+    sudo chmod 0440 /etc/sudoers.d/quickshell-battery
+    ok "Battery charge limit support and sudoers configured."
+  fi
+fi
+
+# ── 3.4. Node.js LTS via fnm ─────────────────────────────────────────────────
+if ((NO_PACKAGES)); then
+  log "Skipping Node.js update (--no-packages)."
+elif ((DRY_RUN)); then
+  printf '[dry-run] would install Node.js LTS with fnm\n'
+elif command -v fnm &>/dev/null; then
+  log "Installing Node.js LTS with fnm..."
+  export FNM_DIR="${FNM_DIR:-$HOME/.local/share/fnm}"
+  eval "$(fnm env)"
+  fnm install --lts || warn "Could not install Node.js LTS."
+  fnm use lts-latest || warn "Could not activate Node.js LTS."
+  ok "Node.js LTS installed: $(node --version 2>/dev/null || echo 'restart your terminal to activate it')."
+else
+  warn "fnm not found in PATH. Make sure ~/.local/bin is in your PATH and re-run."
+fi
+
+# ── 4. Themes ───────────────────────────────────────────────────────────────
 ui_section "Theme and desktop"
-# The theme is cloned as the user and deployed as plain files, so /usr/share
-# never contains a root-owned git repository (no dubious ownership prompts).
+# Reinstalling or enabling the gtk component after the initial install must
+# still provision the theme, otherwise gtk.py has no gtk.css to import its
+# generated colors.css from.
+if component_enabled gtk; then
+  log "Installing Material-Gnome theme..."
+  if ensure_gtk_theme; then
+    ok "Material-Gnome theme is ready."
+  else
+    warn "Could not install the Material-Gnome theme; GTK colors may not apply."
+  fi
+else
+  log "Skipping GTK theme (gtk component disabled)."
+fi
+
+# The SDDM theme is cloned as the user and deployed as plain files, so
+# /usr/share never contains a root-owned git repository (no dubious ownership
+# prompts).
 if ! component_enabled sddm; then
   log "Skipping SDDM theme (sddm component disabled)."
 elif ! command -v sddm >/dev/null 2>&1; then
@@ -364,13 +441,75 @@ else
   sudo rm -rf "$SDDM_THEME_DIR/.git"
   sudo chown -R root:root "$SDDM_THEME_DIR"
 
-  if [ -f "$REPO_DIR/etc/sddm.conf" ]; then
+  if ! sddm_theme_ready "$SDDM_THEME_DIR"; then
+    warn "SDDM theme files are missing; keeping the current /etc/sddm.conf."
+  elif [ -f "$REPO_DIR/etc/sddm.conf" ]; then
     sudo cp "$REPO_DIR/etc/sddm.conf" /etc/sddm.conf
   else
     warn "etc/sddm.conf not found in repo, keeping the current SDDM configuration."
   fi
 
   ok "SDDM theme updated."
+fi
+
+# ── 4.1. dunst notifications ─────────────────────────────────────────────────
+# The dunst component means "disable dunst". install.sh only handles it on a
+# fresh install, so an update must mask it when enabled and restore it when the
+# component is disabled again.
+DUNST_DBUS_SERVICE="/usr/share/dbus-1/services/org.knopwob.dunst.service"
+if ((DRY_RUN)); then
+  if component_enabled dunst; then
+    printf '[dry-run] would mask dunst and disable its D-Bus activation\n'
+  else
+    printf '[dry-run] would restore dunst\n'
+  fi
+elif component_enabled dunst; then
+  if command -v dunst &>/dev/null; then
+    log "Disabling dunst (notifications are managed by QuickShell)..."
+    killall dunst 2>/dev/null && ok "Stopped running dunst process." || true
+    systemctl --user mask dunst.service 2>/dev/null &&
+      ok "dunst.service masked." ||
+      warn "Could not mask dunst.service (may not exist as a systemd service)."
+    if [ -f "$DUNST_DBUS_SERVICE" ]; then
+      if sudo mv "$DUNST_DBUS_SERVICE" "${DUNST_DBUS_SERVICE}.disabled"; then
+        ok "dunst D-Bus activation disabled."
+      else
+        warn "Could not disable the dunst D-Bus activation."
+      fi
+    fi
+    ok "dunst disabled - QuickShell will handle notifications."
+  else
+    ok "dunst is not installed, no conflicts."
+  fi
+else
+  log "Restoring dunst (dunst component disabled)..."
+  systemctl --user unmask dunst.service 2>/dev/null || true
+  if [ -f "${DUNST_DBUS_SERVICE}.disabled" ]; then
+    if sudo mv "${DUNST_DBUS_SERVICE}.disabled" "$DUNST_DBUS_SERVICE"; then
+      ok "dunst D-Bus activation restored."
+    else
+      warn "Could not restore the dunst D-Bus activation."
+    fi
+  fi
+  ok "dunst restored."
+fi
+
+# ── 4.2. system services ─────────────────────────────────────────────────────
+if ! component_enabled services; then
+  log "Skipping system services (services component disabled)."
+elif ((DRY_RUN)); then
+  printf '[dry-run] would enable NetworkManager, bluetooth and power-profiles-daemon\n'
+else
+  log "Checking and enabling system services (NetworkManager, bluetooth, power-profiles-daemon)..."
+  for svc in NetworkManager.service bluetooth.service power-profiles-daemon.service; do
+    if ! systemctl is-enabled --quiet "$svc" 2>/dev/null ||
+      ! systemctl is-active --quiet "$svc" 2>/dev/null; then
+      log "Enabling and starting $svc..."
+      run sudo systemctl enable --now "$svc" || warn "Failed to enable $svc."
+    else
+      ok "$svc is already enabled and running."
+    fi
+  done
 fi
 
 # ── 5. reapply theme & reload ─────────────────────────────────────────────────

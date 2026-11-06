@@ -107,6 +107,50 @@ class InstallerDryRunTests(unittest.TestCase):
         self.assertFalse((self.home / ".minflair_backup").exists())
         self.assertFalse((self.home / ".dotfiles_backup").exists())
 
+    def test_update_dry_run_ensures_the_gtk_theme(self):
+        (self.home / ".config" / "quickshell").mkdir(parents=True)
+        result = self.run_script("update.sh")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("would install Material-Gnome into", result.stdout)
+
+    def test_update_dry_run_skips_the_gtk_theme_when_disabled(self):
+        (self.home / ".config" / "quickshell").mkdir(parents=True)
+        self.prefs.write_text("gtk\n", encoding="utf-8")
+        result = self.run_script("update.sh")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("Skipping GTK theme", result.stdout)
+        self.assertNotIn("would install Material-Gnome into", result.stdout)
+
+    def test_update_dry_run_handles_dunst(self):
+        (self.home / ".config" / "quickshell").mkdir(parents=True)
+        enabled = self.run_script("update.sh")
+        self.assertEqual(enabled.returncode, 0, enabled.stderr)
+        self.assertIn("would mask dunst", enabled.stdout)
+
+        self.prefs.write_text("dunst\n", encoding="utf-8")
+        disabled = self.run_script("update.sh")
+        self.assertEqual(disabled.returncode, 0, disabled.stderr)
+        self.assertIn("would restore dunst", disabled.stdout)
+
+    def test_update_dry_run_enables_system_services(self):
+        (self.home / ".config" / "quickshell").mkdir(parents=True)
+        result = self.run_script("update.sh")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("would enable NetworkManager", result.stdout)
+
+    def test_update_dry_run_installs_node_lts(self):
+        (self.home / ".config" / "quickshell").mkdir(parents=True)
+        result = self.run_script("update.sh")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("would install Node.js LTS with fnm", result.stdout)
+
+    def test_update_dry_run_skips_services_when_disabled(self):
+        (self.home / ".config" / "quickshell").mkdir(parents=True)
+        self.prefs.write_text("services\n", encoding="utf-8")
+        result = self.run_script("update.sh")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("Skipping system services", result.stdout)
+
 
 if __name__ == "__main__":
     unittest.main()
