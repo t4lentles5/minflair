@@ -31,6 +31,27 @@
 
 ---
 
+## 📋 Requirements
+
+- **Arch Linux** or an Arch-based distribution.
+- A normal user account. Minflair refuses to run as root.
+- `git`, `base-devel` and `pacman`.
+- **Rust and Cargo** to build the `minflair` CLI.
+- Python 3, `yay`/`paru` and the desktop dependencies are installed by the
+  installer itself.
+
+Install the build prerequisites first:
+
+```bash
+sudo pacman -S --needed git base-devel rust
+```
+
+> [!NOTE]
+> The `rust` package provides `rustc` and `cargo`. If you already use `rustup`,
+> `rust-toolchain.toml` pins a stable toolchain and the required components.
+
+---
+
 ## 🚀 Quick Install
 
 ### From git
@@ -39,7 +60,19 @@
 # Shallow clone to save space and time
 git clone --depth 1 https://github.com/t4lentles5/minflair.git ~/.minflair
 cd ~/.minflair
-./install.sh
+
+# Build the minflair CLI (the first build downloads the Rust dependencies)
+cargo build --release
+
+# Run the installer
+./target/release/minflair install
+```
+
+To invoke `minflair` from anywhere, install the binary in your `PATH`:
+
+```bash
+install -Dm755 target/release/minflair ~/.local/bin/minflair
+minflair install
 ```
 
 > [!IMPORTANT]
@@ -47,6 +80,13 @@ cd ~/.minflair
 > - Minflair is designed exclusively for **Arch Linux** distributions.
 > - Run the installer as your **normal user**. It asks for `sudo` only when needed.
 > - Reboot after installation so services, themes and shell changes take effect.
+
+> [!NOTE]
+> The native Rust pipeline is being ported in phases. During the transition,
+> `minflair install` delegates to the proven `install.sh`, and `./install.sh`
+> keeps working as a compatibility entrypoint. The selector, preferences and
+> flags are the same in both paths. If you do not want to install Rust,
+> `./install.sh` and `./update.sh` remain fully supported.
 
 > [!TIP]
 > On first run, the interactive selector lets you keep your own Kitty, Neovim,
@@ -56,22 +96,51 @@ cd ~/.minflair
 
 ---
 
+## 🩺 Diagnostics
+
+The CLI can inspect the environment before or after installing:
+
+```bash
+minflair doctor             # human-readable report
+minflair doctor --packages  # also check packages.txt and packages-aur.txt
+minflair doctor --json      # machine-readable report for automation
+```
+
+`doctor` checks the Arch base, required tools, repository, manifest,
+preferences, AUR helper, themes, services and the active Hyprland/Quickshell
+session. It never changes anything.
+
+---
+
 ## 🔄 Updating
 
 From a git clone:
 
 ```bash
 cd ~/.minflair
-git pull
-./update.sh
+git pull --ff-only
+cargo build --release
+./target/release/minflair update
 ```
 
-> If you cloned Minflair before 2.2.0, the repository may still be in
-> `~/.dotfiles`. The folder name does not affect `install.sh` or `update.sh`.
+With `minflair` in `PATH`, pull and update in one step:
 
-`update.sh` backs up replaced files to `~/.minflair_backup/<timestamp>/`, copies
-the updated configuration, installs new dependencies, refreshes the
-`minflair-sddm` theme and reloads Hyprland and Quickshell.
+```bash
+minflair update --pull
+```
+
+`--pull` runs `git pull --ff-only` before updating; omit it if you already
+pulled. Rebuild the binary after pulling so CLI changes take effect.
+
+> If you cloned Minflair before 2.2.0, the repository may still be in
+> `~/.dotfiles`. The folder name does not affect the CLI, `install.sh` or
+> `update.sh`.
+
+The updater backs up replaced files to `~/.minflair_backup/<timestamp>/`,
+copies the updated configuration, installs new dependencies, refreshes the
+`minflair-sddm` theme and reloads Hyprland and Quickshell. Like the installer,
+`minflair update` delegates to `update.sh` while the native pipeline is ported;
+`./update.sh` remains available.
 
 > [!NOTE]
 > The update overwrites configuration files with the repository versions.

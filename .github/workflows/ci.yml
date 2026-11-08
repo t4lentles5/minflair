@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - 'feat/**'
+      - 'release/**'
   pull_request:
 
 permissions:
@@ -41,3 +42,27 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y shellcheck
           shellcheck --severity=error install.sh update.sh lib/*.sh
+
+  rust:
+    name: Rust tests and lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+
+      - name: Cache Cargo
+        uses: Swatinem/rust-cache@v2
+
+      - name: Format
+        run: cargo fmt --all -- --check
+
+      - name: Clippy
+        run: cargo clippy --workspace --all-targets -- -D warnings
+
+      - name: Tests
+        run: cargo test --workspace
