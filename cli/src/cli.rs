@@ -4,7 +4,7 @@ use std::ffi::OsString;
 use std::path::{Path, PathBuf};
 use std::process::Command as ProcessCommand;
 
-use crate::{doctor, repo, ui};
+use crate::{doctor, install, repo, ui};
 
 #[derive(Debug, Parser)]
 #[command(
@@ -131,20 +131,7 @@ pub fn run(args: Cli) -> Result<u8> {
         Command::Doctor(args) => doctor::run(args),
         Command::Install(args) => {
             let root = repo::find(args.repo.clone())?;
-            let mut forwarded = selection_args(&args.selection);
-            if let Some(helper) = &args.aur_helper {
-                forwarded.push("--aur-helper".into());
-                forwarded.push(helper.as_str().into());
-            }
-            if args.dry_run {
-                forwarded.push("--dry-run".into());
-            }
-            if args.no_packages {
-                forwarded.push("--no-packages".into());
-            }
-
-            ui::info("delegating install to install.sh; the native pipeline lands in phase 1");
-            run_legacy(&root, "install.sh", &forwarded)
+            install::run(&root, args)
         }
         Command::Update(args) => {
             let root = repo::find(args.repo.clone())?;

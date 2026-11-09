@@ -30,6 +30,16 @@ cd ~/.minflair
 With no options and an interactive terminal, the component selector opens
 before anything is changed. This is the recommended way to install Minflair.
 
+The native CLI accepts the same options and is the new front door:
+
+```bash
+cargo build --release
+./target/release/minflair install
+```
+
+`./install.sh` remains a compatibility entrypoint with identical selector,
+preferences and flags.
+
 The first interactive install also asks whether to use `yay` or `paru` as the
 AUR helper. The choice is saved in `~/.config/minflair/aur-helper` and is used
 by the installer, the updater and the Package Manager. To change it later:

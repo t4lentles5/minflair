@@ -43,7 +43,7 @@ fn doctor_fails_when_the_repository_is_missing() {
 }
 
 #[test]
-fn install_forwards_flags_to_the_shell_script() {
+fn install_dry_run_keeps_preferences_untouched() {
     let directory = tempfile::tempdir().expect("tempdir");
     let manifest = directory.path().join("config/quickshell/components.tsv");
     fs::create_dir_all(manifest.parent().expect("parent")).expect("mkdir");
@@ -52,32 +52,56 @@ fn install_forwards_flags_to_the_shell_script() {
         "\
 id\tlabel\tcategory\tcore\tpaths\tpackages\ttheme\tfont\treload\tdescription
 quickshell\tQuickshell shell\tcore\t1\tconfig/quickshell\tquickshell\t\t\t\tCore shell
+hyprland\tHyprland\tcore\t1\tconfig/hypr\thyprland\t\t\t\thyprland
+kitty\tKitty terminal\tterminal\t0\tconfig/kitty\tkitty\tkitty\tkitty\t\tTerminal
 ",
     )
     .expect("write manifest");
+    for path in ["quickshell", "hypr", "kitty"] {
+        fs::create_dir_all(directory.path().join("config").join(path)).expect("mkdir");
+    }
 
-    let arguments = directory.path().join("arguments.txt");
-    let script = directory.path().join("install.sh");
-    fs::write(
-        &script,
-        "#!/usr/bin/env bash\nprintf '%s\\n' \"$@\" > \"$MINFLAIR_TEST_ARGS\"\n",
-    )
-    .expect("write script");
+    let home = directory.path().join("home");
+    fs::create_dir_all(&home).expect("mkdir home");
+    let prefs = home.join(".config/minflair/preferences.conf");
+    let helper = home.join(".config/minflair/aur-helper");
 
     let output = binary()
         .args(["install", "--repo"])
         .arg(directory.path())
-        .args(["--exclude", "kitty,nvim", "--dry-run", "--no-packages"])
-        .env("MINFLAIR_TEST_ARGS", &arguments)
+        .args([
+            "--exclude",
+            "kitty",
+            "--dry-run",
+            "--no-input",
+            "--no-packages",
+        ])
+        .env("HOME", &home)
+        .env("MINFLAIR_PREFS", &prefs)
+        .env("MINFLAIR_AUR_HELPER_FILE", &helper)
+        .env("TERM", "dumb")
+        .env("NO_COLOR", "1")
+        .env("COLUMNS", "100")
         .env_remove("MINFLAIR_REPO")
+        .env_remove("MINFLAIR_AUR_HELPER")
         .output()
         .expect("run minflair");
 
-    assert!(output.status.success());
-    let forwarded = fs::read_to_string(&arguments).expect("arguments");
-    assert_eq!(
-        forwarded,
-        "--exclude\nkitty,nvim\n--dry-run\n--no-packages\n"
+    assert!(
+        output.status.success(),
+        "stderr: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Dry run complete."));
+    assert!(stdout.contains("Skipped (1):"));
+    assert!(stdout.contains("Kitty terminal"));
+    assert!(stdout.contains("[dry-run] would copy config/quickshell"));
+    assert!(!prefs.exists(), "dry-run must not write preferences");
+    assert!(!helper.exists(), "dry-run must not write the AUR helper");
+    assert!(
+        !home.join("install_errors.log").exists(),
+        "dry-run must not write the error log"
     );
 }
 

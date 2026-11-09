@@ -1,10 +1,13 @@
 mod aur;
 mod cli;
 mod doctor;
+mod install;
 mod manifest;
 mod prefs;
 mod process;
 mod repo;
+mod selection;
+mod selector;
 mod ui;
 
 use std::process::ExitCode;

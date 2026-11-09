@@ -82,11 +82,13 @@ minflair install
 > - Reboot after installation so services, themes and shell changes take effect.
 
 > [!NOTE]
-> The native Rust pipeline is being ported in phases. During the transition,
-> `minflair install` delegates to the proven `install.sh`, and `./install.sh`
-> keeps working as a compatibility entrypoint. The selector, preferences and
-> flags are the same in both paths. If you do not want to install Rust,
-> `./install.sh` and `./update.sh` remain fully supported.
+> `minflair install` now runs the native Rust pipeline, including the
+> interactive selector, preferences, backups, themes, services and reloads.
+> `./install.sh` keeps working as a compatibility entrypoint with the same
+> selector, preferences and flags. `minflair update` still delegates to
+> `update.sh` while the native update pipeline is ported; `./update.sh` remains
+> fully supported. If you do not want to install Rust, `./install.sh` and
+> `./update.sh` remain fully supported.
 
 > [!TIP]
 > On first run, the interactive selector lets you keep your own Kitty, Neovim,
