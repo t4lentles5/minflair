@@ -5,22 +5,6 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
-
-### Added
-
-- **`minflair components`**: a dedicated command to inspect and edit the component selection without running the installer.
-  - `minflair components list` shows the state of every component; `--json`, `--enabled` and `--disabled` filter the output for automation.
-  - `minflair components enable` and `disable` update `~/.config/minflair/preferences.conf`, validate ids and protect core components.
-  - `minflair components edit` opens the interactive selector, and `reset` re-enables every optional component.
-  - `--apply` saves the selection and runs `minflair update --no-input` in one step; it requires an existing installation.
-
-### Changed
-
-- Documented `--no-pull`, the `--no-build` requirement and the difference between the `install` and `update` selector defaults.
-- Documented the new component commands in `README.md`, `docs/INSTALL.md`, `docs/ADVANCED.md` and `docs/COMPONENTS.md`.
-- Documented how to add `~/.local/bin` to `PATH` in bash when the zsh component is not selected.
-
 ## [2.2.0] - 2026-11-10
 
 ### Added
@@ -45,6 +29,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `install` and `update` run the native pipeline, including the interactive selector, preferences, backups, themes, services and reloads.
   - `install.sh` and `update.sh` remain compatibility entrypoints with the same selector, preferences and flags.
   - `minflair update --pull` pulls the latest source, rebuilds the CLI and reinstalls it in place; `--no-build` skips the rebuild.
+  - New `minflair components` command with `list`, `enable`, `disable`, `edit` and `reset`; `--apply` saves the selection and runs the update pipeline.
+  - `minflair components list` accepts `--json`, `--enabled` and `--disabled`, and the other subcommands reject unknown ids and protect core components.
 - **One-command installation**:
   - New `bootstrap.sh` installs the missing build tools, clones Minflair into `~/.minflair`, builds the CLI into `~/.local/bin` and starts `minflair install`.
   - The bootstrap keeps the terminal attached for the component selector and falls back to `--no-input` when no terminal is available.
@@ -76,6 +62,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - New `docs/COMPONENTS.md` and `docs/INSTALL.md` explain the manifest, selector and flags.
   - The README now links to dedicated setup, advanced usage and troubleshooting guides (`docs/SETUP.md`, `docs/ADVANCED.md`, `docs/TROUBLESHOOTING.md`).
   - The README and `docs/INSTALL.md` document the one-command bootstrap install, and `docs/ADVANCED.md` lists its environment variables.
+  - The README, `docs/INSTALL.md`, `docs/ADVANCED.md` and `docs/COMPONENTS.md` document `minflair components`, `--no-pull`, the `--no-build` requirement and the install/update selector defaults.
+  - The install guide documents how to add `~/.local/bin` to `PATH` in bash when the zsh component is not selected.
   - New GitHub Actions workflow runs the unit tests, validates the manifest and checks shell syntax.
   - The workflow now checks `bootstrap.sh` with `bash -n` and ShellCheck.
 
@@ -87,7 +75,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The git clone path in the documentation is now `~/.minflair`, replacing the old `~/.dotfiles` path.
 - New backups are written to `~/.minflair_backup/<timestamp>/`. Backups from older versions remain in `~/.dotfiles_backup/<timestamp>/` and the restore guide covers both locations.
 - The version shown in Settings → System Information is now `2.2.0`.
-- The `chsh` component is now part of `zsh`: selecting zsh also sets it as the login shell, and old `chsh` preferences are ignored with a warning.
 - `minflair` now resolves the repository from the path saved by `bootstrap.sh` and also checks `~/.local/share/minflair`, `/usr/share/minflair` and `/usr/local/share/minflair`.
 - The README and install guide present the native CLI as the canonical entrypoint, with `install.sh` and `update.sh` kept as compatibility entrypoints.
 
