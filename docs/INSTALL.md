@@ -112,7 +112,12 @@ minflair install --aur-helper paru
 Core components (`quickshell` and `hyprland`) are always enabled and cannot be
 toggled. On wide terminals the selector shows a description panel next to the
 list. `Enter` opens a review screen with the components that will be installed
-and skipped; preferences are saved only after you confirm.
+and skipped in separate panels; preferences are saved only after you confirm.
+
+In the review screen, use `j`/`k` or `PgUp`/`PgDn` to scroll, `Enter` or `y` to
+start the installation, and `Esc` or `n` to go back. The installer and updater
+also group the final summary by category and show the next steps as a numbered
+list.
 
 The `zsh` component includes the login shell change: selecting it sets zsh as
 your default shell. If Starship is disabled, zsh falls back to a basic prompt.

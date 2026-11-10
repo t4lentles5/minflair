@@ -16,7 +16,7 @@ MINFLAIR_SELECTOR_SH=1
 
 selector_category_label() {
   case "$1" in
-    core) printf 'Core (always installed)' ;;
+    core) printf 'Core' ;;
     terminal) printf 'Terminal' ;;
     desktop) printf 'Desktop' ;;
     apps) printf 'Applications' ;;
@@ -83,7 +83,7 @@ selector_run() {
 
   selector_review() {
     local -a included=() skipped=()
-    local review_id
+    local review_id optional=0 enabled=0 rule i
 
     for ((i = 0; i < total; i++)); do
       review_id="${ids[i]}"
@@ -92,33 +92,57 @@ selector_run() {
       else
         skipped+=("${labels[i]}")
       fi
+      if [[ "${cores[i]}" != "1" ]]; then
+        optional=$((optional + 1))
+        if [[ "${selected[$review_id]}" == "1" ]]; then
+          enabled=$((enabled + 1))
+        fi
+      fi
     done
 
     printf '\033[H\033[2J'
     ui_header "Minflair $version - Review selection"
-    printf '\n  %sIncluded (%d)%s\n' "$UI_BOLD" "${#included[@]}" "$UI_RESET"
-    components_print_list "    " "$(components_join "${included[@]}")"
     printf '\n'
+    printf '  %sOptional components%s  %s%d/%d enabled%s   %s%d skipped%s\n' \
+      "$UI_DIM" "$UI_RESET" \
+      "$UI_BOLD$UI_GREEN" "$enabled" "$optional" "$UI_RESET" \
+      "$UI_YELLOW" "$((optional - enabled))" "$UI_RESET"
+    printf '  %sCore components are always installed and cannot be disabled.%s\n\n' \
+      "$UI_DIM" "$UI_RESET"
+
+    printf '  %sIncluded (%d):%s\n' "$UI_BOLD$UI_GREEN" "${#included[@]}" "$UI_RESET"
+    components_print_list "    + " "$(components_join "${included[@]}")"
+    printf '\n'
+
     if ((${#skipped[@]})); then
-      printf '  %sSkipped (%d)%s\n' "$UI_BOLD" "${#skipped[@]}" "$UI_RESET"
-      components_print_list "    " "$(components_join "${skipped[@]}")"
-      printf '\n'
-      printf '  Skipped components keep their existing files. Minflair will not\n'
-      printf '  copy, theme or reload them.\n\n'
+      printf '  %sSkipped (%d):%s\n' "$UI_BOLD$UI_YELLOW" "${#skipped[@]}" "$UI_RESET"
+      components_print_list "    - " "$(components_join "${skipped[@]}")"
+      printf '    %sSkipped components keep their existing files.%s\n\n' \
+        "$UI_DIM" "$UI_RESET"
     else
-      printf '  %sSkipped (0)%s: none\n\n' "$UI_BOLD" "$UI_RESET"
+      printf '  %sSkipped (0): none%s\n\n' "$UI_DIM" "$UI_RESET"
     fi
 
     if [[ "${selected[zsh]:-0}" == "1" ]]; then
-      printf '  %sNote:%s zsh will be set as your login shell.\n' "$UI_BOLD" "$UI_RESET"
+      printf '  %s!%s zsh will be set as your login shell.\n' \
+        "$UI_BOLD$UI_YELLOW" "$UI_RESET"
       if [[ "${selected[starship]:-0}" != "1" ]]; then
-        printf '  %sNote:%s Starship is disabled; zsh will use a basic prompt.\n' "$UI_BOLD" "$UI_RESET"
+        printf '  %s!%s Starship is disabled; zsh will use a basic prompt.\n' \
+          "$UI_BOLD$UI_YELLOW" "$UI_RESET"
       fi
       printf '\n'
     fi
 
+    printf -v rule '%*s' "$(ui_rule_width)" ''
+    rule="${rule// /-}"
+    printf '%s%s%s\n' "$UI_DIM" "$rule" "$UI_RESET"
+    printf '  %sEnter/y%s start installation   %sn/Esc%s back   %sq%s cancel\n\n' \
+      "$UI_BOLD$UI_CYAN" "$UI_RESET" \
+      "$UI_DIM" "$UI_RESET" \
+      "$UI_DIM" "$UI_RESET"
+
     ui_show_cursor
-    if ui_confirm "Apply this selection?" y; then
+    if ui_confirm "Start the installation?" y; then
       local -a enabled_ids=()
       for ((i = 0; i < total; i++)); do
         review_id="${ids[i]}"

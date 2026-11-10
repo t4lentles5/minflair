@@ -40,12 +40,36 @@ pub fn cyan(text: &str) -> String {
     paint("36", text)
 }
 
+/// Width used by the rules and banners in the plain-text output.
+const RULE_WIDTH: usize = 72;
+
+fn rule_width() -> usize {
+    RULE_WIDTH.min(terminal_width())
+}
+
 pub fn header(title: &str) {
+    let width = rule_width();
     println!("\n{}", paint("1;36", title));
+    println!("{}", paint("2", &"-".repeat(width)));
 }
 
 pub fn section(title: &str) {
-    println!("\n{}", bold(&format!("== {title} ==")));
+    let width = rule_width();
+    let label = format!("-- {title} ");
+    let fill = width.saturating_sub(label.len());
+    println!(
+        "\n{}{}",
+        paint("1;36", &label),
+        paint("2", &"-".repeat(fill))
+    );
+}
+
+/// Closing banner used when a pipeline finishes successfully.
+pub fn finish(title: &str) {
+    let width = rule_width();
+    println!("\n{}", paint("1;32", &"=".repeat(width)));
+    println!("{}", paint("1;32", &format!("  {title}")));
+    println!("{}", paint("1;32", &"=".repeat(width)));
 }
 
 pub fn info(message: &str) {
@@ -65,7 +89,16 @@ pub fn error(message: &str) {
 }
 
 pub fn done(message: &str) {
-    println!("\n{} {message}", green("[OK]"));
+    println!("\n{} {}", paint("1;32", "[OK]"), bold(message));
+}
+
+/// Print an indented numbered list, used for the post-install next steps.
+pub fn next_steps(steps: &[&str]) {
+    println!();
+    println!("{}", bold("Next steps"));
+    for (index, step) in steps.iter().enumerate() {
+        println!("  {}. {step}", index + 1);
+    }
 }
 
 /// Ask a yes/no question on the controlling terminal.
@@ -78,7 +111,7 @@ pub fn confirm(prompt: &str, default_yes: bool) -> bool {
     }
 
     let suffix = if default_yes { "[Y/n] " } else { "[y/N] " };
-    print!("{prompt} {suffix}");
+    print!("{} {}", bold(prompt), cyan(suffix));
     let _ = io::stdout().flush();
 
     let mut reply = String::new();
@@ -101,15 +134,22 @@ pub fn terminal_width() -> usize {
         .unwrap_or(100)
 }
 
-/// Wrap a comma-separated list, preserving the indentation used by the shell
-/// installer. This mirrors `components_print_list`.
-pub fn print_list(indent: &str, text: &str) {
+/// Print a dim label followed by a wrapped list, aligning continuation lines
+/// with the text column. Used by the component summary.
+pub fn print_labeled(indent: &str, label: &str, text: &str, label_width: usize) {
     if text.is_empty() {
         return;
     }
-    let width = terminal_width().saturating_sub(indent.len()).max(20);
-    for line in wrap(text, width) {
-        println!("{indent}{line}");
+    let prefix = format!("{indent}{label:<label_width$}  ");
+    let width = terminal_width()
+        .saturating_sub(prefix.chars().count())
+        .max(20);
+    for (index, line) in wrap(text, width).into_iter().enumerate() {
+        if index == 0 {
+            println!("{}{}", dim(&prefix), line);
+        } else {
+            println!("{}{}", " ".repeat(prefix.chars().count()), line);
+        }
     }
 }
 

@@ -143,7 +143,6 @@ pub fn run(root: &Path, args: UpdateArgs) -> Result<u8> {
     install::run_reloads(&ctx, &manifest, &disabled);
 
     if ctx.dry_run {
-        println!();
         ui::done("Dry run complete. No files or packages were changed.");
         ui::info(&format!(
             "Preferences that would be used: {}",
@@ -157,14 +156,13 @@ pub fn run(root: &Path, args: UpdateArgs) -> Result<u8> {
 
     reload_desktop(&ctx);
 
-    println!();
-    ui::section("Update complete");
+    ui::finish("Update complete");
     ui::ok(&format!("Backup saved at: {}", ctx.backup_dir.display()));
     install::print_summary(&manifest, &disabled);
-    println!();
-    ui::info("Next steps:");
-    println!("  1. Restart your session if the reload was skipped.");
-    println!("  2. Review docs/SETUP.md after major updates.");
+    ui::next_steps(&[
+        "Restart your session if the reload was skipped.",
+        "Review docs/SETUP.md after major updates.",
+    ]);
     Ok(0)
 }
 

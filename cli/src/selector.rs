@@ -14,7 +14,7 @@ use ratatui::{Frame, Terminal};
 use std::collections::BTreeSet;
 use std::io::{self, IsTerminal, Stdout};
 
-use crate::manifest::Manifest;
+use crate::manifest::{category_label, Manifest};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Mode {
@@ -424,7 +424,7 @@ fn draw(frame: &mut Frame, state: &mut SelectorState) {
     let chunks = Layout::vertical([
         Constraint::Length(2),
         Constraint::Min(5),
-        Constraint::Length(3),
+        Constraint::Length(4),
     ])
     .split(area);
 
@@ -489,9 +489,9 @@ fn draw_list(frame: &mut Frame, state: &mut SelectorState, area: Rect, two_pane:
         let mark = if entry.core {
             Span::styled("[core]", Style::new().fg(Color::Yellow))
         } else if entry.selected {
-            Span::styled("[x]", Style::new().fg(Color::Green))
+            Span::styled("[x]   ", Style::new().fg(Color::Green))
         } else {
-            Span::styled("[ ]", Style::new().fg(Color::DarkGray))
+            Span::styled("[ ]   ", Style::new().fg(Color::DarkGray))
         };
 
         let id_style = if entry.core {
@@ -565,10 +565,21 @@ fn draw_details(frame: &mut Frame, state: &SelectorState, area: Rect) {
 
     let mut lines: Vec<Line> = Vec::new();
     if let Some(entry) = entry {
-        lines.push(Line::from(vec![Span::styled(
-            entry.label.clone(),
-            Style::new().fg(Color::Cyan).add_modifier(Modifier::BOLD),
-        )]));
+        let marker = if entry.core {
+            Span::styled("[core]", Style::new().fg(Color::Yellow))
+        } else if entry.selected {
+            Span::styled("[x]", Style::new().fg(Color::Green))
+        } else {
+            Span::styled("[ ]", Style::new().fg(Color::DarkGray))
+        };
+        lines.push(Line::from(vec![
+            marker,
+            Span::raw(" "),
+            Span::styled(
+                entry.label.clone(),
+                Style::new().fg(Color::Cyan).add_modifier(Modifier::BOLD),
+            ),
+        ]));
         lines.push(Line::from(""));
         lines.push(Line::from(vec![
             Span::styled("id: ", Style::new().fg(Color::DarkGray)),
@@ -628,124 +639,302 @@ fn draw_details(frame: &mut Frame, state: &SelectorState, area: Rect) {
     frame.render_widget(paragraph, area);
 }
 
+fn key_span(key: &str) -> Span<'static> {
+    Span::styled(
+        format!(" {key} "),
+        Style::new()
+            .fg(Color::Black)
+            .bg(Color::Cyan)
+            .add_modifier(Modifier::BOLD),
+    )
+}
+
+fn hint_span(label: &str) -> Span<'static> {
+    Span::styled(format!(" {label}   "), Style::new().fg(Color::DarkGray))
+}
+
 fn draw_footer(frame: &mut Frame, state: &SelectorState, area: Rect) {
     let (enabled, total) = state.optional_counts();
+    let skipped = total.saturating_sub(enabled);
     let mut lines = vec![Line::from(vec![
+        Span::styled("  Optional components  ", Style::new().fg(Color::DarkGray)),
         Span::styled(
-            format!("  {enabled}/{total} optional enabled"),
+            format!("{enabled}/{total} enabled"),
             Style::new().fg(Color::Green).add_modifier(Modifier::BOLD),
         ),
         Span::styled(
-            format!("   {} skipped", total.saturating_sub(enabled)),
-            Style::new().fg(Color::DarkGray),
+            format!("   {skipped} skipped"),
+            Style::new().fg(Color::Yellow),
         ),
     ])];
 
     match state.mode {
         Mode::Search => lines.push(Line::from(vec![
-            Span::styled("  Search: ", Style::new().fg(Color::Cyan)),
+            Span::styled(
+                "  Search: ",
+                Style::new().fg(Color::Cyan).add_modifier(Modifier::BOLD),
+            ),
             Span::raw(state.filter.clone()),
             Span::styled("_", Style::new().add_modifier(Modifier::RAPID_BLINK)),
         ])),
         _ if !state.filter.is_empty() => lines.push(Line::from(vec![
-            Span::styled("  Filter: ", Style::new().fg(Color::Cyan)),
+            Span::styled(
+                "  Filter: ",
+                Style::new().fg(Color::Cyan).add_modifier(Modifier::BOLD),
+            ),
             Span::raw(state.filter.clone()),
-            Span::styled(" (Esc clears)", Style::new().fg(Color::DarkGray)),
+            Span::styled("  (Esc clears)", Style::new().fg(Color::DarkGray)),
         ])),
         _ => lines.push(Line::from("")),
     }
 
     let help = if state.mode == Mode::Search {
-        "  Type to filter   Enter accept   Esc clear"
+        Line::from(vec![
+            Span::raw("  "),
+            key_span("Type"),
+            hint_span("filter"),
+            key_span("Enter"),
+            hint_span("accept"),
+            key_span("Esc"),
+            hint_span("clear"),
+        ])
+    } else if area.width < 76 {
+        Line::from(vec![
+            Span::raw("  "),
+            key_span("Space"),
+            hint_span("toggle"),
+            key_span("Enter"),
+            hint_span("review"),
+            key_span("q"),
+            hint_span("cancel"),
+        ])
     } else {
-        "  Space toggle   Enter continue   a all   n none   / search   q cancel"
+        Line::from(vec![
+            Span::raw("  "),
+            key_span("Space"),
+            hint_span("toggle"),
+            key_span("Enter"),
+            hint_span("review"),
+            key_span("a"),
+            hint_span("all"),
+            key_span("n"),
+            hint_span("none"),
+            key_span("/"),
+            hint_span("search"),
+            key_span("q"),
+            hint_span("cancel"),
+        ])
     };
-    lines.push(Line::from(Span::styled(
-        help,
-        Style::new().fg(Color::DarkGray),
-    )));
+    lines.push(help);
 
     let paragraph = Paragraph::new(lines).block(Block::default().borders(Borders::TOP));
     frame.render_widget(paragraph, area);
 }
 
-fn draw_review(frame: &mut Frame, state: &mut SelectorState) {
-    let included = state.included_labels();
-    let skipped = state.skipped_labels();
+fn draw_review(frame: &mut Frame, state: &SelectorState) {
+    let included: Vec<String> = state
+        .included_labels()
+        .into_iter()
+        .map(str::to_string)
+        .collect();
+    let skipped: Vec<String> = state
+        .skipped_labels()
+        .into_iter()
+        .map(str::to_string)
+        .collect();
     let (enabled, total) = state.optional_counts();
-    let mut lines = vec![
-        Line::from(""),
-        Line::from(Span::styled(
-            format!("Included ({}):", included.len()),
-            Style::new().fg(Color::Green).add_modifier(Modifier::BOLD),
-        )),
-        Line::from(included.join(", ")),
-        Line::from(""),
-    ];
-
-    if skipped.is_empty() {
-        lines.push(Line::from(Span::styled(
-            "Skipped (0): none",
-            Style::new().fg(Color::Yellow).add_modifier(Modifier::BOLD),
-        )));
-    } else {
-        lines.push(Line::from(Span::styled(
-            format!("Skipped ({}):", skipped.len()),
-            Style::new().fg(Color::Yellow).add_modifier(Modifier::BOLD),
-        )));
-        lines.push(Line::from(skipped.join(", ")));
-        lines.push(Line::from(""));
-        lines.push(Line::from(Span::styled(
-            "Skipped components keep their existing files. Minflair will not copy, theme or reload them.",
-            Style::new().fg(Color::DarkGray),
-        )));
-    }
-
-    if state
-        .entries
-        .iter()
-        .any(|entry| entry.id == "zsh" && entry.selected)
-    {
-        lines.push(Line::from(""));
-        lines.push(Line::from(Span::styled(
-            "Note: zsh will be set as your login shell.",
-            Style::new().fg(Color::Yellow),
-        )));
-        if !state
-            .entries
-            .iter()
-            .any(|entry| entry.id == "starship" && entry.selected)
-        {
-            lines.push(Line::from(Span::styled(
-                "Note: Starship is disabled; zsh will use a basic prompt.",
-                Style::new().fg(Color::Yellow),
-            )));
-        }
-    }
-
-    lines.push(Line::from(""));
-    lines.push(Line::from(Span::styled(
-        format!("{enabled}/{total} optional components enabled"),
-        Style::new().fg(Color::DarkGray),
-    )));
-    lines.push(Line::from(""));
-    lines.push(Line::from(Span::styled(
-        "Press y or Enter to apply this selection, n or Esc to go back, q to cancel.",
-        Style::new().fg(Color::Cyan).add_modifier(Modifier::BOLD),
-    )));
+    let notes = review_notes(state);
 
     let area = frame.area();
-    let popup = centered_rect(area, 80, 80);
-    let block = Block::default()
+    let popup = centered_rect(area, 92, 88);
+    let outer = Block::default()
         .borders(Borders::ALL)
-        .title(" Review selection ")
+        .title(format!(" Review selection | Minflair {} ", state.version))
         .title_alignment(Alignment::Center)
         .border_style(Style::new().fg(Color::Cyan));
+    let inner = outer.inner(popup);
+    frame.render_widget(outer, popup);
+
+    let mut constraints = vec![Constraint::Length(2), Constraint::Min(5)];
+    if !notes.is_empty() {
+        constraints.push(Constraint::Length(notes.len() as u16 + 2));
+    }
+    constraints.push(Constraint::Length(3));
+    let chunks = Layout::vertical(constraints).split(inner);
+
+    let header = Paragraph::new(vec![
+        Line::from(vec![
+            Span::styled("  Optional components  ", Style::new().fg(Color::DarkGray)),
+            Span::styled(
+                format!("{enabled}/{total} enabled"),
+                Style::new().fg(Color::Green).add_modifier(Modifier::BOLD),
+            ),
+            Span::styled(
+                format!("   {} skipped", total.saturating_sub(enabled)),
+                Style::new().fg(Color::Yellow),
+            ),
+        ]),
+        Line::from(Span::styled(
+            "  Core components are always installed and cannot be disabled.",
+            Style::new().fg(Color::DarkGray),
+        )),
+    ]);
+    frame.render_widget(header, chunks[0]);
+
+    let content = chunks[1];
+    let included_panel = ReviewPanel {
+        title: format!(" Included ({}) ", included.len()),
+        color: Color::Green,
+        items: &included,
+        empty: "Every optional component is selected.",
+        marker: "+",
+        scroll: state.review_scroll,
+    };
+    let skipped_panel = ReviewPanel {
+        title: format!(" Skipped ({}) ", skipped.len()),
+        color: Color::Yellow,
+        items: &skipped,
+        empty: "Nothing skipped.",
+        marker: "-",
+        scroll: state.review_scroll,
+    };
+
+    if content.width >= 60 {
+        let columns = Layout::horizontal([
+            Constraint::Percentage(55),
+            Constraint::Length(1),
+            Constraint::Min(20),
+        ])
+        .split(content);
+        draw_review_panel(frame, columns[0], &included_panel);
+        draw_review_panel(frame, columns[2], &skipped_panel);
+    } else {
+        let rows = Layout::vertical([
+            Constraint::Percentage(55),
+            Constraint::Length(1),
+            Constraint::Min(3),
+        ])
+        .split(content);
+        draw_review_panel(frame, rows[0], &included_panel);
+        draw_review_panel(frame, rows[2], &skipped_panel);
+    }
+
+    if !notes.is_empty() {
+        draw_notes_panel(frame, chunks[2], &notes);
+    }
+
+    let footer_line = if inner.width < 62 {
+        Line::from(vec![
+            Span::raw("  "),
+            key_span("Enter/y"),
+            hint_span("start"),
+            key_span("Esc/n"),
+            hint_span("back"),
+            key_span("q"),
+            hint_span("cancel"),
+        ])
+    } else {
+        Line::from(vec![
+            Span::raw("  "),
+            key_span("Enter/y"),
+            hint_span("start installation"),
+            key_span("Esc/n"),
+            hint_span("back"),
+            key_span("q"),
+            hint_span("cancel"),
+        ])
+    };
+    let footer = Paragraph::new(vec![
+        footer_line,
+        Line::from(Span::styled(
+            "  j/k scroll   PgUp/PgDn faster",
+            Style::new().fg(Color::DarkGray),
+        )),
+    ])
+    .block(Block::default().borders(Borders::TOP));
+    frame.render_widget(footer, chunks[chunks.len() - 1]);
+}
+
+struct ReviewPanel<'a> {
+    title: String,
+    color: Color,
+    items: &'a [String],
+    empty: &'a str,
+    marker: &'a str,
+    scroll: u16,
+}
+
+fn draw_review_panel(frame: &mut Frame, area: Rect, panel: &ReviewPanel) {
+    let block = Block::default()
+        .borders(Borders::ALL)
+        .title(panel.title.clone())
+        .border_style(Style::new().fg(panel.color));
+    let lines: Vec<Line> = if panel.items.is_empty() {
+        vec![Line::from(Span::styled(
+            format!(" {}", panel.empty),
+            Style::new().fg(Color::DarkGray),
+        ))]
+    } else {
+        panel
+            .items
+            .iter()
+            .map(|item| {
+                Line::from(vec![
+                    Span::styled(
+                        format!(" {} ", panel.marker),
+                        Style::new().fg(panel.color).add_modifier(Modifier::BOLD),
+                    ),
+                    Span::raw(item.clone()),
+                ])
+            })
+            .collect()
+    };
     let paragraph = Paragraph::new(lines)
         .block(block)
         .wrap(Wrap { trim: false })
-        .scroll((state.review_scroll, 0));
-    frame.render_widget(paragraph, popup);
+        .scroll((panel.scroll, 0));
+    frame.render_widget(paragraph, area);
+}
+
+fn draw_notes_panel(frame: &mut Frame, area: Rect, notes: &[String]) {
+    let block = Block::default()
+        .borders(Borders::ALL)
+        .title(" Notes ")
+        .border_style(Style::new().fg(Color::Yellow));
+    let lines: Vec<Line> = notes
+        .iter()
+        .map(|note| {
+            Line::from(vec![
+                Span::styled(
+                    " ! ",
+                    Style::new().fg(Color::Yellow).add_modifier(Modifier::BOLD),
+                ),
+                Span::styled(note.clone(), Style::new().fg(Color::Yellow)),
+            ])
+        })
+        .collect();
+    let paragraph = Paragraph::new(lines)
+        .block(block)
+        .wrap(Wrap { trim: false });
+    frame.render_widget(paragraph, area);
+}
+
+fn review_notes(state: &SelectorState) -> Vec<String> {
+    let is_selected = |id: &str| {
+        state
+            .entries
+            .iter()
+            .any(|entry| entry.id == id && entry.selected)
+    };
+
+    let mut notes = Vec::new();
+    if is_selected("zsh") {
+        notes.push("zsh will be set as your login shell.".to_string());
+        if !is_selected("starship") {
+            notes.push("Starship is disabled; zsh will use a basic prompt.".to_string());
+        }
+    }
+    notes
 }
 
 fn centered_rect(area: Rect, percent_x: u16, percent_y: u16) -> Rect {
@@ -762,17 +951,6 @@ fn centered_rect(area: Rect, percent_x: u16, percent_y: u16) -> Rect {
     ])
     .split(vertical[1]);
     horizontal[1]
-}
-
-fn category_label(category: &str) -> &str {
-    match category {
-        "core" => "Core (always installed)",
-        "terminal" => "Terminal",
-        "desktop" => "Desktop",
-        "apps" => "Applications",
-        "system" => "System",
-        other => other,
-    }
 }
 
 fn truncate(text: &str, width: usize) -> String {
@@ -873,5 +1051,46 @@ nvim\tNeovim\tterminal\t0\tconfig/nvim\tnvim\tnvim\t\t\tEditor
         state.handle_key(key(KeyCode::Enter));
         state.handle_key(key(KeyCode::Char('n')));
         assert_eq!(state.mode, Mode::List);
+    }
+
+    fn render_review(state: &SelectorState, width: u16, height: u16) -> String {
+        use ratatui::backend::TestBackend;
+        use ratatui::Terminal;
+
+        let backend = TestBackend::new(width, height);
+        let mut terminal = Terminal::new(backend).expect("terminal");
+        terminal
+            .draw(|frame| draw_review(frame, state))
+            .expect("draw review");
+        terminal
+            .backend()
+            .buffer()
+            .content()
+            .iter()
+            .map(|cell| cell.symbol())
+            .collect()
+    }
+
+    #[test]
+    fn review_shows_included_and_skipped_panels() {
+        let mut state = state();
+        state.handle_key(key(KeyCode::Char('j')));
+        state.handle_key(key(KeyCode::Char('j')));
+        state.handle_key(key(KeyCode::Char(' ')));
+
+        let text = render_review(&state, 80, 24);
+        assert!(text.contains("Review selection"));
+        assert!(text.contains("Included (3)"));
+        assert!(text.contains("Skipped (1)"));
+        assert!(text.contains("Kitty terminal"));
+        assert!(text.contains("start installation"));
+    }
+
+    #[test]
+    fn review_renders_in_a_narrow_terminal() {
+        let mut state = state();
+        state.mode = Mode::Review;
+        let text = render_review(&state, 40, 16);
+        assert!(text.contains("Included (4)"));
     }
 }

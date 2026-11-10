@@ -128,7 +128,6 @@ pub fn run(root: &Path, args: InstallArgs) -> Result<u8> {
     run_reloads(&ctx, &manifest, &disabled);
 
     if ctx.dry_run {
-        println!();
         ui::done("Dry run complete. No files or packages were changed.");
         ui::info(&format!(
             "Preferences that would be used: {}",
@@ -140,15 +139,14 @@ pub fn run(root: &Path, args: InstallArgs) -> Result<u8> {
         return Ok(0);
     }
 
-    println!();
-    ctx.section("Installation complete");
+    ui::finish("Installation complete");
     ui::ok(&format!("Backup saved at: {}", ctx.backup_dir.display()));
     print_summary(&manifest, &disabled);
-    println!();
-    ui::info("Next steps:");
-    println!("  1. Reboot to apply every change.");
-    println!("  2. Add wallpapers and review docs/SETUP.md.");
-    println!("  3. Pull new changes and run ./update.sh when needed.");
+    ui::next_steps(&[
+        "Reboot to apply every change.",
+        "Add wallpapers and review docs/SETUP.md.",
+        "Pull new changes and run ./update.sh when needed.",
+    ]);
     println!();
 
     if args.selection.no_input {
@@ -1077,29 +1075,69 @@ pub(crate) fn run_reloads(ctx: &Ctx, manifest: &Manifest, disabled: &BTreeSet<St
 }
 
 pub(crate) fn print_summary(manifest: &Manifest, disabled: &BTreeSet<String>) {
-    let mut included = Vec::new();
-    let mut skipped = Vec::new();
+    let included = summary_groups(manifest, disabled, true);
+    let skipped = summary_groups(manifest, disabled, false);
+    let included_count: usize = included.iter().map(|(_, labels)| labels.len()).sum();
+    let skipped_count: usize = skipped.iter().map(|(_, labels)| labels.len()).sum();
+
+    if included_count == 0 {
+        println!("  {}", ui::dim("Enabled (0): none"));
+    } else {
+        println!(
+            "  {}",
+            ui::green(&ui::bold(&format!("Enabled ({included_count}):")))
+        );
+        print_summary_groups(&included);
+    }
+
+    if skipped_count == 0 {
+        println!("  {}", ui::dim("Skipped (0): none"));
+    } else {
+        println!(
+            "  {}",
+            ui::yellow(&ui::bold(&format!("Skipped ({skipped_count}):")))
+        );
+        print_summary_groups(&skipped);
+        println!(
+            "  {}",
+            ui::dim("Skipped components keep their existing files.")
+        );
+    }
+}
+
+/// Group the labels of the enabled or skipped components by category,
+/// preserving the manifest order.
+fn summary_groups<'a>(
+    manifest: &'a Manifest,
+    disabled: &BTreeSet<String>,
+    include_enabled: bool,
+) -> Vec<(&'a str, Vec<&'a str>)> {
+    let mut groups: Vec<(&str, Vec<&str>)> = Vec::new();
     for component in manifest.components() {
-        if component.core || !disabled.contains(&component.id) {
-            included.push(component.label.clone());
+        let enabled = component.core || !disabled.contains(&component.id);
+        if enabled != include_enabled {
+            continue;
+        }
+        if let Some((_, labels)) = groups
+            .iter_mut()
+            .find(|(category, _)| *category == component.category)
+        {
+            labels.push(&component.label);
         } else {
-            skipped.push(component.label.clone());
+            groups.push((&component.category, vec![&component.label]));
         }
     }
+    groups
+}
 
-    if included.is_empty() {
-        println!("  Enabled (0): none");
-    } else {
-        println!("  Enabled ({}):", included.len());
-        ui::print_list("    ", &included.join(", "));
-    }
-
-    if skipped.is_empty() {
-        println!("  Skipped (0): none");
-    } else {
-        println!("  Skipped ({}):", skipped.len());
-        ui::print_list("    ", &skipped.join(", "));
-        println!("  Skipped components keep their existing files.");
+fn print_summary_groups(groups: &[(&str, Vec<&str>)]) {
+    for (category, labels) in groups {
+        ui::print_labeled(
+            "    ",
+            crate::manifest::category_label(category),
+            &labels.join(", "),
+            12,
+        );
     }
 }
 
@@ -1434,6 +1472,30 @@ mod tests {
         let disabled: BTreeSet<String> = ["nvim".to_string()].into_iter().collect();
         let filtered = filtered_packages(&packages, &disabled);
         assert_eq!(filtered, vec!["kitty", "btop"]);
+    }
+
+    #[test]
+    fn groups_the_summary_by_category() {
+        let manifest = Manifest::parse(
+            "id\tlabel\tcategory\tcore\tpaths\tpackages\ttheme\tfont\treload\tdescription\n\
+             quickshell\tQuickshell shell\tcore\t1\tconfig/quickshell\tquickshell\t\t\t\tCore shell\n\
+             kitty\tKitty terminal\tterminal\t0\tconfig/kitty\tkitty\tkitty\tkitty\t\tTerminal\n\
+             nvim\tNeovim\tterminal\t0\tconfig/nvim\tnvim\tnvim\t\t\tEditor\n",
+        )
+        .expect("manifest");
+        let disabled: BTreeSet<String> = ["nvim".to_string()].into_iter().collect();
+
+        assert_eq!(
+            summary_groups(&manifest, &disabled, true),
+            vec![
+                ("core", vec!["Quickshell shell"]),
+                ("terminal", vec!["Kitty terminal"]),
+            ]
+        );
+        assert_eq!(
+            summary_groups(&manifest, &disabled, false),
+            vec![("terminal", vec!["Neovim"])]
+        );
     }
 
     #[test]

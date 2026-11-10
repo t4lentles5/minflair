@@ -17,6 +17,18 @@ pub const COLUMNS: [&str; 10] = [
     "description",
 ];
 
+/// Human-readable name for a manifest category.
+pub fn category_label(category: &str) -> &str {
+    match category {
+        "core" => "Core",
+        "terminal" => "Terminal",
+        "desktop" => "Desktop",
+        "apps" => "Applications",
+        "system" => "System",
+        other => other,
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Component {
     pub id: String,

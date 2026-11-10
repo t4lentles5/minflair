@@ -426,31 +426,92 @@ components_print_list() {
   printf '%s\n' "$text" | fold -s -w "$((width - ${#indent}))" | sed "s/^/${indent}/"
 }
 
+components_category_label() {
+  case "$1" in
+    core) printf 'Core' ;;
+    terminal) printf 'Terminal' ;;
+    desktop) printf 'Desktop' ;;
+    apps) printf 'Applications' ;;
+    system) printf 'System' ;;
+    *) printf '%s' "$1" ;;
+  esac
+}
+
+# Append a label to the group for its category, creating the group on first use.
+components_group_add() {
+  local -n cats="$1"
+  local -n labels="$2"
+  local category="$3" label="$4"
+  local i
+
+  for ((i = 0; i < ${#cats[@]}; i++)); do
+    if [[ "${cats[i]}" == "$category" ]]; then
+      labels[i]+="${labels[i]:+, }$label"
+      return 0
+    fi
+  done
+  cats+=("$category")
+  labels+=("$label")
+}
+
+# Print one aligned label and its wrapped, comma-separated values.
+components_print_labeled() {
+  local indent="$1" label="$2" text="$3" label_width="$4"
+  local prefix padding width line first=1
+
+  [[ -n "$text" ]] || return 0
+  width="${COLUMNS:-100}"
+  if [[ ! "$width" =~ ^[0-9]+$ ]] || (( width < 40 )); then
+    width=80
+  fi
+  printf -v prefix '%s%-*s  ' "$indent" "$label_width" "$label"
+  printf -v padding '%*s' "${#prefix}" ''
+  while IFS= read -r line; do
+    if (( first )); then
+      printf '%s%s\n' "$prefix" "$line"
+      first=0
+    else
+      printf '%s%s\n' "$padding" "$line"
+    fi
+  done < <(printf '%s\n' "$text" | fold -s -w "$((width - ${#prefix}))" | sed 's/[[:space:]]*$//')
+}
+
+components_print_groups() {
+  local -n cats="$1"
+  local -n labels="$2"
+  local i
+
+  for ((i = 0; i < ${#cats[@]}; i++)); do
+    components_print_labeled \
+      "    " "$(components_category_label "${cats[i]}")" "${labels[i]}" 12
+  done
+}
+
 components_summary() {
   local id label category core paths packages theme font reload description
-  local -a enabled=() skipped=()
-  local enabled_text skipped_text
+  local -a enabled_cats=() enabled_labels=() skipped_cats=() skipped_labels=()
+  local enabled_count=0 skipped_count=0
 
   while IFS=$'\037' read -r id label category core paths packages theme font reload description; do
     if component_core "$id" || component_enabled "$id"; then
-      enabled+=("$label")
+      enabled_count=$((enabled_count + 1))
+      components_group_add enabled_cats enabled_labels "$category" "$label"
     else
-      skipped+=("$label")
+      skipped_count=$((skipped_count + 1))
+      components_group_add skipped_cats skipped_labels "$category" "$label"
     fi
   done < <(manifest_fields)
 
-  enabled_text="$(components_join "${enabled[@]}")"
-  if [[ -n "$enabled_text" ]]; then
-    printf '  Enabled (%d):\n' "${#enabled[@]}"
-    components_print_list "    " "$enabled_text"
+  if (( enabled_count )); then
+    printf '  Enabled (%d):\n' "$enabled_count"
+    components_print_groups enabled_cats enabled_labels
   else
     printf '  Enabled (0): none\n'
   fi
 
-  if ((${#skipped[@]})); then
-    skipped_text="$(components_join "${skipped[@]}")"
-    printf '  Skipped (%d):\n' "${#skipped[@]}"
-    components_print_list "    " "$skipped_text"
+  if (( skipped_count )); then
+    printf '  Skipped (%d):\n' "$skipped_count"
+    components_print_groups skipped_cats skipped_labels
     printf '  Skipped components keep their existing files.\n'
   else
     printf '  Skipped (0): none\n'

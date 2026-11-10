@@ -111,23 +111,68 @@ ui_refresh_size() {
 }
 
 ui_header() {
-  local title="$1"
+  local title="$1" width dashes
 
-  if (( ! UI_TTY || UI_PLAIN )); then
-    printf '\n%s\n' "$title"
-    return 0
+  width="$(ui_rule_width)"
+  printf -v dashes '%*s' "$width" ''
+  dashes="${dashes// /-}"
+
+  if (( UI_TTY && ! UI_PLAIN )); then
+    printf '\n%s%s%s%s\n' "$UI_BOLD" "$UI_CYAN" "$title" "$UI_RESET"
+    printf '%s%s%s\n' "$UI_DIM" "$dashes" "$UI_RESET"
+  else
+    printf '\n%s\n%s\n' "$title" "$dashes"
   fi
+}
 
-  printf '\n%s%s%s%s\n' "$UI_BOLD" "$UI_CYAN" "$title" "$UI_RESET"
+ui_rule_width() {
+  local width="${UI_WIDTH:-80}"
+  if (( width > 72 )); then
+    width=72
+  fi
+  printf '%s' "$width"
 }
 
 ui_section() {
-  local title="$1"
-  if (( UI_TTY && ! UI_PLAIN )); then
-    printf '\n%s== %s ==%s\n' "$UI_BOLD" "$title" "$UI_RESET"
-  else
-    printf '\n== %s ==\n' "$title"
+  local title="$1" width label fill dashes
+
+  width="$(ui_rule_width)"
+  label="-- $title "
+  fill=$((width - ${#label}))
+  if (( fill < 0 )); then
+    fill=0
   fi
+  printf -v dashes '%*s' "$fill" ''
+  dashes="${dashes// /-}"
+
+  if (( UI_TTY && ! UI_PLAIN )); then
+    printf '\n%s%s%s%s%s%s%s\n' \
+      "$UI_BOLD" "$UI_CYAN" "$label" "$UI_RESET" "$UI_DIM" "$dashes" "$UI_RESET"
+  else
+    printf '\n%s%s\n' "$label" "$dashes"
+  fi
+}
+
+ui_finish() {
+  local title="$1" width dashes
+
+  width="$(ui_rule_width)"
+  printf -v dashes '%*s' "$width" ''
+  dashes="${dashes// /=}"
+
+  printf '\n%s%s%s%s\n' "$UI_BOLD" "$UI_GREEN" "$dashes" "$UI_RESET"
+  printf '%s%s  %s%s\n' "$UI_BOLD" "$UI_GREEN" "$title" "$UI_RESET"
+  printf '%s%s%s%s\n' "$UI_BOLD" "$UI_GREEN" "$dashes" "$UI_RESET"
+}
+
+ui_next_steps() {
+  local step index=1
+
+  printf '\n%sNext steps%s\n' "$UI_BOLD" "$UI_RESET"
+  for step in "$@"; do
+    printf '  %d. %s\n' "$index" "$step"
+    index=$((index + 1))
+  done
 }
 
 ui_info() {

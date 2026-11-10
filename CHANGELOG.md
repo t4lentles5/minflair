@@ -24,6 +24,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - New `lib/ui.sh` centralizes one-line headers, ASCII section markers, status symbols, confirmation prompts and terminal size detection.
   - All visible output is ASCII-only. Color is optional and is disabled when there is no TTY, when `NO_COLOR` is set or when `TERM=dumb`.
   - The final summary lists the enabled and skipped components, the backup location and the next steps.
+  - The native CLI draws section rules, category-grouped summaries, key-hint footers and a two-panel review screen in the selector instead of plain text.
+  - `install.sh`, `update.sh` and `lib/selector.sh` use the same section rules, category-grouped summaries and a review layout with key hints.
 - **Native `minflair` CLI**:
   - New Rust CLI with `minflair install`, `minflair update` and `minflair doctor`.
   - `install` and `update` run the native pipeline, including the interactive selector, preferences, backups, themes, services and reloads.

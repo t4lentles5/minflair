@@ -550,11 +550,9 @@ else
   warn "Hyprland session not detected; restart Quickshell manually."
 fi
 
-echo ""
-ui_section "Update complete"
+ui_finish "Update complete"
 ui_ok "Backup saved at: $BACKUP_DIR"
 components_summary
-echo ""
-ui_info "Next steps:"
-printf '  1. Restart your session if the reload was skipped.\n'
-printf '  2. Review docs/SETUP.md after major updates.\n'
+ui_next_steps \
+  "Restart your session if the reload was skipped." \
+  "Review docs/SETUP.md after major updates."

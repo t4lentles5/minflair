@@ -594,15 +594,13 @@ if ((DRY_RUN)); then
   exit 0
 fi
 
-echo ""
-ui_section "Installation complete"
+ui_finish "Installation complete"
 ui_ok "Backup saved at: $BACKUP_DIR"
 components_summary
-echo ""
-ui_info "Next steps:"
-printf '  1. Reboot to apply every change.\n'
-printf '  2. Add wallpapers and review docs/SETUP.md.\n'
-printf '  3. Pull new changes and run ./update.sh when needed.\n'
+ui_next_steps \
+  "Reboot to apply every change." \
+  "Add wallpapers and review docs/SETUP.md." \
+  "Pull new changes and run ./update.sh when needed."
 echo ""
 if ((NO_INPUT)); then
   ui_warn "Please remember to reboot later for all changes to take effect."
