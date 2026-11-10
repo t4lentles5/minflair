@@ -68,7 +68,8 @@ A disabled component is never:
 
 Disabling a component does **not** delete files that are already installed.
 It only prevents Minflair from touching them again. This is deliberate: an
-exclusion must never destroy a user's configuration.
+exclusion must never destroy a user's configuration. Enabling a component does
+not deploy its files either; the next `install` or `update` does that.
 
 ## Installer integration
 
@@ -118,7 +119,36 @@ The SDDM runtime cache under `/var/tmp/sddm-theme` is only written when the
 `sddm` component is enabled. This applies to the Python font applier and to the
 QML services that save the wallpaper and settings.
 
-## CLI
+## Changing components with the CLI
+
+Once the `minflair` CLI is installed, use `minflair components` instead of
+editing the file by hand:
+
+```bash
+minflair components list
+minflair components list --enabled
+minflair components list --disabled
+minflair components list --json
+minflair components enable kitty
+minflair components disable kitty,nvim
+minflair components edit           # interactive selector
+minflair components reset          # enable every optional component
+minflair components enable kitty --apply
+```
+
+The command edits `~/.config/minflair/preferences.conf` only. It never copies,
+installs or deletes files. `enable` and `disable` change only the ids you pass,
+core ids cannot be disabled and unknown ids are rejected. `reset` clears the
+disabled list.
+
+`--apply` runs `minflair update --no-input` after saving, so it requires an
+existing installation (`~/.config/quickshell`). Without `--apply`, the new
+selection is applied by the next `minflair install` or `minflair update`.
+
+## Python helper
+
+The repository also ships a Python helper, used by the runtime scripts and
+available when the CLI is not installed:
 
 ```bash
 python3 config/quickshell/Scripts/minflair_components.py list

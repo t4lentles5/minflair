@@ -146,6 +146,12 @@ in another location, pass `--repo <path>` or set `MINFLAIR_REPO`.
 > AUR helper; the choice is used by the installer, the updater and the Package
 > Manager. See [docs/INSTALL.md](docs/INSTALL.md).
 
+> [!TIP]
+> To change components later, run `minflair components edit` for the selector,
+> or `minflair components enable` / `disable` for individual components. Add
+> `--apply` to save and update in one step. See
+> [docs/COMPONENTS.md](docs/COMPONENTS.md#changing-components-with-the-cli).
+
 ---
 
 ## 🩺 Diagnostics
@@ -174,7 +180,8 @@ minflair update --pull
 
 `--pull` runs `git pull --ff-only` and then rebuilds and reinstalls the CLI
 automatically, so the command stays up to date. Use `--no-build` to skip the
-rebuild, or omit `--pull` if you already pulled.
+rebuild. Omitting `--pull` (the default, also available as `--no-pull`) applies
+the source already in the repository.
 
 To update manually instead:
 

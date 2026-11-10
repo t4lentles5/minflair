@@ -119,7 +119,26 @@ your default shell. If Starship is disabled, zsh falls back to a basic prompt.
 
 ## Change the selection later
 
-The selector is the recommended way to change components:
+With the CLI installed, use `minflair components`:
+
+```bash
+minflair components edit                 # interactive selector
+minflair components enable kitty         # save the preference
+minflair components disable kitty,nvim   # save the preference
+minflair components reset                # enable every optional component
+```
+
+Add `--apply` to save and run `minflair update --no-input` in one step:
+
+```bash
+minflair components edit --apply
+```
+
+Without `--apply`, run `minflair update` when you want to deploy the new
+selection. See [ADVANCED.md](ADVANCED.md#managing-components) for the full
+command reference.
+
+If you did not install the CLI, the compatibility entrypoint still works:
 
 ```bash
 ./install.sh --select

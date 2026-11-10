@@ -1,5 +1,6 @@
 mod aur;
 mod cli;
+mod components;
 mod doctor;
 mod install;
 mod manifest;

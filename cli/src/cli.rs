@@ -2,7 +2,7 @@ use anyhow::Result;
 use clap::{Args, Parser, Subcommand};
 use std::path::PathBuf;
 
-use crate::{doctor, install, repo, update};
+use crate::{components, doctor, install, repo, update};
 
 #[derive(Debug, Parser)]
 #[command(
@@ -24,6 +24,8 @@ pub enum Command {
     Update(UpdateArgs),
     /// Check the environment, repository and configuration
     Doctor(DoctorArgs),
+    /// List, enable or disable components
+    Components(ComponentsArgs),
 }
 
 #[derive(Debug, Args, Default, Clone)]
@@ -71,7 +73,7 @@ pub struct InstallArgs {
     pub repo: Option<PathBuf>,
 }
 
-#[derive(Debug, Args)]
+#[derive(Debug, Args, Default)]
 pub struct UpdateArgs {
     #[command(flatten)]
     pub selection: SelectionArgs,
@@ -120,6 +122,70 @@ pub struct DoctorArgs {
     pub repo: Option<PathBuf>,
 }
 
+#[derive(Debug, Args)]
+pub struct ComponentsArgs {
+    #[command(subcommand)]
+    pub command: ComponentsCommand,
+
+    /// Repository root (defaults to auto-detection)
+    #[arg(long, global = true, hide = true)]
+    pub repo: Option<PathBuf>,
+}
+
+#[derive(Debug, Subcommand)]
+pub enum ComponentsCommand {
+    /// List the components and whether they are enabled
+    List(ComponentListArgs),
+    /// Enable components and save the preference
+    Enable(ComponentChangeArgs),
+    /// Disable components and save the preference
+    Disable(ComponentChangeArgs),
+    /// Change the selection in the interactive selector
+    Edit(ComponentEditArgs),
+    /// Re-enable every optional component
+    Reset(ComponentResetArgs),
+}
+
+#[derive(Debug, Args)]
+pub struct ComponentListArgs {
+    /// Print the list as JSON
+    #[arg(long)]
+    pub json: bool,
+
+    /// Only show enabled components
+    #[arg(long, conflicts_with = "disabled")]
+    pub enabled: bool,
+
+    /// Only show disabled components
+    #[arg(long)]
+    pub disabled: bool,
+}
+
+#[derive(Debug, Args)]
+pub struct ComponentChangeArgs {
+    /// Component ids (comma-separated, repeatable)
+    #[arg(value_delimiter = ',', value_name = "IDS", required = true)]
+    pub ids: Vec<String>,
+
+    /// Run minflair update after saving the selection
+    #[arg(long)]
+    pub apply: bool,
+}
+
+#[derive(Debug, Args)]
+pub struct ComponentEditArgs {
+    /// Run minflair update after saving the selection
+    #[arg(long)]
+    pub apply: bool,
+}
+
+#[derive(Debug, Args)]
+pub struct ComponentResetArgs {
+    /// Run minflair update after saving the selection
+    #[arg(long)]
+    pub apply: bool,
+}
+
 pub fn parse() -> Cli {
     Cli::parse()
 }
@@ -134,6 +200,10 @@ pub fn run(args: Cli) -> Result<u8> {
         Command::Update(args) => {
             let root = repo::find(args.repo.clone())?;
             update::run(&root, args)
+        }
+        Command::Components(args) => {
+            let root = repo::find(args.repo.clone())?;
+            components::run(&root, args)
         }
     }
 }

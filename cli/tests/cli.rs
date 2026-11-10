@@ -14,6 +14,7 @@ fn help_lists_every_command() {
     assert!(stdout.contains("install"));
     assert!(stdout.contains("update"));
     assert!(stdout.contains("doctor"));
+    assert!(stdout.contains("components"));
 }
 
 #[test]
@@ -219,6 +220,132 @@ quickshell\tQuickshell shell\tcore\t1\tconfig/quickshell\tquickshell\t\t\t\tCore
     assert_eq!(output.status.code(), Some(1));
     let stderr = String::from_utf8_lossy(&output.stderr);
     assert!(stderr.contains("Quickshell config not found"));
+}
+
+fn component_repository() -> tempfile::TempDir {
+    let directory = tempfile::tempdir().expect("tempdir");
+    let manifest = directory.path().join("config/quickshell/components.tsv");
+    fs::create_dir_all(manifest.parent().expect("parent")).expect("mkdir");
+    fs::write(
+        &manifest,
+        "\
+id\tlabel\tcategory\tcore\tpaths\tpackages\ttheme\tfont\treload\tdescription
+quickshell\tQuickshell shell\tcore\t1\tconfig/quickshell\tquickshell\t\t\t\tCore shell
+hyprland\tHyprland\tcore\t1\tconfig/hypr\thyprland\t\t\t\tHyprland
+kitty\tKitty terminal\tterminal\t0\tconfig/kitty\tkitty\tkitty\tkitty\t\tTerminal
+nvim\tNeovim\tterminal\t0\tconfig/nvim\tnvim\tnvim\t\t\tEditor
+",
+    )
+    .expect("write manifest");
+    directory
+}
+
+#[test]
+fn components_manage_the_saved_selection() {
+    let directory = component_repository();
+    let home = directory.path().join("home");
+    fs::create_dir_all(&home).expect("mkdir home");
+    let prefs = home.join(".config/minflair/preferences.conf");
+
+    let run = |args: &[&str]| {
+        let mut command = binary();
+        command
+            .arg("components")
+            .args(args)
+            .args(["--repo"])
+            .arg(directory.path())
+            .env("HOME", &home)
+            .env("MINFLAIR_PREFS", &prefs)
+            .env("TERM", "dumb")
+            .env("NO_COLOR", "1")
+            .env_remove("MINFLAIR_REPO");
+        command.output().expect("run minflair")
+    };
+
+    let output = run(&["list", "--json"]);
+    assert!(
+        output.status.success(),
+        "stderr: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let report: serde_json::Value =
+        serde_json::from_str(&String::from_utf8_lossy(&output.stdout)).expect("list JSON");
+    let components = report["components"].as_array().expect("components");
+    assert_eq!(components.len(), 4);
+    assert!(components
+        .iter()
+        .all(|component| component["enabled"] == true));
+
+    // A stale preferences file from an older release must not break the save.
+    fs::create_dir_all(prefs.parent().expect("parent")).expect("mkdir prefs");
+    fs::write(&prefs, "ghost\nchsh\n").expect("write stale preferences");
+
+    let output = run(&["disable", "kitty,nvim"]);
+    assert!(
+        output.status.success(),
+        "stderr: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(stderr.contains("ghost"));
+    assert!(stderr.contains("chsh"));
+    let saved = fs::read_to_string(&prefs).expect("preferences");
+    assert!(saved.lines().any(|line| line.trim() == "kitty"));
+    assert!(saved.lines().any(|line| line.trim() == "nvim"));
+    assert!(!saved.lines().any(|line| line.trim() == "ghost"));
+
+    let output = run(&["list", "--disabled", "--json"]);
+    let report: serde_json::Value =
+        serde_json::from_str(&String::from_utf8_lossy(&output.stdout)).expect("list JSON");
+    let ids: Vec<&str> = report["components"]
+        .as_array()
+        .expect("components")
+        .iter()
+        .map(|component| component["id"].as_str().expect("id"))
+        .collect();
+    assert_eq!(ids, ["kitty", "nvim"]);
+
+    let output = run(&["enable", "kitty"]);
+    assert!(output.status.success());
+    let saved = fs::read_to_string(&prefs).expect("preferences");
+    assert!(!saved.lines().any(|line| line.trim() == "kitty"));
+
+    let output = run(&["reset"]);
+    assert!(output.status.success());
+    let saved = fs::read_to_string(&prefs).expect("preferences");
+    assert!(!saved
+        .lines()
+        .any(|line| !line.trim().is_empty() && !line.trim().starts_with('#')));
+
+    let output = run(&["disable", "quickshell"]);
+    assert_eq!(output.status.code(), Some(1));
+    assert!(String::from_utf8_lossy(&output.stderr).contains("core component cannot be disabled"));
+}
+
+#[test]
+fn components_apply_requires_an_install() {
+    let directory = component_repository();
+    let home = directory.path().join("home");
+    fs::create_dir_all(&home).expect("mkdir home");
+    let prefs = home.join(".config/minflair/preferences.conf");
+
+    let output = binary()
+        .args(["components", "disable", "kitty", "--apply", "--repo"])
+        .arg(directory.path())
+        .env("HOME", &home)
+        .env("MINFLAIR_PREFS", &prefs)
+        .env("TERM", "dumb")
+        .env("NO_COLOR", "1")
+        .env_remove("MINFLAIR_REPO")
+        .output()
+        .expect("run minflair");
+
+    assert_eq!(output.status.code(), Some(1));
+    assert!(String::from_utf8_lossy(&output.stderr).contains("Quickshell config not found"));
+    assert!(fs::read_to_string(&prefs)
+        .expect("preferences")
+        .lines()
+        .any(|line| line.trim() == "kitty"));
 }
 
 #[test]

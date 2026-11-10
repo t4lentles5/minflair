@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **`minflair components`**: a dedicated command to inspect and edit the component selection without running the installer.
+  - `minflair components list` shows the state of every component; `--json`, `--enabled` and `--disabled` filter the output for automation.
+  - `minflair components enable` and `disable` update `~/.config/minflair/preferences.conf`, validate ids and protect core components.
+  - `minflair components edit` opens the interactive selector, and `reset` re-enables every optional component.
+  - `--apply` saves the selection and runs `minflair update --no-input` in one step; it requires an existing installation.
+
+### Changed
+
+- Documented `--no-pull`, the `--no-build` requirement and the difference between the `install` and `update` selector defaults.
+- Documented the new component commands in `README.md`, `docs/INSTALL.md`, `docs/ADVANCED.md` and `docs/COMPONENTS.md`.
+- Documented how to add `~/.local/bin` to `PATH` in bash when the zsh component is not selected.
+
 ## [2.2.0] - 2026-11-10
 
 ### Added

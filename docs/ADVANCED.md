@@ -21,8 +21,26 @@ compatibility entrypoints with the same selector, preferences and flags:
 | `--dry-run` | Print every action without writing files or running package changes. |
 | `--no-packages` | Skip `pacman` and the AUR helper; useful for configuration-only installs. |
 | `--pull` | Update only: run `git pull --ff-only` before updating (requires a git checkout). |
+| `--no-pull` | Update only: do not pull the source. This is the default; conflicts with `--pull`. |
 | `--no-build` | Update only: do not rebuild the CLI after `--pull`. |
 | `--help` | Show the built-in help. |
+
+`--no-build` only applies when `--pull` is also given. `--pull` and
+`--no-pull` are mutually exclusive; `--no-pull` is the default.
+
+### install vs update
+
+| | `minflair install` | `minflair update` |
+| --- | --- | --- |
+| Purpose | First deployment or full reapply | Refresh an existing installation |
+| Interactive selector | Opens by default | Only with `--select` |
+| Selection flags | Persist to preferences | Persist to preferences |
+| `--pull` / `--no-build` | Not available | Available |
+| Requires an existing install | No | Yes (`~/.config/quickshell`) |
+
+Both commands apply the saved preferences. By default, `install` opens the
+selector and `update` does not; use `--select` to review the selection in
+either command.
 
 Lists are comma-separated. Flags can be combined and repeated:
 
@@ -93,6 +111,43 @@ example when using `--no-packages`), the installer prints a warning and skips
 the login shell change instead of failing. The same applies to a missing
 `yay`: AUR packages are skipped with a warning.
 
+## Managing components
+
+`minflair components` edits the saved selection without running the installer.
+It only writes `~/.config/minflair/preferences.conf`; it never copies, installs
+or deletes files.
+
+```bash
+minflair components list                 # status, id, label
+minflair components list --enabled       # only enabled components
+minflair components list --disabled      # only disabled components
+minflair components list --json          # machine-readable report
+minflair components enable kitty         # save the preference
+minflair components disable kitty,nvim   # save the preference
+minflair components edit                 # interactive selector
+minflair components reset                # enable every optional component
+```
+
+`enable` and `disable` are additive: they change only the ids you pass.
+`reset` clears the disabled list. Core components (`quickshell` and
+`hyprland`) cannot be disabled, and unknown ids are rejected.
+
+To save the selection and apply it in one step, add `--apply`:
+
+```bash
+minflair components enable kitty --apply
+minflair components disable obsidian --apply
+minflair components edit --apply
+```
+
+`--apply` runs `minflair update --no-input` after saving, so it requires an
+existing installation (`~/.config/quickshell`). Without `--apply`, run
+`minflair update` yourself when you want to deploy the new selection.
+
+Disabling a component keeps files that are already installed; it only stops
+Minflair from touching them again. Enabling a component does not deploy it
+until the next `install` or `update`.
+
 ## Automation recipes
 
 ```bash
@@ -131,7 +186,8 @@ terminal it falls back to `--no-input` and the saved preferences.
 
 ## Editing preferences directly
 
-The component helper reads and writes the same preferences file:
+`minflair components` is the supported way to change the selection. If the CLI
+is not installed, the Python helper reads and writes the same file:
 
 ```bash
 python config/quickshell/Scripts/minflair_components.py list
