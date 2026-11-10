@@ -289,6 +289,7 @@ fn components_manage_the_saved_selection() {
     let stderr = String::from_utf8_lossy(&output.stderr);
     assert!(stderr.contains("ghost"));
     assert!(stderr.contains("obsolete"));
+    assert!(String::from_utf8_lossy(&output.stdout).contains("minflair update"));
     let saved = fs::read_to_string(&prefs).expect("preferences");
     assert!(saved.lines().any(|line| line.trim() == "kitty"));
     assert!(saved.lines().any(|line| line.trim() == "nvim"));
@@ -307,11 +308,13 @@ fn components_manage_the_saved_selection() {
 
     let output = run(&["enable", "kitty"]);
     assert!(output.status.success());
+    assert!(String::from_utf8_lossy(&output.stdout).contains("minflair update"));
     let saved = fs::read_to_string(&prefs).expect("preferences");
     assert!(!saved.lines().any(|line| line.trim() == "kitty"));
 
     let output = run(&["reset"]);
     assert!(output.status.success());
+    assert!(String::from_utf8_lossy(&output.stdout).contains("minflair update"));
     let saved = fs::read_to_string(&prefs).expect("preferences");
     assert!(!saved
         .lines()
@@ -342,6 +345,7 @@ fn components_apply_requires_an_install() {
 
     assert_eq!(output.status.code(), Some(1));
     assert!(String::from_utf8_lossy(&output.stderr).contains("Quickshell config not found"));
+    assert!(!String::from_utf8_lossy(&output.stdout).contains("Run `minflair update`"));
     assert!(fs::read_to_string(&prefs)
         .expect("preferences")
         .lines()

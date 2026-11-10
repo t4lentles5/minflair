@@ -72,7 +72,7 @@ pub fn run(root: &Path, args: UpdateArgs) -> Result<u8> {
     if args.selection.select && !args.selection.no_input {
         if selector::available() {
             ctx.info("Choose the components you want to keep.");
-            match selector::run(&manifest, &disabled, &version)? {
+            match selector::run_with_action(&manifest, &disabled, &version, "apply selection")? {
                 Some(selected) => {
                     prefs::save(&prefs_path, &selected, &manifest)
                         .context("could not save component preferences")?;

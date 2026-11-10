@@ -45,6 +45,7 @@ pub struct SelectorState {
     scroll: usize,
     review_scroll: u16,
     version: String,
+    action: String,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -83,7 +84,13 @@ impl SelectorState {
             scroll: 0,
             review_scroll: 0,
             version: version.to_string(),
+            action: "start installation".to_string(),
         }
+    }
+
+    pub fn with_action(mut self, action: &str) -> Self {
+        self.action = action.to_string();
+        self
     }
 
     fn filtered(&self) -> Vec<usize> {
@@ -347,7 +354,17 @@ pub fn run(
     disabled: &BTreeSet<String>,
     version: &str,
 ) -> Result<Option<BTreeSet<String>>> {
-    let mut state = SelectorState::new(manifest, disabled, version);
+    run_with_action(manifest, disabled, version, "start installation")
+}
+
+/// Run the selector with a custom label for the confirm action in the footer.
+pub fn run_with_action(
+    manifest: &Manifest,
+    disabled: &BTreeSet<String>,
+    version: &str,
+    action: &str,
+) -> Result<Option<BTreeSet<String>>> {
+    let mut state = SelectorState::new(manifest, disabled, version).with_action(action);
     let mut terminal = TerminalSession::start()?;
 
     let outcome = loop {
@@ -827,17 +844,15 @@ fn draw_review(frame: &mut Frame, state: &SelectorState) {
         Line::from(vec![
             Span::raw("  "),
             key_span("Enter/y"),
-            hint_span("start"),
+            hint_span(&state.action),
             key_span("Esc/n"),
             hint_span("back"),
-            key_span("q"),
-            hint_span("cancel"),
         ])
     } else {
         Line::from(vec![
             Span::raw("  "),
             key_span("Enter/y"),
-            hint_span("start installation"),
+            hint_span(&state.action),
             key_span("Esc/n"),
             hint_span("back"),
             key_span("q"),
@@ -1084,6 +1099,14 @@ nvim\tNeovim\tterminal\t0\tconfig/nvim\tnvim\tnvim\t\t\tEditor
         assert!(text.contains("Skipped (1)"));
         assert!(text.contains("Kitty terminal"));
         assert!(text.contains("start installation"));
+    }
+
+    #[test]
+    fn review_uses_a_custom_action_label() {
+        let mut state = state().with_action("save selection");
+        state.mode = Mode::Review;
+        let text = render_review(&state, 80, 24);
+        assert!(text.contains("save selection"));
     }
 
     #[test]

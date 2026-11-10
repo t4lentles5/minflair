@@ -173,9 +173,14 @@ fn change(root: &Path, args: ComponentChangeArgs, enable: bool) -> Result<u8> {
             "Saved component preferences to {}.",
             path.display()
         ));
-        if enable {
-            ui::info("Run `minflair update` to deploy the newly enabled components.");
-        } else {
+        if !args.apply {
+            if enable {
+                ui::info("Run `minflair update` to deploy the newly enabled components.");
+            } else {
+                ui::info("Run `minflair update` to apply the saved selection.");
+            }
+        }
+        if !enable {
             ui::info("Files already installed are kept; disabled components are only skipped.");
         }
     }
@@ -196,7 +201,9 @@ fn edit(root: &Path, args: ComponentEditArgs) -> Result<u8> {
     }
 
     let version = repo::app_version(root).unwrap_or_else(|| "unknown".to_string());
-    let Some(selection) = selector::run(&manifest, &disabled, &version)? else {
+    let Some(selection) =
+        selector::run_with_action(&manifest, &disabled, &version, "save selection")?
+    else {
         ui::info("No changes made.");
         return Ok(0);
     };
@@ -209,6 +216,8 @@ fn edit(root: &Path, args: ComponentEditArgs) -> Result<u8> {
 
     if args.apply {
         apply(root)?;
+    } else {
+        ui::info("Run `minflair update` to deploy the saved selection.");
     }
     Ok(0)
 }
@@ -224,7 +233,9 @@ fn reset(root: &Path, args: ComponentResetArgs) -> Result<u8> {
             "Enabled every optional component in {}.",
             path.display()
         ));
-        ui::info("Run `minflair update` to deploy the newly enabled components.");
+        if !args.apply {
+            ui::info("Run `minflair update` to deploy the newly enabled components.");
+        }
     }
 
     if args.apply {

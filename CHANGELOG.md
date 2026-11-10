@@ -82,6 +82,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Missing next step after saving a component selection**: `minflair components edit`, `enable`, `disable` and `reset` now print the `minflair update` command needed to deploy the selection, and skip that hint when `--apply` is used.
 - **Caps Lock and Num Lock OSD bindings**: the Hyprland bindings now use `ignore_mods = true`. Hyprland reports both keys as their own modifiers and adds them to the event mask, so the bindings never matched before.
 - **Stuck notification toasts**: `BaseNotifLayer` now has a fallback timer that removes notifications when the closing animation never completes.
 - **zsh startup without optional components**: zsh now falls back to a basic prompt when Starship is disabled and skips missing plugins instead of printing `command not found`.
