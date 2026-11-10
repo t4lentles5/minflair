@@ -37,9 +37,17 @@ fn doctor_fails_when_the_repository_is_missing() {
         .expect("run minflair");
 
     assert_eq!(output.status.code(), Some(1));
+
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(stdout.contains("\"repo\""));
-    assert!(stdout.contains("\"failures\": 1"));
+    let report: serde_json::Value = serde_json::from_str(&stdout).expect("doctor JSON");
+    let checks = report["checks"].as_array().expect("checks");
+    let repo = checks
+        .iter()
+        .find(|check| check["name"] == "repo")
+        .expect("repo check");
+
+    assert_eq!(repo["status"], "fail");
+    assert!(report["summary"]["failures"].as_u64().expect("failures") >= 1);
 }
 
 #[test]
