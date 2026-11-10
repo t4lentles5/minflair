@@ -56,7 +56,7 @@ Item {
     Process {
         id: aurProc
 
-        command: ["sh", "-c", "yay -Qua | wc -l || echo 0"]
+        command: ["sh", "-c", SettingsService.aurHelper + " -Qua | wc -l || echo 0"]
 
         stdout: SplitParser {
             onRead: (data) => {

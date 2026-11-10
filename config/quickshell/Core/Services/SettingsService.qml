@@ -9,6 +9,7 @@ Item {
 
     property bool settingsLoaded: false
     property string packageManagerMode: "install"
+    property string aurHelper: "yay"
     property int clipboardMaxItems: 100
     property var enabledKbLayouts: ["us", "latam"]
     property string githubUsername: ""
@@ -84,6 +85,7 @@ Item {
     Component.onCompleted: {
         load();
         browsersProc.running = true;
+        aurHelperProc.running = true;
     }
     onClipboardMaxItemsChanged: {
         if (settingsLoaded)
@@ -259,16 +261,19 @@ Item {
                 "fontFamily": settingsService.fontFamily
             };
             settingsSaver.running = false;
-            settingsSaver.command = ["sh", "-c", "mkdir -p ~/.cache/quickshell /var/tmp/sddm-theme && cat << 'EOF' > ~/.cache/quickshell/settings_prefs.json.tmp
+            settingsSaver.command = ["sh", "-c", "mkdir -p ~/.cache/quickshell && cat << 'EOF' > ~/.cache/quickshell/settings_prefs.json.tmp
 " + JSON.stringify(data) + "
 EOF
 mv -f ~/.cache/quickshell/settings_prefs.json.tmp ~/.cache/quickshell/settings_prefs.json
 chmod 600 ~/.cache/quickshell/settings_prefs.json
-cat << 'EOF' > /var/tmp/sddm-theme/settings_prefs.json.tmp
+if ! grep -qxF sddm \"$HOME/.config/minflair/preferences.conf\" 2>/dev/null; then
+  mkdir -p /var/tmp/sddm-theme
+  cat << 'EOF' > /var/tmp/sddm-theme/settings_prefs.json.tmp
 " + JSON.stringify(sddmData) + "
 EOF
-mv -f /var/tmp/sddm-theme/settings_prefs.json.tmp /var/tmp/sddm-theme/settings_prefs.json
-chmod 644 /var/tmp/sddm-theme/settings_prefs.json || true"];
+  mv -f /var/tmp/sddm-theme/settings_prefs.json.tmp /var/tmp/sddm-theme/settings_prefs.json
+  chmod 644 /var/tmp/sddm-theme/settings_prefs.json || true
+fi"];
             settingsSaver.running = true;
         }
     }
@@ -451,6 +456,22 @@ chmod 644 /var/tmp/sddm-theme/settings_prefs.json || true"];
 
     Process {
         id: settingsSaver
+    }
+
+    Process {
+        id: aurHelperProc
+
+        command: ["python3", Quickshell.shellDir + "/Scripts/aur_helper.py"]
+
+        stdout: SplitParser {
+            onRead: data => {
+                let value = data.trim();
+                if (value === "yay" || value === "paru")
+                    settingsService.aurHelper = value;
+
+            }
+        }
+
     }
 
     Process {

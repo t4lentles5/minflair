@@ -7,15 +7,19 @@ import re
 import subprocess
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-def main():
-    if len(sys.argv) < 3:
-        print("Usage: apply_cursor.py <ThemeName> <Size>")
-        sys.exit(1)
+import minflair_components as components
 
-    theme_name = sys.argv[1]
-    size = sys.argv[2]
-    home = Path.home()
+
+def apply_cursor(theme_name, size, home=None, is_enabled=None):
+    """Apply the cursor theme when the cursor component is enabled."""
+    if is_enabled is None:
+        is_enabled = components.enabled
+    if not is_enabled("cursor"):
+        return
+
+    home = home or Path.home()
 
     # 1. Update GTK globally via gsettings
     subprocess.run(
@@ -61,11 +65,23 @@ def main():
                 content,
             )
             envs_lua.write_text(content, encoding="utf-8")
-        except Exception as e:
-            print(f"Warning: Failed to update envs.lua: {e}", file=sys.stderr)
+        except Exception as exc:
+            print(f"Warning: Failed to update envs.lua: {exc}", file=sys.stderr)
 
     # 4. Apply via hyprctl (runtime)
     subprocess.run(["hyprctl", "setcursor", theme_name, size], capture_output=True)
+
+
+def main():
+    if len(sys.argv) < 3:
+        print("Usage: apply_cursor.py <ThemeName> <Size>")
+        sys.exit(1)
+
+    try:
+        apply_cursor(sys.argv[1], sys.argv[2])
+    except components.ComponentError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        sys.exit(1)
 
 
 if __name__ == "__main__":

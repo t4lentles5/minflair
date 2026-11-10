@@ -83,7 +83,8 @@ QtObject {
         // The wallpaper name is passed as a positional argument and written with
         // printf, so quotes, newlines or shell metacharacters in a file name can
         // never break the command or inject code.
-        wallpaperSaveProc.command = ["sh", "-c", "mkdir -p \"$HOME/.cache/quickshell\" /var/tmp/sddm-theme && printf '%s' \"$1\" > \"$HOME/.cache/quickshell/current_wallpaper\" && printf '%s' \"$1\" > /var/tmp/sddm-theme/current_wallpaper && python3 \"$2\" 2>/dev/null || true", "minflair-wallpaper", wallName, Quickshell.shellDir + "/Scripts/theme/apply_theme.py"];
+        // The SDDM cache is only written when the sddm component is enabled.
+        wallpaperSaveProc.command = ["sh", "-c", "mkdir -p \"$HOME/.cache/quickshell\" && printf '%s' \"$1\" > \"$HOME/.cache/quickshell/current_wallpaper\" && if ! grep -qxF sddm \"$HOME/.config/minflair/preferences.conf\" 2>/dev/null; then mkdir -p /var/tmp/sddm-theme && printf '%s' \"$1\" > /var/tmp/sddm-theme/current_wallpaper; fi && python3 \"$2\" 2>/dev/null || true", "minflair-wallpaper", wallName, Quickshell.shellDir + "/Scripts/theme/apply_theme.py"];
         wallpaperSaveProc.startDetached();
     }
 

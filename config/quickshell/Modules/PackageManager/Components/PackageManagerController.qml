@@ -40,7 +40,7 @@ Item {
         if (managerRoot.detailsOverlayRef)
             managerRoot.detailsOverlayRef.visible = true;
 
-        detailsProc.command = installed ? ["env", "LANG=C", "yay", "-Qi", pkgName] : ["env", "LANG=C", "yay", "-Si", pkgName];
+        detailsProc.command = installed ? ["env", "LANG=C", SettingsService.aurHelper, "-Qi", pkgName] : ["env", "LANG=C", SettingsService.aurHelper, "-Si", pkgName];
         detailsProc.running = false;
         detailsProc.running = true;
     }
@@ -268,16 +268,16 @@ Item {
 
         if (controller.actionMode === "remove") {
             removeProc.running = false;
-            removeProc.command = ["kitty", "--class", "kitty-floating", "--hold", "-e", "yay", "-Rns"].concat(controller.selectedPackages);
+            removeProc.command = ["kitty", "--class", "kitty-floating", "--hold", "-e", SettingsService.aurHelper, "-Rns"].concat(controller.selectedPackages);
             removeProc.startDetached();
         } else if (controller.actionMode === "update") {
             installProc.running = false;
-            installProc.command = ["kitty", "--class", "kitty-floating", "--hold", "-e", "yay", "-Syu"].concat(controller.selectedPackages);
+            installProc.command = ["kitty", "--class", "kitty-floating", "--hold", "-e", SettingsService.aurHelper, "-Syu"].concat(controller.selectedPackages);
             UpdateService.isSystemUpdating = true;
             installProc.startDetached();
         } else {
             installProc.running = false;
-            installProc.command = ["kitty", "--class", "kitty-floating", "--hold", "-e", "yay", "-S"].concat(controller.selectedPackages);
+            installProc.command = ["kitty", "--class", "kitty-floating", "--hold", "-e", SettingsService.aurHelper, "-S"].concat(controller.selectedPackages);
             installProc.startDetached();
         }
         controller.selectedPackages = [];
@@ -288,7 +288,7 @@ Item {
     function installPackage(name) {
         controller.installingPkg = name;
         installProc.running = false;
-        installProc.command = ["kitty", "--class", "kitty-floating", "--hold", "-e", "yay", "-S", name];
+        installProc.command = ["kitty", "--class", "kitty-floating", "--hold", "-e", SettingsService.aurHelper, "-S", name];
         installProc.startDetached();
         focusKittyTimer.start();
         managerRoot.isOpen = false;
@@ -297,7 +297,7 @@ Item {
     function removePackage(name) {
         controller.installingPkg = name;
         removeProc.running = false;
-        removeProc.command = ["kitty", "--class", "kitty-floating", "--hold", "-e", "yay", "-Rns", name];
+        removeProc.command = ["kitty", "--class", "kitty-floating", "--hold", "-e", SettingsService.aurHelper, "-Rns", name];
         removeProc.startDetached();
         focusKittyTimer.start();
         managerRoot.isOpen = false;

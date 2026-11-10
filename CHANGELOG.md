@@ -5,6 +5,84 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.0] - 2026-11-10
+
+### Added
+
+- **Component manifest and persistent preferences**:
+  - New `config/quickshell/components.tsv` manifest is the single source of truth for component ids, paths, packages, theme appliers, font targets and reload commands.
+  - Preferences are stored in `~/.config/minflair/preferences.conf` as a plain list of disabled components, so they work before Python or `jq` are available.
+  - Components are opt-out: a component is enabled unless it is listed in the preferences file. `quickshell` and `hyprland` are core and cannot be disabled.
+  - New `minflair_components.py` CLI and shared `lib/components.sh` helpers read the manifest from both the installer and the runtime scripts.
+- **Interactive component selector**:
+  - `install.sh` opens a keyboard-driven selector by default when no selection flags are passed.
+  - The selector can toggle optional components, enable everything, disable everything, search by id or description, and cancel without changing anything.
+  - Wide terminals show a two-pane layout with the description of the highlighted component.
+  - `Enter` opens a review screen; preferences are saved only after confirmation.
+  - `update.sh --select` opens the same selector before updating.
+- **Installer and updater UI**:
+  - New `lib/ui.sh` centralizes one-line headers, ASCII section markers, status symbols, confirmation prompts and terminal size detection.
+  - All visible output is ASCII-only. Color is optional and is disabled when there is no TTY, when `NO_COLOR` is set or when `TERM=dumb`.
+  - The final summary lists the enabled and skipped components, the backup location and the next steps.
+- **Native `minflair` CLI**:
+  - New Rust CLI with `minflair install`, `minflair update` and `minflair doctor`.
+  - `install` and `update` run the native pipeline, including the interactive selector, preferences, backups, themes, services and reloads.
+  - `install.sh` and `update.sh` remain compatibility entrypoints with the same selector, preferences and flags.
+  - `minflair update --pull` pulls the latest source, rebuilds the CLI and reinstalls it in place; `--no-build` skips the rebuild.
+- **One-command installation**:
+  - New `bootstrap.sh` installs the missing build tools, clones Minflair into `~/.minflair`, builds the CLI into `~/.local/bin` and starts `minflair install`.
+  - The bootstrap keeps the terminal attached for the component selector and falls back to `--no-input` when no terminal is available.
+  - `MINFLAIR_DIR`, `MINFLAIR_BIN_DIR`, `MINFLAIR_REPO_URL` and `MINFLAIR_REF` override the clone directory, CLI destination, remote and branch or tag.
+  - The repository path is saved in `~/.config/minflair/repo`, so the CLI works from any directory.
+- **Selection flags for install and update**:
+  - `--exclude`, `--only`, `--include`, `--select`, `--no-input`, `--dry-run` and `--no-packages` are available in both scripts.
+  - Selection flags persist the choice and make the run non-interactive.
+  - `--dry-run` reports the exact files, packages and reloads without changing the system.
+- **Selectable AUR helper**:
+  - The first interactive install asks whether to use `yay` or `paru`; the choice is saved in `~/.config/minflair/aur-helper` and reused later.
+  - `install.sh` and `update.sh` accept `--aur-helper yay|paru`, so the helper can be changed without editing files.
+  - The Package Manager, the update counter and the package search script read the same saved value, so AUR actions work with either helper.
+  - `MINFLAIR_AUR_HELPER` and `MINFLAIR_AUR_HELPER_FILE` override the saved value for automation and tests.
+- **DDC/CI brightness for external monitors**:
+  - New `Scripts/system/brightness.sh` helper uses `brightnessctl` for internal panels and falls back to `ddcutil` over DDC/CI for external monitors.
+  - The helper caches the detected backend, the buses and the last value in `$XDG_RUNTIME_DIR`, serializes bus access with `flock` and skips detection for 30 seconds when no display supports DDC/CI.
+  - `BrightnessSlider` and the Hyprland brightness keybinds share the helper, so the keys and the slider stay in sync.
+  - `install.sh` and `update.sh` install `ddcutil`, load `i2c-dev` on boot and add the user to the `i2c` group.
+- **System tray item pinning**:
+  - Pinned tray items are validated against the live `SystemTray` list in `AppState`.
+  - When a pinned application quits, the stale pin is dropped instead of falling back to an index that now points at a different tray item.
+- **Runtime gating**:
+  - Theme, font and cursor appliers skip disabled components instead of writing their configuration.
+  - The installer filters `packages.txt` and `packages-aur.txt` so disabled applications are not installed or updated.
+  - Disabled components are not copied, themed or signalled. Existing files from a disabled component are left untouched.
+  - SDDM cache writes are gated in the shell services.
+- **Documentation and CI**:
+  - New `docs/COMPONENTS.md` and `docs/INSTALL.md` explain the manifest, selector and flags.
+  - The README now links to dedicated setup, advanced usage and troubleshooting guides (`docs/SETUP.md`, `docs/ADVANCED.md`, `docs/TROUBLESHOOTING.md`).
+  - The README and `docs/INSTALL.md` document the one-command bootstrap install, and `docs/ADVANCED.md` lists its environment variables.
+  - New GitHub Actions workflow runs the unit tests, validates the manifest and checks shell syntax.
+  - The workflow now checks `bootstrap.sh` with `bash -n` and ShellCheck.
+
+### Changed
+
+- The installer now copies only enabled component paths and backs up only the files it is about to replace.
+- The update script keeps the saved selection and does not re-enable components that were disabled earlier.
+- AUR packages are installed and updated with the selected helper instead of a hardcoded `yay`.
+- The git clone path in the documentation is now `~/.minflair`, replacing the old `~/.dotfiles` path.
+- New backups are written to `~/.minflair_backup/<timestamp>/`. Backups from older versions remain in `~/.dotfiles_backup/<timestamp>/` and the restore guide covers both locations.
+- The version shown in Settings → System Information is now `2.2.0`.
+- The `chsh` component is now part of `zsh`: selecting zsh also sets it as the login shell, and old `chsh` preferences are ignored with a warning.
+- `minflair` now resolves the repository from the path saved by `bootstrap.sh` and also checks `~/.local/share/minflair`, `/usr/share/minflair` and `/usr/local/share/minflair`.
+- The README and install guide present the native CLI as the canonical entrypoint, with `install.sh` and `update.sh` kept as compatibility entrypoints.
+
+### Fixed
+
+- **Caps Lock and Num Lock OSD bindings**: the Hyprland bindings now use `ignore_mods = true`. Hyprland reports both keys as their own modifiers and adds them to the event mask, so the bindings never matched before.
+- **Stuck notification toasts**: `BaseNotifLayer` now has a fallback timer that removes notifications when the closing animation never completes.
+- **zsh startup without optional components**: zsh now falls back to a basic prompt when Starship is disabled and skips missing plugins instead of printing `command not found`.
+- **`update` alias with paru**: the zsh alias now reads the selected AUR helper instead of always calling `yay`.
+- **`minflair update --pull` outside a git checkout**: the updater now stops with a clear message instead of failing inside `git pull`.
+
 ## [2.1.0] - 2026-10-28
 
 ### Added
@@ -48,7 +126,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added full-tile click interaction, hover animations, and improved click handling for inactive tiles in `QuickSettingsTile`.
   - Unified gaming bar dimensions through a shared `gamingBarHeight` constant and added the app version to Settings → System Information.
 - **Configuration Update Script (`update.sh`)**:
-  - New updater for existing installations: backs up replaced files to `~/.dotfiles_backup/<timestamp>/`, syncs `config/` and `home/` (preserving Zsh history), installs new dependencies, refreshes the `minflair-sddm` theme without root-owned Git repositories, and reloads Hyprland and Quickshell.
+  - New updater for existing installations: backs up replaced files to `~/.minflair_backup/<timestamp>/`, syncs `config/` and `home/` (preserving Zsh history), installs new dependencies, refreshes the `minflair-sddm` theme without root-owned Git repositories, and reloads Hyprland and Quickshell.
 
 ### Changed
 
