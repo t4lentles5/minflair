@@ -16,6 +16,9 @@ use std::io::{self, IsTerminal, Stdout};
 
 use crate::manifest::{category_label, Manifest};
 
+/// Minimum contrast between the selected row and the terminal background.
+const HIGHLIGHT_BACKGROUND_CONTRAST: f64 = 2.0;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Mode {
     List,
@@ -46,6 +49,8 @@ pub struct SelectorState {
     review_scroll: u16,
     version: String,
     action: String,
+    highlight_bg: Color,
+    highlight_fg: Color,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -55,8 +60,131 @@ enum Action {
     Cancel,
 }
 
+/// Builds the cursor highlight from the active wallpaper theme.
+///
+/// The accent is regenerated whenever the wallpaper changes, so it can be any
+/// hue and lightness. We keep the accent as the row background when it is
+/// distinguishable from the theme background, nudge it if it is not, and pick
+/// black or white text depending on which has the better contrast.
+fn theme_highlight() -> (Color, Color) {
+    theme_accent()
+        .map(|(accent, background)| highlight_colors(accent, background))
+        .unwrap_or((Color::Blue, Color::White))
+}
+
+fn theme_accent() -> Option<([u8; 3], [u8; 3])> {
+    let path = crate::repo::home_dir()
+        .ok()?
+        .join(".cache/quickshell/colorscheme.json");
+    let content = std::fs::read_to_string(path).ok()?;
+    let value: serde_json::Value = serde_json::from_str(&content).ok()?;
+    let accent = parse_hex(value.get("accent")?.as_str()?)?;
+    let background = value
+        .get("bg")
+        .and_then(|value| value.as_str())
+        .and_then(parse_hex)
+        .unwrap_or([0x10, 0x10, 0x10]);
+    Some((accent, background))
+}
+
+fn highlight_colors(accent: [u8; 3], background: [u8; 3]) -> (Color, Color) {
+    let visible = ensure_visible(accent, background);
+    (to_color(visible), to_color(readable_foreground(visible)))
+}
+
+fn to_color(rgb: [u8; 3]) -> Color {
+    Color::Rgb(rgb[0], rgb[1], rgb[2])
+}
+
+fn parse_hex(value: &str) -> Option<[u8; 3]> {
+    let value = value.strip_prefix('#').unwrap_or(value);
+    let (value, digits) = match value.len() {
+        3 => (value, 1),
+        6 => (value, 2),
+        // Qt serializes colors as #AARRGGBB; ignore the alpha channel.
+        8 => (&value[2..], 2),
+        _ => return None,
+    };
+    let mut channels = [0u8; 3];
+    if digits == 1 {
+        for (index, channel) in channels.iter_mut().enumerate() {
+            let digit = u8::from_str_radix(&value[index..=index], 16).ok()?;
+            *channel = digit * 0x11;
+        }
+    } else {
+        for (index, channel) in channels.iter_mut().enumerate() {
+            *channel = u8::from_str_radix(&value[index * 2..index * 2 + 2], 16).ok()?;
+        }
+    }
+    Some(channels)
+}
+
+fn ensure_visible(accent: [u8; 3], background: [u8; 3]) -> [u8; 3] {
+    if contrast_ratio(accent, background) >= HIGHLIGHT_BACKGROUND_CONTRAST {
+        return accent;
+    }
+
+    let target = if relative_luminance(background) < 0.4 {
+        [0xff, 0xff, 0xff]
+    } else {
+        [0x00, 0x00, 0x00]
+    };
+
+    for step in 1..=20 {
+        let candidate = mix(accent, target, step as f64 / 20.0);
+        if contrast_ratio(candidate, background) >= HIGHLIGHT_BACKGROUND_CONTRAST {
+            return candidate;
+        }
+    }
+    target
+}
+
+fn readable_foreground(background: [u8; 3]) -> [u8; 3] {
+    let black = [0x00, 0x00, 0x00];
+    let white = [0xff, 0xff, 0xff];
+    if contrast_ratio(background, black) >= contrast_ratio(background, white) {
+        black
+    } else {
+        white
+    }
+}
+
+fn mix(from: [u8; 3], to: [u8; 3], amount: f64) -> [u8; 3] {
+    let channel =
+        |from: u8, to: u8| (from as f64 + (to as f64 - from as f64) * amount).round() as u8;
+    [
+        channel(from[0], to[0]),
+        channel(from[1], to[1]),
+        channel(from[2], to[2]),
+    ]
+}
+
+fn relative_luminance(rgb: [u8; 3]) -> f64 {
+    let linear = |channel: u8| {
+        let value = channel as f64 / 255.0;
+        if value <= 0.039_28 {
+            value / 12.92
+        } else {
+            ((value + 0.055) / 1.055).powf(2.4)
+        }
+    };
+    0.2126 * linear(rgb[0]) + 0.7152 * linear(rgb[1]) + 0.0722 * linear(rgb[2])
+}
+
+fn contrast_ratio(first: [u8; 3], second: [u8; 3]) -> f64 {
+    let first = relative_luminance(first);
+    let second = relative_luminance(second);
+    let (lighter, darker) = if first > second {
+        (first, second)
+    } else {
+        (second, first)
+    };
+    (lighter + 0.05) / (darker + 0.05)
+}
+
 impl SelectorState {
     pub fn new(manifest: &Manifest, disabled: &BTreeSet<String>, version: &str) -> Self {
+        let (highlight_bg, highlight_fg) = theme_highlight();
         let entries = manifest
             .components()
             .iter()
@@ -85,6 +213,8 @@ impl SelectorState {
             review_scroll: 0,
             version: version.to_string(),
             action: "start installation".to_string(),
+            highlight_bg,
+            highlight_fg,
         }
     }
 
@@ -504,14 +634,34 @@ fn draw_list(frame: &mut Frame, state: &mut SelectorState, area: Rect, two_pane:
         }
 
         let mark = if entry.core {
-            Span::styled("[core]", Style::new().fg(Color::Yellow))
+            Span::styled(
+                "[core]",
+                Style::new()
+                    .fg(if is_selected {
+                        state.highlight_fg
+                    } else {
+                        Color::Yellow
+                    })
+                    .add_modifier(if is_selected {
+                        Modifier::BOLD
+                    } else {
+                        Modifier::empty()
+                    }),
+            )
         } else if entry.selected {
-            Span::styled("[x]   ", Style::new().fg(Color::Green))
+            Span::styled(
+                "[x]   ",
+                Style::new().fg(if is_selected {
+                    state.highlight_fg
+                } else {
+                    Color::Green
+                }),
+            )
         } else {
             Span::styled(
                 "[ ]   ",
                 Style::new().fg(if is_selected {
-                    Color::White
+                    state.highlight_fg
                 } else {
                     Color::DarkGray
                 }),
@@ -521,20 +671,20 @@ fn draw_list(frame: &mut Frame, state: &mut SelectorState, area: Rect, two_pane:
         let id_style = if entry.core {
             Style::new()
                 .fg(if is_selected {
-                    Color::White
+                    state.highlight_fg
                 } else {
                     Color::Reset
                 })
                 .add_modifier(Modifier::BOLD)
         } else if entry.selected {
             Style::new().fg(if is_selected {
-                Color::White
+                state.highlight_fg
             } else {
                 Color::Reset
             })
         } else {
             Style::new().fg(if is_selected {
-                Color::White
+                state.highlight_fg
             } else {
                 Color::DarkGray
             })
@@ -553,7 +703,7 @@ fn draw_list(frame: &mut Frame, state: &mut SelectorState, area: Rect, two_pane:
                 spans.push(Span::styled(
                     truncate(&entry.description, description_width),
                     Style::new().fg(if is_selected {
-                        Color::White
+                        state.highlight_fg
                     } else {
                         Color::Gray
                     }),
@@ -571,7 +721,7 @@ fn draw_list(frame: &mut Frame, state: &mut SelectorState, area: Rect, two_pane:
 
         let mut line = Line::from(spans);
         if is_selected {
-            line = line.style(Style::new().bg(Color::DarkGray));
+            line = line.style(Style::new().fg(state.highlight_fg).bg(state.highlight_bg));
         }
         rows.push(Row {
             line,
@@ -1138,11 +1288,48 @@ nvim\tNeovim\tterminal\t0\tconfig/nvim\tnvim\tnvim\t\t\tEditor
 
         // Title, list border, category heading, first component row.
         let cell = buffer.cell((1, 3)).expect("selected cell");
-        assert_eq!(cell.bg, Color::DarkGray);
+        assert_eq!(cell.bg, state.highlight_bg);
         assert!(!cell.modifier.contains(Modifier::REVERSED));
 
         let last = buffer.cell((78, 3)).expect("last selected cell");
-        assert_eq!(last.bg, Color::DarkGray);
+        assert_eq!(last.bg, state.highlight_bg);
+
+        // The component id must use the contrast-aware foreground.
+        let id = buffer.cell((10, 3)).expect("selected id cell");
+        assert_eq!(id.fg, state.highlight_fg);
+    }
+
+    #[test]
+    fn parses_theme_hex_colors() {
+        assert_eq!(parse_hex("#b7c5e0"), Some([0xb7, 0xc5, 0xe0]));
+        assert_eq!(parse_hex("#B7C5E0"), Some([0xb7, 0xc5, 0xe0]));
+        assert_eq!(parse_hex("#fff"), Some([0xff, 0xff, 0xff]));
+        assert_eq!(parse_hex("#26b7c5e0"), Some([0xb7, 0xc5, 0xe0]));
+        assert_eq!(parse_hex("not-a-color"), None);
+    }
+
+    #[test]
+    fn light_accents_get_dark_text() {
+        let (background, foreground) = highlight_colors([0xb7, 0xc5, 0xe0], [0x09, 0x09, 0x0b]);
+        assert_eq!(background, Color::Rgb(0xb7, 0xc5, 0xe0));
+        assert_eq!(foreground, Color::Rgb(0, 0, 0));
+    }
+
+    #[test]
+    fn dark_accents_get_light_text() {
+        let (background, foreground) = highlight_colors([0x30, 0x4a, 0x7a], [0x09, 0x09, 0x0b]);
+        assert_eq!(background, Color::Rgb(0x30, 0x4a, 0x7a));
+        assert_eq!(foreground, Color::Rgb(255, 255, 255));
+    }
+
+    #[test]
+    fn low_contrast_accents_are_pushed_away_from_the_background() {
+        let background = [0x09, 0x09, 0x0b];
+        let accent = [0x12, 0x12, 0x14];
+        let visible = ensure_visible(accent, background);
+
+        assert!(contrast_ratio(visible, background) >= HIGHLIGHT_BACKGROUND_CONTRAST);
+        assert_eq!(readable_foreground(visible), [0xff, 0xff, 0xff]);
     }
 
     #[test]
