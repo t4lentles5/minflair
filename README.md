@@ -65,8 +65,14 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/t4lentles5/minflair/main
 The bootstrap script installs the build tools, clones Minflair into
 `~/.minflair`, builds the `minflair` CLI into `~/.local/bin`, saves the
 repository path in `~/.config/minflair/repo` and starts `minflair install`.
-Minflair's zsh configuration adds `~/.local/bin` to `PATH`; for other shells,
-add it manually.
+Minflair's zsh configuration adds `~/.local/bin` to `PATH`. If you did not
+select the zsh component, or you use another shell, add it yourself and reload
+the shell. For bash:
+
+```bash
+echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
+exec bash
+```
 
 Use `bash -c "$(curl ...)"`, not `curl ... | bash`: the component selector needs
 the terminal as input. To pass installer flags:

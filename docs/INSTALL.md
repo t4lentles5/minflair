@@ -37,7 +37,19 @@ The bootstrap script:
 5. runs `minflair install` with the flags you pass.
 
 The CLI lands in `~/.local/bin`, which Minflair's zsh configuration adds to
-`PATH`. For other shells, add that directory manually.
+`PATH`. If you did not select the zsh component, or you use another shell, add
+that directory manually and reload the shell. For bash:
+
+```bash
+echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
+exec bash
+```
+
+Then check that the command is available:
+
+```bash
+minflair --version
+```
 
 Keep the terminal attached. Use `bash -c "$(curl ...)"` instead of
 `curl ... | bash`, because the component selector reads from the terminal. To
