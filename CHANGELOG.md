@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.2.0] - 2026-11-04
+## [2.2.0] - 2026-11-10
 
 ### Added
 
@@ -24,6 +24,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - New `lib/ui.sh` centralizes one-line headers, ASCII section markers, status symbols, confirmation prompts and terminal size detection.
   - All visible output is ASCII-only. Color is optional and is disabled when there is no TTY, when `NO_COLOR` is set or when `TERM=dumb`.
   - The final summary lists the enabled and skipped components, the backup location and the next steps.
+- **Native `minflair` CLI**:
+  - New Rust CLI with `minflair install`, `minflair update` and `minflair doctor`.
+  - `install` and `update` run the native pipeline, including the interactive selector, preferences, backups, themes, services and reloads.
+  - `install.sh` and `update.sh` remain compatibility entrypoints with the same selector, preferences and flags.
+  - `minflair update --pull` pulls the latest source, rebuilds the CLI and reinstalls it in place; `--no-build` skips the rebuild.
+- **One-command installation**:
+  - New `bootstrap.sh` installs the missing build tools, clones Minflair into `~/.minflair`, builds the CLI into `~/.local/bin` and starts `minflair install`.
+  - The bootstrap keeps the terminal attached for the component selector and falls back to `--no-input` when no terminal is available.
+  - `MINFLAIR_DIR`, `MINFLAIR_BIN_DIR`, `MINFLAIR_REPO_URL` and `MINFLAIR_REF` override the clone directory, CLI destination, remote and branch or tag.
+  - The repository path is saved in `~/.config/minflair/repo`, so the CLI works from any directory.
 - **Selection flags for install and update**:
   - `--exclude`, `--only`, `--include`, `--select`, `--no-input`, `--dry-run` and `--no-packages` are available in both scripts.
   - Selection flags persist the choice and make the run non-interactive.
@@ -49,7 +59,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Documentation and CI**:
   - New `docs/COMPONENTS.md` and `docs/INSTALL.md` explain the manifest, selector and flags.
   - The README now links to dedicated setup, advanced usage and troubleshooting guides (`docs/SETUP.md`, `docs/ADVANCED.md`, `docs/TROUBLESHOOTING.md`).
+  - The README and `docs/INSTALL.md` document the one-command bootstrap install, and `docs/ADVANCED.md` lists its environment variables.
   - New GitHub Actions workflow runs the unit tests, validates the manifest and checks shell syntax.
+  - The workflow now checks `bootstrap.sh` with `bash -n` and ShellCheck.
 
 ### Changed
 
@@ -60,6 +72,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - New backups are written to `~/.minflair_backup/<timestamp>/`. Backups from older versions remain in `~/.dotfiles_backup/<timestamp>/` and the restore guide covers both locations.
 - The version shown in Settings → System Information is now `2.2.0`.
 - The `chsh` component is now part of `zsh`: selecting zsh also sets it as the login shell, and old `chsh` preferences are ignored with a warning.
+- `minflair` now resolves the repository from the path saved by `bootstrap.sh` and also checks `~/.local/share/minflair`, `/usr/share/minflair` and `/usr/local/share/minflair`.
+- The README and install guide present the native CLI as the canonical entrypoint, with `install.sh` and `update.sh` kept as compatibility entrypoints.
 
 ### Fixed
 
@@ -67,6 +81,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Stuck notification toasts**: `BaseNotifLayer` now has a fallback timer that removes notifications when the closing animation never completes.
 - **zsh startup without optional components**: zsh now falls back to a basic prompt when Starship is disabled and skips missing plugins instead of printing `command not found`.
 - **`update` alias with paru**: the zsh alias now reads the selected AUR helper instead of always calling `yay`.
+- **`minflair update --pull` outside a git checkout**: the updater now stops with a clear message instead of failing inside `git pull`.
 
 ## [2.1.0] - 2026-10-28
 

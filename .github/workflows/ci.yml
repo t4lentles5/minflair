@@ -6,6 +6,7 @@ on:
       - main
       - 'feat/**'
       - 'release/**'
+      - 'release-*'
   pull_request:
 
 permissions:
