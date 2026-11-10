@@ -439,9 +439,9 @@ fn draw(frame: &mut Frame, state: &mut SelectorState) {
 
     let area = frame.area();
     let chunks = Layout::vertical([
-        Constraint::Length(2),
+        Constraint::Length(1),
         Constraint::Min(5),
-        Constraint::Length(4),
+        Constraint::Length(3),
     ])
     .split(area);
 
@@ -449,8 +449,7 @@ fn draw(frame: &mut Frame, state: &mut SelectorState) {
     let header = Paragraph::new(Line::from(vec![Span::styled(
         title,
         Style::new().fg(Color::Cyan).add_modifier(Modifier::BOLD),
-    )]))
-    .block(Block::default().borders(Borders::BOTTOM));
+    )]));
     frame.render_widget(header, chunks[0]);
 
     let two_pane = area.width >= 90;
@@ -486,6 +485,7 @@ fn draw_list(frame: &mut Frame, state: &mut SelectorState, area: Rect, two_pane:
 
     for &index in &filtered {
         let entry = &state.entries[index];
+        let is_selected = Some(index) == selected;
         if previous_category != Some(entry.category.as_str()) {
             if previous_category.is_some() {
                 rows.push(Row {
@@ -508,15 +508,36 @@ fn draw_list(frame: &mut Frame, state: &mut SelectorState, area: Rect, two_pane:
         } else if entry.selected {
             Span::styled("[x]   ", Style::new().fg(Color::Green))
         } else {
-            Span::styled("[ ]   ", Style::new().fg(Color::DarkGray))
+            Span::styled(
+                "[ ]   ",
+                Style::new().fg(if is_selected {
+                    Color::White
+                } else {
+                    Color::DarkGray
+                }),
+            )
         };
 
         let id_style = if entry.core {
-            Style::new().add_modifier(Modifier::BOLD)
-        } else if entry.selected {
             Style::new()
+                .fg(if is_selected {
+                    Color::White
+                } else {
+                    Color::Reset
+                })
+                .add_modifier(Modifier::BOLD)
+        } else if entry.selected {
+            Style::new().fg(if is_selected {
+                Color::White
+            } else {
+                Color::Reset
+            })
         } else {
-            Style::new().fg(Color::DarkGray)
+            Style::new().fg(if is_selected {
+                Color::White
+            } else {
+                Color::DarkGray
+            })
         };
 
         let mut spans = vec![
@@ -531,14 +552,26 @@ fn draw_list(frame: &mut Frame, state: &mut SelectorState, area: Rect, two_pane:
             if description_width > 0 {
                 spans.push(Span::styled(
                     truncate(&entry.description, description_width),
-                    Style::new().fg(Color::Gray),
+                    Style::new().fg(if is_selected {
+                        Color::White
+                    } else {
+                        Color::Gray
+                    }),
                 ));
             }
         }
 
+        if is_selected {
+            let used: usize = spans.iter().map(|span| span.content.chars().count()).sum();
+            let available = area.width.saturating_sub(2) as usize;
+            if used < available {
+                spans.push(Span::raw(" ".repeat(available - used)));
+            }
+        }
+
         let mut line = Line::from(spans);
-        if Some(index) == selected {
-            line = line.style(Style::new().add_modifier(Modifier::REVERSED));
+        if is_selected {
+            line = line.style(Style::new().bg(Color::DarkGray));
         }
         rows.push(Row {
             line,
@@ -744,7 +777,7 @@ fn draw_footer(frame: &mut Frame, state: &SelectorState, area: Rect) {
     };
     lines.push(help);
 
-    let paragraph = Paragraph::new(lines).block(Block::default().borders(Borders::TOP));
+    let paragraph = Paragraph::new(lines);
     frame.render_widget(paragraph, area);
 }
 
@@ -1084,6 +1117,32 @@ nvim\tNeovim\tterminal\t0\tconfig/nvim\tnvim\tnvim\t\t\tEditor
             .iter()
             .map(|cell| cell.symbol())
             .collect()
+    }
+
+    fn render_list(state: &mut SelectorState, width: u16, height: u16) -> ratatui::buffer::Buffer {
+        use ratatui::backend::TestBackend;
+        use ratatui::Terminal;
+
+        let backend = TestBackend::new(width, height);
+        let mut terminal = Terminal::new(backend).expect("terminal");
+        terminal
+            .draw(|frame| draw(frame, state))
+            .expect("draw list");
+        terminal.backend().buffer().clone()
+    }
+
+    #[test]
+    fn selected_row_uses_a_solid_background() {
+        let mut state = state();
+        let buffer = render_list(&mut state, 80, 24);
+
+        // Title, list border, category heading, first component row.
+        let cell = buffer.cell((1, 3)).expect("selected cell");
+        assert_eq!(cell.bg, Color::DarkGray);
+        assert!(!cell.modifier.contains(Modifier::REVERSED));
+
+        let last = buffer.cell((78, 3)).expect("last selected cell");
+        assert_eq!(last.bg, Color::DarkGray);
     }
 
     #[test]
