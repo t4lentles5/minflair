@@ -288,14 +288,9 @@ def validate(
         disabled = load_disabled()
 
     for component_id in sorted(disabled - set(components)):
-        if component_id == "chsh":
-            warnings.append(
-                "preferences: chsh is now part of zsh (ignored)"
-            )
-        else:
-            warnings.append(
-                f"preferences: unknown component id {component_id!r} (ignored)"
-            )
+        warnings.append(
+            f"preferences: unknown component id {component_id!r} (ignored)"
+        )
     for component_id in sorted(disabled):
         component = components.get(component_id)
         if component is not None and component.core:

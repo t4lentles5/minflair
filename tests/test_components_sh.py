@@ -199,11 +199,6 @@ class BashComponentTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("unknown component", result.stderr)
 
-    def test_old_chsh_preference_is_a_warning(self):
-        result = self.run_bash("components_validate", prefs="chsh\n")
-        self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertIn("part of zsh", result.stderr)
-
     def test_zsh_login_shell_dry_run_prints_chsh(self):
         bin_dir = self.home / "bin"
         bin_dir.mkdir()

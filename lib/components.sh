@@ -362,11 +362,7 @@ components_validate() {
   # blocking an update after a component is renamed or removed.
   while IFS= read -r id; do
     if ! component_exists "$id"; then
-      if [[ "$id" == "chsh" ]]; then
-        printf 'warning: chsh is now part of zsh; ignoring the old preference\n' >&2
-      else
-        printf 'warning: preferences contain an unknown component: %s\n' "$id" >&2
-      fi
+      printf 'warning: preferences contain an unknown component: %s\n' "$id" >&2
     elif component_core "$id"; then
       printf 'warning: preferences contain a core component: %s\n' "$id" >&2
     fi

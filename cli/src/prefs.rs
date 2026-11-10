@@ -89,9 +89,6 @@ pub fn validate(manifest: &Manifest, disabled: &BTreeSet<String>) -> Vec<String>
                 "preferences: core component {:?} cannot be disabled (ignored)",
                 id
             )),
-            None if id == "chsh" => {
-                warnings.push("preferences: chsh is now part of zsh (ignored)".to_string())
-            }
             None => warnings.push(format!(
                 "preferences: unknown component id {:?} (ignored)",
                 id

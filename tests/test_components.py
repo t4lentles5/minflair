@@ -136,14 +136,6 @@ class PreferenceTests(unittest.TestCase):
         )
         self.assertTrue(any("does-not-exist" in warning for warning in warnings))
 
-    def test_old_chsh_preference_is_reported_as_migrated(self):
-        self.prefs.write_text("chsh\n", encoding="utf-8")
-        disabled = components.load_disabled(self.prefs)
-        warnings = components.validate(
-            self.manifest, repo_root=REPO_ROOT, disabled=disabled
-        )
-        self.assertTrue(any("part of zsh" in warning for warning in warnings))
-
     def test_write_and_read_roundtrip(self):
         components.write_disabled(["kitty", "starship"], self.prefs)
         self.assertEqual(

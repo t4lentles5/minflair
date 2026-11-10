@@ -278,7 +278,7 @@ fn components_manage_the_saved_selection() {
 
     // A stale preferences file from an older release must not break the save.
     fs::create_dir_all(prefs.parent().expect("parent")).expect("mkdir prefs");
-    fs::write(&prefs, "ghost\nchsh\n").expect("write stale preferences");
+    fs::write(&prefs, "ghost\nobsolete\n").expect("write stale preferences");
 
     let output = run(&["disable", "kitty,nvim"]);
     assert!(
@@ -288,7 +288,7 @@ fn components_manage_the_saved_selection() {
     );
     let stderr = String::from_utf8_lossy(&output.stderr);
     assert!(stderr.contains("ghost"));
-    assert!(stderr.contains("chsh"));
+    assert!(stderr.contains("obsolete"));
     let saved = fs::read_to_string(&prefs).expect("preferences");
     assert!(saved.lines().any(|line| line.trim() == "kitty"));
     assert!(saved.lines().any(|line| line.trim() == "nvim"));
