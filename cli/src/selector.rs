@@ -18,6 +18,9 @@ use crate::manifest::{category_label, Manifest};
 
 /// Minimum contrast between the selected row and the terminal background.
 const HIGHLIGHT_BACKGROUND_CONTRAST: f64 = 2.0;
+/// Default Minflair theme, used before Quickshell has written its cache.
+const DEFAULT_THEME_ACCENT: [u8; 3] = [0xa7, 0x7e, 0xf5];
+const DEFAULT_THEME_BG: [u8; 3] = [0x03, 0x01, 0x07];
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Mode {
@@ -66,10 +69,12 @@ enum Action {
 /// hue and lightness. We keep the accent as the row background when it is
 /// distinguishable from the theme background, nudge it if it is not, and pick
 /// black or white text depending on which has the better contrast.
+///
+/// On a first install Quickshell has not written its cache yet, so the default
+/// Minflair theme is used instead of a generic terminal color.
 fn theme_highlight() -> (Color, Color) {
-    theme_accent()
-        .map(|(accent, background)| highlight_colors(accent, background))
-        .unwrap_or((Color::Blue, Color::White))
+    let (accent, background) = theme_accent().unwrap_or((DEFAULT_THEME_ACCENT, DEFAULT_THEME_BG));
+    highlight_colors(accent, background)
 }
 
 fn theme_accent() -> Option<([u8; 3], [u8; 3])> {
@@ -1297,6 +1302,17 @@ nvim\tNeovim\tterminal\t0\tconfig/nvim\tnvim\tnvim\t\t\tEditor
         // The component id must use the contrast-aware foreground.
         let id = buffer.cell((10, 3)).expect("selected id cell");
         assert_eq!(id.fg, state.highlight_fg);
+    }
+
+    #[test]
+    fn first_install_uses_the_default_theme_accent() {
+        let (background, foreground) = highlight_colors(DEFAULT_THEME_ACCENT, DEFAULT_THEME_BG);
+        assert_eq!(background, Color::Rgb(0xa7, 0x7e, 0xf5));
+
+        let Color::Rgb(red, green, blue) = foreground else {
+            panic!("expected an RGB foreground");
+        };
+        assert!(contrast_ratio([red, green, blue], DEFAULT_THEME_ACCENT) >= 4.5);
     }
 
     #[test]
