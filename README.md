@@ -61,19 +61,32 @@ sudo pacman -S --needed git base-devel rust
 git clone --depth 1 https://github.com/t4lentles5/minflair.git ~/.minflair
 cd ~/.minflair
 
-# Build the minflair CLI (the first build downloads the Rust dependencies)
-cargo build --release
+# Install the minflair CLI (the first build downloads the Rust dependencies)
+cargo install --path cli --locked
 
 # Run the installer
-./target/release/minflair install
-```
-
-To invoke `minflair` from anywhere, install the binary in your `PATH`:
-
-```bash
-install -Dm755 target/release/minflair ~/.local/bin/minflair
 minflair install
 ```
+
+`cargo install` puts the binary in `~/.cargo/bin`, which rustup adds to your
+`PATH`. If you installed Rust from the `rust` package, make sure that directory
+is in your shell configuration:
+
+```bash
+export PATH="$HOME/.cargo/bin:$PATH"   # add it to ~/.zshrc
+```
+
+As an alternative, build explicitly and copy the binary to a directory that is
+already in `PATH`:
+
+```bash
+cargo build --release --locked
+sudo install -Dm755 target/release/minflair /usr/local/bin/minflair
+```
+
+`minflair` finds the repository automatically when it is in `~/.minflair` (or
+`~/.dotfiles`). For a clone in another location, pass `--repo <path>` or set
+`MINFLAIR_REPO`.
 
 > [!IMPORTANT]
 >
@@ -82,13 +95,11 @@ minflair install
 > - Reboot after installation so services, themes and shell changes take effect.
 
 > [!NOTE]
-> `minflair install` now runs the native Rust pipeline, including the
-> interactive selector, preferences, backups, themes, services and reloads.
-> `./install.sh` keeps working as a compatibility entrypoint with the same
-> selector, preferences and flags. `minflair update` still delegates to
-> `update.sh` while the native update pipeline is ported; `./update.sh` remains
-> fully supported. If you do not want to install Rust, `./install.sh` and
-> `./update.sh` remain fully supported.
+> `minflair install` and `minflair update` run the native Rust pipelines,
+> including the interactive selector, preferences, backups, themes, services
+> and reloads. `./install.sh` and `./update.sh` remain compatibility
+> entrypoints with the same selector, preferences and flags. If you do not want
+> to install the CLI, both scripts keep working on their own.
 
 > [!TIP]
 > On first run, the interactive selector lets you keep your own Kitty, Neovim,
@@ -116,23 +127,24 @@ session. It never changes anything.
 
 ## 🔄 Updating
 
-From a git clone:
-
-```bash
-cd ~/.minflair
-git pull --ff-only
-cargo build --release
-./target/release/minflair update
-```
-
 With `minflair` in `PATH`, pull and update in one step:
 
 ```bash
 minflair update --pull
 ```
 
-`--pull` runs `git pull --ff-only` before updating; omit it if you already
-pulled. Rebuild the binary after pulling so CLI changes take effect.
+`--pull` runs `git pull --ff-only` and then rebuilds and reinstalls the CLI
+automatically, so the command stays up to date. Use `--no-build` to skip the
+rebuild, or omit `--pull` if you already pulled.
+
+To update manually instead:
+
+```bash
+cd ~/.minflair
+git pull --ff-only
+cargo install --path cli --locked --force
+minflair update
+```
 
 > If you cloned Minflair before 2.2.0, the repository may still be in
 > `~/.dotfiles`. The folder name does not affect the CLI, `install.sh` or
@@ -140,9 +152,8 @@ pulled. Rebuild the binary after pulling so CLI changes take effect.
 
 The updater backs up replaced files to `~/.minflair_backup/<timestamp>/`,
 copies the updated configuration, installs new dependencies, refreshes the
-`minflair-sddm` theme and reloads Hyprland and Quickshell. Like the installer,
-`minflair update` delegates to `update.sh` while the native pipeline is ported;
-`./update.sh` remains available.
+`minflair-sddm` theme and reloads Hyprland and Quickshell. Both
+`minflair update` and `./update.sh` run the same native pipeline.
 
 > [!NOTE]
 > The update overwrites configuration files with the repository versions.

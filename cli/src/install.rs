@@ -18,9 +18,9 @@ use crate::selection::{self, Flags};
 use crate::selector;
 use crate::ui;
 
-const GTK_THEME_URL: &str = "https://github.com/t4lentles5/material-gnome-theme.git";
-const SDDM_THEME_URL: &str = "https://github.com/t4lentles5/tokyo-night-sddm.git";
-const SDDM_THEME_DIR: &str = "/usr/share/sddm/themes/minflair-sddm";
+pub(crate) const GTK_THEME_URL: &str = "https://github.com/t4lentles5/material-gnome-theme.git";
+pub(crate) const SDDM_THEME_URL: &str = "https://github.com/t4lentles5/tokyo-night-sddm.git";
+pub(crate) const SDDM_THEME_DIR: &str = "/usr/share/sddm/themes/minflair-sddm";
 const SERVICES: [&str; 3] = [
     "NetworkManager.service",
     "bluetooth.service",
@@ -40,16 +40,7 @@ pub fn run(root: &Path, args: InstallArgs) -> Result<u8> {
     validate_manifest(root, &manifest)?;
 
     let home = repo::home_dir()?;
-    let user = current_user();
-    let backup_dir = home.join(".minflair_backup").join(timestamp());
-    let ctx = Ctx {
-        root: root.to_path_buf(),
-        home: home.clone(),
-        user,
-        backup_dir,
-        dry_run: args.dry_run,
-        error_log: error_log_path(&home, args.dry_run),
-    };
+    let ctx = Ctx::new(root, &home, args.dry_run);
 
     if let Some(helper) = &args.aur_helper {
         if !aur::valid(helper) {
@@ -59,29 +50,7 @@ pub fn run(root: &Path, args: InstallArgs) -> Result<u8> {
 
     // In dry-run mode all preference writes go to a temporary copy so the real
     // file is never touched, exactly like install.sh.
-    let real_prefs = prefs::default_path()?;
-    let mut dry_prefs = None;
-    let prefs_path = if args.dry_run {
-        let path = env::temp_dir().join(format!(
-            "minflair-prefs-{}-{}.conf",
-            std::process::id(),
-            unique_suffix()
-        ));
-        fs::write(&path, "").with_context(|| format!("could not create {}", path.display()))?;
-        if real_prefs.is_file() {
-            fs::copy(&real_prefs, &path).with_context(|| {
-                format!(
-                    "could not copy {} to {}",
-                    real_prefs.display(),
-                    path.display()
-                )
-            })?;
-        }
-        dry_prefs = Some(TempFile(path.clone()));
-        path
-    } else {
-        real_prefs.clone()
-    };
+    let (prefs_path, dry_prefs) = prepare_prefs(args.dry_run)?;
 
     let mut disabled = prefs::load(&prefs_path)?;
     for warning in prefs::validate(&manifest, &disabled) {
@@ -131,7 +100,7 @@ pub fn run(root: &Path, args: InstallArgs) -> Result<u8> {
 
     ctx.section("System integration");
     configure_ddc(&ctx, &manifest, &disabled);
-    configure_battery(&ctx, &manifest, &disabled, &args, &helper);
+    configure_battery(&ctx, &manifest, &disabled, args.no_packages, &helper);
 
     ctx.section("Dotfiles");
     backup_dotfiles(&ctx, &manifest, &disabled)?;
@@ -194,6 +163,34 @@ pub fn run(root: &Path, args: InstallArgs) -> Result<u8> {
     Ok(0)
 }
 
+/// Create the preferences file used by the pipeline.
+///
+/// Dry runs get a temporary copy so the real file is never modified. The
+/// returned guard removes the copy on drop.
+pub(crate) fn prepare_prefs(dry_run: bool) -> Result<(PathBuf, Option<TempFile>)> {
+    let real_prefs = prefs::default_path()?;
+    if !dry_run {
+        return Ok((real_prefs, None));
+    }
+
+    let path = env::temp_dir().join(format!(
+        "minflair-prefs-{}-{}.conf",
+        std::process::id(),
+        unique_suffix()
+    ));
+    fs::write(&path, "").with_context(|| format!("could not create {}", path.display()))?;
+    if real_prefs.is_file() {
+        fs::copy(&real_prefs, &path).with_context(|| {
+            format!(
+                "could not copy {} to {}",
+                real_prefs.display(),
+                path.display()
+            )
+        })?;
+    }
+    Ok((path.clone(), Some(TempFile(path))))
+}
+
 fn choose_components(
     ctx: &Ctx,
     manifest: &Manifest,
@@ -240,7 +237,7 @@ fn choose_components(
     }
 }
 
-fn validate_manifest(root: &Path, manifest: &Manifest) -> Result<()> {
+pub(crate) fn validate_manifest(root: &Path, manifest: &Manifest) -> Result<()> {
     for component in manifest.components() {
         for relative in &component.paths {
             if !root.join(relative).exists() {
@@ -275,6 +272,12 @@ fn preflight(ctx: &Ctx) -> Result<()> {
         return Ok(());
     }
 
+    authenticate_sudo()
+}
+
+/// Ask for the sudo password once and keep the timestamp alive while long
+/// package installations run.
+pub(crate) fn authenticate_sudo() -> Result<()> {
     let status = Command::new("sudo")
         .arg("-v")
         .status()
@@ -283,7 +286,6 @@ fn preflight(ctx: &Ctx) -> Result<()> {
         bail!("sudo authentication failed");
     }
 
-    // Keep the sudo timestamp alive while long package installations run.
     thread::spawn(|| loop {
         thread::sleep(Duration::from_secs(60));
         let _ = Command::new("sudo")
@@ -446,7 +448,7 @@ fn install_packages(
     }
 }
 
-fn configure_ddc(ctx: &Ctx, manifest: &Manifest, disabled: &BTreeSet<String>) {
+pub(crate) fn configure_ddc(ctx: &Ctx, manifest: &Manifest, disabled: &BTreeSet<String>) {
     if !enabled(manifest, disabled, "ddc") {
         ctx.info("Skipping DDC/CI support (ddc component disabled).");
         return;
@@ -490,11 +492,11 @@ fn configure_ddc(ctx: &Ctx, manifest: &Manifest, disabled: &BTreeSet<String>) {
     }
 }
 
-fn configure_battery(
+pub(crate) fn configure_battery(
     ctx: &Ctx,
     manifest: &Manifest,
     disabled: &BTreeSet<String>,
-    args: &InstallArgs,
+    no_packages: bool,
     helper: &str,
 ) {
     if !enabled(manifest, disabled, "battery") {
@@ -536,7 +538,7 @@ fn configure_battery(
         return;
     }
 
-    if args.no_packages {
+    if no_packages {
         ctx.warn("Skipping vendor battery packages (--no-packages).");
     } else {
         let lower = vendor.to_lowercase();
@@ -596,6 +598,16 @@ fn backup_dotfiles(ctx: &Ctx, manifest: &Manifest, disabled: &BTreeSet<String>) 
             .with_context(|| format!("could not create {}", ctx.backup_dir.display()))?;
     }
 
+    backup_enabled_paths(ctx, manifest, disabled)?;
+    ctx.ok("Enabled component files backed up.");
+    Ok(())
+}
+
+pub(crate) fn backup_enabled_paths(
+    ctx: &Ctx,
+    manifest: &Manifest,
+    disabled: &BTreeSet<String>,
+) -> Result<()> {
     for relative in enabled_paths(manifest, disabled) {
         let Some(destination) = destination_for(&ctx.home, &relative) else {
             continue;
@@ -627,12 +639,21 @@ fn backup_dotfiles(ctx: &Ctx, manifest: &Manifest, disabled: &BTreeSet<String>) 
         }
     }
 
-    ctx.ok("Enabled component files backed up.");
     Ok(())
 }
 
 fn copy_dotfiles(ctx: &Ctx, manifest: &Manifest, disabled: &BTreeSet<String>) -> Result<()> {
     ctx.info("Copying enabled components to ~/.config and ~/ ...");
+    copy_enabled_paths(ctx, manifest, disabled)?;
+    ctx.ok("Enabled component files copied.");
+    Ok(())
+}
+
+pub(crate) fn copy_enabled_paths(
+    ctx: &Ctx,
+    manifest: &Manifest,
+    disabled: &BTreeSet<String>,
+) -> Result<()> {
     for relative in enabled_paths(manifest, disabled) {
         let source = ctx.root.join(&relative);
         if relative.starts_with("config/") {
@@ -670,7 +691,6 @@ fn copy_dotfiles(ctx: &Ctx, manifest: &Manifest, disabled: &BTreeSet<String>) ->
             }
         }
     }
-    ctx.ok("Enabled component files copied.");
     Ok(())
 }
 
@@ -732,7 +752,7 @@ fn configure_gtk(ctx: &Ctx, manifest: &Manifest, disabled: &BTreeSet<String>) {
     ctx.ok("GTK theme applied via gsettings.");
 }
 
-fn install_gtk_theme(ctx: &Ctx, theme_dir: &Path, theme_url: &str) -> bool {
+pub(crate) fn install_gtk_theme(ctx: &Ctx, theme_dir: &Path, theme_url: &str) -> bool {
     let Some(parent) = theme_dir.parent() else {
         return false;
     };
@@ -926,7 +946,7 @@ fn configure_dunst(ctx: &Ctx, manifest: &Manifest, disabled: &BTreeSet<String>) 
     ctx.ok("dunst disabled - QuickShell will handle notifications.");
 }
 
-fn configure_zsh(ctx: &Ctx, manifest: &Manifest, disabled: &BTreeSet<String>) {
+pub(crate) fn configure_zsh(ctx: &Ctx, manifest: &Manifest, disabled: &BTreeSet<String>) {
     if !enabled(manifest, disabled, "zsh") {
         ctx.info("Skipping zsh login shell (zsh component disabled).");
         return;
@@ -986,7 +1006,7 @@ fn ensure_zsh_login_shell(ctx: &Ctx) -> bool {
     )
 }
 
-fn install_node(ctx: &Ctx) {
+pub(crate) fn install_node(ctx: &Ctx) {
     ctx.info("Installing Node.js LTS with fnm...");
     let fnm_dir = env::var_os("FNM_DIR")
         .map(PathBuf::from)
@@ -1016,7 +1036,7 @@ fn install_node(ctx: &Ctx) {
     ctx.ok(&format!("Node.js LTS installed: {version}"));
 }
 
-fn configure_services(ctx: &Ctx, manifest: &Manifest, disabled: &BTreeSet<String>) {
+pub(crate) fn configure_services(ctx: &Ctx, manifest: &Manifest, disabled: &BTreeSet<String>) {
     if !enabled(manifest, disabled, "services") {
         ctx.info("Skipping system services (services component disabled).");
         return;
@@ -1037,7 +1057,7 @@ fn configure_services(ctx: &Ctx, manifest: &Manifest, disabled: &BTreeSet<String
     }
 }
 
-fn run_reloads(ctx: &Ctx, manifest: &Manifest, disabled: &BTreeSet<String>) {
+pub(crate) fn run_reloads(ctx: &Ctx, manifest: &Manifest, disabled: &BTreeSet<String>) {
     for component in manifest.components() {
         if component.core || disabled.contains(&component.id) || component.reload.is_empty() {
             continue;
@@ -1056,7 +1076,7 @@ fn run_reloads(ctx: &Ctx, manifest: &Manifest, disabled: &BTreeSet<String>) {
     }
 }
 
-fn print_summary(manifest: &Manifest, disabled: &BTreeSet<String>) {
+pub(crate) fn print_summary(manifest: &Manifest, disabled: &BTreeSet<String>) {
     let mut included = Vec::new();
     let mut skipped = Vec::new();
     for component in manifest.components() {
@@ -1083,7 +1103,7 @@ fn print_summary(manifest: &Manifest, disabled: &BTreeSet<String>) {
     }
 }
 
-fn enabled(manifest: &Manifest, disabled: &BTreeSet<String>, id: &str) -> bool {
+pub(crate) fn enabled(manifest: &Manifest, disabled: &BTreeSet<String>, id: &str) -> bool {
     manifest.is_enabled(id, disabled).unwrap_or(false)
 }
 
@@ -1114,7 +1134,7 @@ fn backup_for(backup: &Path, relative: &str) -> Option<PathBuf> {
     }
 }
 
-fn filtered_packages(path: &Path, disabled: &BTreeSet<String>) -> Vec<String> {
+pub(crate) fn filtered_packages(path: &Path, disabled: &BTreeSet<String>) -> Vec<String> {
     let Ok(content) = fs::read_to_string(path) else {
         return Vec::new();
     };
@@ -1128,7 +1148,7 @@ fn filtered_packages(path: &Path, disabled: &BTreeSet<String>) -> Vec<String> {
         .collect()
 }
 
-fn gtk_theme_valid(theme_dir: &Path) -> bool {
+pub(crate) fn gtk_theme_valid(theme_dir: &Path) -> bool {
     gtk_css_valid(&theme_dir.join("gtk-3.0/gtk.css"))
         && gtk_css_valid(&theme_dir.join("gtk-4.0/gtk.css"))
         && gtk_css_valid(&theme_dir.join("gtk-4.0/gtk-dark.css"))
@@ -1169,7 +1189,7 @@ fn service_active(service: &str) -> bool {
         .unwrap_or(false)
 }
 
-fn current_user() -> String {
+pub(crate) fn current_user() -> String {
     env::var("USER")
         .or_else(|_| env::var("LOGNAME"))
         .unwrap_or_else(|_| {
@@ -1189,7 +1209,7 @@ fn user_in_group(group: &str) -> bool {
         .unwrap_or(false)
 }
 
-fn error_log_path(home: &Path, dry_run: bool) -> Option<PathBuf> {
+pub(crate) fn error_log_path(home: &Path, dry_run: bool) -> Option<PathBuf> {
     if dry_run {
         // A dry run must not change any files, even a log file.
         return None;
@@ -1199,7 +1219,7 @@ fn error_log_path(home: &Path, dry_run: bool) -> Option<PathBuf> {
     Some(path)
 }
 
-fn timestamp() -> String {
+pub(crate) fn timestamp() -> String {
     let now = unsafe { libc::time(std::ptr::null_mut()) };
     let mut value: libc::tm = unsafe { std::mem::zeroed() };
     // SAFETY: `now` and `value` are valid pointers for the duration of the call.
@@ -1215,18 +1235,18 @@ fn timestamp() -> String {
     )
 }
 
-fn unique_suffix() -> u128 {
+pub(crate) fn unique_suffix() -> u128 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .map(|duration| duration.as_nanos())
         .unwrap_or(0)
 }
 
-fn strs<const N: usize>(values: [&str; N]) -> Vec<String> {
+pub(crate) fn strs<const N: usize>(values: [&str; N]) -> Vec<String> {
     values.into_iter().map(str::to_string).collect()
 }
 
-struct TempFile(PathBuf);
+pub(crate) struct TempFile(PathBuf);
 
 impl Drop for TempFile {
     fn drop(&mut self) {
@@ -1234,10 +1254,10 @@ impl Drop for TempFile {
     }
 }
 
-struct TempDir(PathBuf);
+pub(crate) struct TempDir(PathBuf);
 
 impl TempDir {
-    fn path(&self) -> &Path {
+    pub(crate) fn path(&self) -> &Path {
         &self.0
     }
 }
@@ -1248,7 +1268,7 @@ impl Drop for TempDir {
     }
 }
 
-fn temp_dir(prefix: &str) -> Result<TempDir> {
+pub(crate) fn temp_dir(prefix: &str) -> Result<TempDir> {
     temp_dir_in(&env::temp_dir(), prefix)
 }
 
@@ -1262,30 +1282,41 @@ fn temp_dir_in(parent: &Path, prefix: &str) -> Result<TempDir> {
     Ok(TempDir(path))
 }
 
-struct Ctx {
-    root: PathBuf,
-    home: PathBuf,
-    user: String,
-    backup_dir: PathBuf,
-    dry_run: bool,
+pub(crate) struct Ctx {
+    pub(crate) root: PathBuf,
+    pub(crate) home: PathBuf,
+    pub(crate) user: String,
+    pub(crate) backup_dir: PathBuf,
+    pub(crate) dry_run: bool,
     error_log: Option<PathBuf>,
 }
 
 impl Ctx {
-    fn info(&self, message: &str) {
+    pub(crate) fn new(root: &Path, home: &Path, dry_run: bool) -> Self {
+        Self {
+            root: root.to_path_buf(),
+            home: home.to_path_buf(),
+            user: current_user(),
+            backup_dir: home.join(".minflair_backup").join(timestamp()),
+            dry_run,
+            error_log: error_log_path(home, dry_run),
+        }
+    }
+
+    pub(crate) fn info(&self, message: &str) {
         ui::info(message);
     }
 
-    fn ok(&self, message: &str) {
+    pub(crate) fn ok(&self, message: &str) {
         ui::ok(message);
     }
 
-    fn warn(&self, message: &str) {
+    pub(crate) fn warn(&self, message: &str) {
         ui::warn(message);
         self.log(message);
     }
 
-    fn section(&self, title: &str) {
+    pub(crate) fn section(&self, title: &str) {
         ui::section(title);
     }
 
@@ -1298,7 +1329,7 @@ impl Ctx {
         }
     }
 
-    fn run(&self, program: &str, args: &[String]) -> bool {
+    pub(crate) fn run(&self, program: &str, args: &[String]) -> bool {
         if self.dry_run {
             println!("[dry-run] {}", ui::command_line(program, args));
             return true;
@@ -1306,7 +1337,7 @@ impl Ctx {
         self.execute(program, args, None)
     }
 
-    fn run_in(&self, program: &str, args: &[String], cwd: &Path) -> bool {
+    pub(crate) fn run_in(&self, program: &str, args: &[String], cwd: &Path) -> bool {
         if self.dry_run {
             println!(
                 "[dry-run] (cd {} && {})",
@@ -1318,7 +1349,7 @@ impl Ctx {
         self.execute(program, args, Some(cwd))
     }
 
-    fn run_quiet(&self, program: &str, args: &[String]) -> bool {
+    pub(crate) fn run_quiet(&self, program: &str, args: &[String]) -> bool {
         if self.dry_run {
             println!("[dry-run] {}", ui::command_line(program, args));
             return true;
@@ -1332,7 +1363,7 @@ impl Ctx {
             .unwrap_or(false)
     }
 
-    fn run_checked(&self, program: &str, args: &[String]) -> Result<()> {
+    pub(crate) fn run_checked(&self, program: &str, args: &[String]) -> Result<()> {
         if self.dry_run {
             println!("[dry-run] {}", ui::command_line(program, args));
             return Ok(());
@@ -1347,7 +1378,7 @@ impl Ctx {
         Ok(())
     }
 
-    fn execute(&self, program: &str, args: &[String], cwd: Option<&Path>) -> bool {
+    pub(crate) fn execute(&self, program: &str, args: &[String], cwd: Option<&Path>) -> bool {
         let mut command = Command::new(program);
         command.args(args);
         if let Some(cwd) = cwd {
@@ -1362,7 +1393,7 @@ impl Ctx {
         }
     }
 
-    fn write_sudo_file(&self, path: &str, contents: &str) -> bool {
+    pub(crate) fn write_sudo_file(&self, path: &str, contents: &str) -> bool {
         if self.dry_run {
             println!("[dry-run] would write {path}");
             return true;

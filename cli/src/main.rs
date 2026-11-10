@@ -9,6 +9,7 @@ mod repo;
 mod selection;
 mod selector;
 mod ui;
+mod update;
 
 use std::process::ExitCode;
 

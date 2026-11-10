@@ -116,7 +116,6 @@ impl Manifest {
         Ok(Self { components, index })
     }
 
-    #[allow(dead_code)] // Used by the install/update pipelines in later phases.
     pub fn components(&self) -> &[Component] {
         &self.components
     }
@@ -129,7 +128,6 @@ impl Manifest {
         self.components.len()
     }
 
-    #[allow(dead_code)] // Used by the install/update pipelines in later phases.
     pub fn is_enabled(&self, id: &str, disabled: &BTreeSet<String>) -> Option<bool> {
         self.get(id)
             .map(|component| component.core || !disabled.contains(id))

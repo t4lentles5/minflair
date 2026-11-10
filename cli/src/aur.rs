@@ -46,7 +46,6 @@ pub fn current() -> Result<String> {
     Ok("yay".to_string())
 }
 
-#[allow(dead_code)] // Used by the install/update pipelines in later phases.
 pub fn set(name: &str) -> Result<()> {
     if !valid(name) {
         bail!("invalid AUR helper {:?}; use yay or paru", name);

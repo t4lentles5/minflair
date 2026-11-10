@@ -56,7 +56,6 @@ pub fn ok(message: &str) {
     println!("{} {message}", green("[OK]"));
 }
 
-#[allow(dead_code)] // Used by the install/update pipelines in later phases.
 pub fn warn(message: &str) {
     eprintln!("{} {message}", yellow("[WARN]"));
 }

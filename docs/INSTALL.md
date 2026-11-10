@@ -11,7 +11,8 @@ rules.
 ## Requirements
 
 - Arch Linux or an Arch-based distribution.
-- A normal user account. `install.sh` and `update.sh` refuse to run as root.
+- A normal user account. `minflair install` and `minflair update` refuse to run
+  as root.
 - `git`, `base-devel` and `pacman`. The installer bootstraps `yay` when it is
   missing.
 - An interactive terminal for the selector. Automation and non-interactive
@@ -24,28 +25,29 @@ rules.
 ```bash
 git clone https://github.com/t4lentles5/minflair.git ~/.minflair
 cd ~/.minflair
-./install.sh
+
+# Install the CLI in ~/.cargo/bin (already in PATH with rustup)
+cargo install --path cli --locked
+
+minflair install
 ```
 
 With no options and an interactive terminal, the component selector opens
 before anything is changed. This is the recommended way to install Minflair.
 
-The native CLI accepts the same options and is the new front door:
+`minflair` finds the repository automatically when it is in `~/.minflair` (or
+`~/.dotfiles`). For a clone in another location, pass `--repo <path>` or set
+`MINFLAIR_REPO`.
 
-```bash
-cargo build --release
-./target/release/minflair install
-```
-
-`./install.sh` remains a compatibility entrypoint with identical selector,
-preferences and flags.
+If you prefer not to install the CLI, `./install.sh` remains a compatibility
+entrypoint with the same selector, preferences and flags.
 
 The first interactive install also asks whether to use `yay` or `paru` as the
 AUR helper. The choice is saved in `~/.config/minflair/aur-helper` and is used
 by the installer, the updater and the Package Manager. To change it later:
 
 ```bash
-./install.sh --aur-helper paru
+minflair install --aur-helper paru
 ```
 
 ### Selector controls
@@ -116,7 +118,7 @@ before Python is installed, and it is easy to edit by hand.
 
 A disabled component is not:
 
-- copied by `install.sh` or `update.sh`;
+- copied by `minflair install` or `minflair update`;
 - installed or updated as a package;
 - themed by `apply_theme.py`;
 - updated by `apply_font.py`;
@@ -130,27 +132,36 @@ are.
 
 ## Updating
 
-From a git clone:
+With `minflair` in `PATH`, pull, rebuild and update in one step:
 
 ```bash
-cd ~/.minflair
-git pull --ff-only
-./update.sh
+minflair update --pull
 ```
 
-`update.sh` reads the saved preferences and only copies, installs, themes and
-reloads enabled components. It never reintroduces a component that was
-excluded.
+`--pull` runs `git pull --ff-only` and then rebuilds and reinstalls the CLI
+automatically. Use `--no-build` to skip the rebuild, or omit `--pull` if you
+already pulled:
+
+```bash
+minflair update
+```
+
+`minflair update` reads the saved preferences and only copies, installs, themes
+and reloads enabled components. It never reintroduces a component that was
+excluded. It only opens the selector with `--select`; a normal update keeps the
+saved selection.
 
 To change the selection during an update:
 
 ```bash
-./update.sh --select
-./update.sh --exclude nvim
-./update.sh --include kitty
+minflair update --select
+minflair update --exclude nvim
+minflair update --include kitty
 ```
 
-For a dry run or automation, see [ADVANCED.md](ADVANCED.md).
+`./update.sh` remains a compatibility entrypoint with the same flags and the
+same native pipeline. For a dry run or automation, see
+[ADVANCED.md](ADVANCED.md).
 
 ### Restoring a backup
 
@@ -181,22 +192,22 @@ sddm-greeter --test-mode --theme /usr/share/sddm/themes/minflair-sddm
   up by Minflair.
 - Backups are written under `~/.minflair_backup/<timestamp>/`. Backups from
   older versions stay in `~/.dotfiles_backup/<timestamp>/` and are not deleted.
-- `update.sh` preserves `~/.config/zsh/zhistory` when the `zsh` component is
-  enabled.
+- `minflair update` preserves `~/.config/zsh/zhistory` when the `zsh`
+  component is enabled.
 
 ## Troubleshooting
 
 **The selector does not appear.** It needs an interactive terminal. Run
-`./install.sh --select` from a terminal. If the terminal is not interactive,
-use `--exclude`/`--include` or see [ADVANCED.md](ADVANCED.md).
+`minflair install --select` from a terminal. If the terminal is not
+interactive, use `--exclude`/`--include` or see [ADVANCED.md](ADVANCED.md).
 
 **A component I disabled is still themed.** Check that the preference file
-contains the component id and re-run `./update.sh`. Files already written by an
-older version are not deleted, but they are not updated again.
+contains the component id and re-run `minflair update`. Files already written
+by an older version are not deleted, but they are not updated again.
 
 **A package I disabled was still installed.** It may be a dependency of an
 enabled component. Minflair only removes packages from its own explicit lists;
 `pacman` still resolves dependencies.
 
 **I want everything back.** Remove `~/.config/minflair/preferences.conf` and run
-`./update.sh`.
+`minflair update`.

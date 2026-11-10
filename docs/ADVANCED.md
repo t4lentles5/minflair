@@ -3,6 +3,11 @@
 This guide covers non-interactive flags, dry runs and automation. For a normal
 installation, use the selector described in [INSTALL.md](INSTALL.md).
 
+`minflair` is the canonical command. `./install.sh` and `./update.sh` remain
+compatibility entrypoints with the same selector, preferences and flags:
+`./install.sh <flags>` is equivalent to `minflair install <flags>`, and
+`./update.sh <flags>` is equivalent to `minflair update <flags>`.
+
 ## Flag reference
 
 | Flag | Effect |
@@ -15,13 +20,15 @@ installation, use the selector described in [INSTALL.md](INSTALL.md).
 | `--aur-helper NAME` | Use `yay` or `paru` as the AUR helper and save the choice. |
 | `--dry-run` | Print every action without writing files or running package changes. |
 | `--no-packages` | Skip `pacman` and the AUR helper; useful for configuration-only installs. |
+| `--pull` | Update only: run `git pull --ff-only` before updating. |
+| `--no-build` | Update only: do not rebuild the CLI after `--pull`. |
 | `--help` | Show the built-in help. |
 
 Lists are comma-separated. Flags can be combined and repeated:
 
 ```bash
-./install.sh --exclude kitty --exclude nvim --no-input
-./install.sh --exclude=kitty,nvim --dry-run
+minflair install --exclude kitty --exclude nvim --no-input
+minflair install --exclude=kitty,nvim --dry-run
 ```
 
 `--exclude` and `--only` persist the selection. `--include` removes ids from
@@ -35,25 +42,25 @@ review the resulting selection in the selector before continuing.
 
 ```bash
 # Disable a few applications and keep everything else
-./install.sh --exclude kitty,nvim,starship
+minflair install --exclude kitty,nvim,starship
 
 # Install only the core shell plus Kitty and Zsh
-./install.sh --only quickshell,hyprland,kitty,zsh
+minflair install --only quickshell,hyprland,kitty,zsh
 
 # Re-enable components that were disabled before
-./install.sh --include kitty
+minflair install --include kitty
 
 # Use the saved preferences, never prompt
-./install.sh --no-input
+minflair install --no-input
 
 # Show the full plan without changing the system
-./install.sh --dry-run
+minflair install --dry-run
 
 # Install configuration only; do not touch packages
-./install.sh --no-packages
+minflair install --no-packages
 
 # Use paru for the AUR and save the choice
-./install.sh --aur-helper paru
+minflair install --aur-helper paru
 ```
 
 ## Dry run
@@ -63,14 +70,14 @@ package and reload action, and exits without changing the system. It is the
 recommended way to check a selection before applying it:
 
 ```bash
-./install.sh --dry-run --only quickshell,hyprland,kitty,zsh
-./update.sh --dry-run --exclude nvim
+minflair install --dry-run --only quickshell,hyprland,kitty,zsh
+minflair update --dry-run --exclude nvim
 ```
 
 It is also useful when reporting an installation problem:
 
 ```bash
-./install.sh --dry-run --no-input --no-packages
+minflair install --dry-run --no-input --no-packages
 ```
 
 The output shows which components would be copied, which packages would be
@@ -90,16 +97,16 @@ the login shell change instead of failing. The same applies to a missing
 
 ```bash
 # Fresh install with the saved preferences, no prompts
-./install.sh --no-input
+minflair install --no-input
 
 # Update without touching packages or asking questions
-./update.sh --no-input --no-packages
+minflair update --no-input --no-packages
 
 # Preview an update in CI or a support session
-./update.sh --dry-run --no-input
+minflair update --dry-run --no-input
 
 # Disable a component for an unattended install
-./install.sh --exclude obsidian --no-input
+minflair install --exclude obsidian --no-input
 ```
 
 ## Editing preferences directly
@@ -117,13 +124,13 @@ See [COMPONENTS.md](COMPONENTS.md) for the manifest and the exact file format.
 
 ## Flag troubleshooting
 
-**A flag is not recognized.** Run `./install.sh --help` or
-`./update.sh --help` and check the spelling. Unknown options stop the script
-before any change is made.
+**A flag is not recognized.** Run `minflair install --help` or
+`minflair update --help` and check the spelling. Unknown options stop the
+command before any change is made.
 
 **`--select` does nothing.** It needs an interactive terminal. Without one, the
 saved preferences are used.
 
 **`--no-input` installed something I did not expect.** Check
 `~/.config/minflair/preferences.conf` and run
-`./install.sh --dry-run --no-input` to see the resulting plan.
+`minflair install --dry-run --no-input` to see the resulting plan.

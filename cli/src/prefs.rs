@@ -38,7 +38,6 @@ pub fn parse(content: &str) -> BTreeSet<String> {
 
 /// Persist the disabled components using the format read by the shell and
 /// Python runtime scripts.
-#[allow(dead_code)] // Used by the interactive selector in phase 1.
 pub fn save(path: &Path, disabled: &BTreeSet<String>, manifest: &Manifest) -> Result<()> {
     let unknown: Vec<&String> = disabled
         .iter()
