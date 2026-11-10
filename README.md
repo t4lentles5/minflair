@@ -54,6 +54,39 @@ sudo pacman -S --needed git base-devel rust
 
 ## 🚀 Quick Install
 
+### One command
+
+On Arch Linux, a fresh installation takes one command:
+
+```bash
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/t4lentles5/minflair/main/bootstrap.sh)"
+```
+
+The bootstrap script installs the build tools, clones Minflair into
+`~/.minflair`, builds the `minflair` CLI into `~/.local/bin`, saves the
+repository path in `~/.config/minflair/repo` and starts `minflair install`.
+Minflair's zsh configuration adds `~/.local/bin` to `PATH`; for other shells,
+add it manually.
+
+Use `bash -c "$(curl ...)"`, not `curl ... | bash`: the component selector needs
+the terminal as input. To pass installer flags:
+
+```bash
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/t4lentles5/minflair/main/bootstrap.sh)" -- --exclude kitty,nvim
+```
+
+To audit the script or pin a version:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/t4lentles5/minflair/main/bootstrap.sh \
+  -o /tmp/minflair-bootstrap.sh
+MINFLAIR_REF=v2.2.0 bash /tmp/minflair-bootstrap.sh
+```
+
+`MINFLAIR_DIR`, `MINFLAIR_BIN_DIR`, `MINFLAIR_REPO_URL` and `MINFLAIR_REF`
+override the clone directory, the CLI destination, the remote and the branch or
+tag. See [docs/ADVANCED.md](docs/ADVANCED.md#bootstrap-environment-variables).
+
 ### From git
 
 ```bash
@@ -84,9 +117,9 @@ cargo build --release --locked
 sudo install -Dm755 target/release/minflair /usr/local/bin/minflair
 ```
 
-`minflair` finds the repository automatically when it is in `~/.minflair` (or
-`~/.dotfiles`). For a clone in another location, pass `--repo <path>` or set
-`MINFLAIR_REPO`.
+`minflair` finds the repository automatically from the path saved by
+`bootstrap.sh`, and when it is in `~/.minflair` (or `~/.dotfiles`). For a clone
+in another location, pass `--repo <path>` or set `MINFLAIR_REPO`.
 
 > [!IMPORTANT]
 >

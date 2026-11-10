@@ -559,6 +559,13 @@ fn reload_desktop(ctx: &Ctx) {
 }
 
 fn pull(root: &Path) -> Result<()> {
+    if !root.join(".git").is_dir() {
+        bail!(
+            "{} is not a git checkout; update it with your package manager or run bootstrap.sh again",
+            root.display()
+        );
+    }
+
     ui::info("pulling the latest source (git pull --ff-only)...");
     let status = Command::new("git")
         .arg("-C")
@@ -701,5 +708,15 @@ mod tests {
         let error =
             require_existing_install(&root, directory.path()).expect_err("missing packages");
         assert!(format!("{error:#}").contains(repo::PACKAGES_REL));
+    }
+
+    #[test]
+    fn pull_requires_a_git_checkout() {
+        let directory = tempfile::tempdir().expect("tempdir");
+        let root = directory.path().join("repo");
+        fs::create_dir_all(&root).expect("mkdir");
+
+        let error = pull(&root).expect_err("not a git checkout");
+        assert!(format!("{error:#}").contains("not a git checkout"));
     }
 }

@@ -20,7 +20,7 @@ compatibility entrypoints with the same selector, preferences and flags:
 | `--aur-helper NAME` | Use `yay` or `paru` as the AUR helper and save the choice. |
 | `--dry-run` | Print every action without writing files or running package changes. |
 | `--no-packages` | Skip `pacman` and the AUR helper; useful for configuration-only installs. |
-| `--pull` | Update only: run `git pull --ff-only` before updating. |
+| `--pull` | Update only: run `git pull --ff-only` before updating (requires a git checkout). |
 | `--no-build` | Update only: do not rebuild the CLI after `--pull`. |
 | `--help` | Show the built-in help. |
 
@@ -108,6 +108,26 @@ minflair update --dry-run --no-input
 # Disable a component for an unattended install
 minflair install --exclude obsidian --no-input
 ```
+
+## Bootstrap environment variables
+
+`bootstrap.sh` installs the build tools, clones the repository and installs the
+CLI before running `minflair install`. These variables override its defaults:
+
+| Variable | Effect |
+| --- | --- |
+| `MINFLAIR_DIR` | Clone directory. Default: `~/.minflair`. |
+| `MINFLAIR_BIN_DIR` | CLI destination. Default: `~/.local/bin`. |
+| `MINFLAIR_REPO_URL` | Git remote. Default: the GitHub repository. |
+| `MINFLAIR_REF` | Branch or tag to install. Default: `main`. |
+
+```bash
+# Pin a release and install the CLI in a custom directory
+MINFLAIR_REF=v2.2.0 MINFLAIR_BIN_DIR="$HOME/bin" bash bootstrap.sh
+```
+
+The script keeps the terminal attached so the selector works. Without a
+terminal it falls back to `--no-input` and the saved preferences.
 
 ## Editing preferences directly
 

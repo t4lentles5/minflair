@@ -35,13 +35,13 @@ jobs:
 
       - name: Bash syntax
         run: |
-          bash -n install.sh update.sh lib/*.sh
+          bash -n bootstrap.sh install.sh update.sh lib/*.sh
 
       - name: ShellCheck
         run: |
           sudo apt-get update
           sudo apt-get install -y shellcheck
-          shellcheck --severity=error install.sh update.sh lib/*.sh
+          shellcheck --severity=error bootstrap.sh install.sh update.sh lib/*.sh
 
   rust:
     name: Rust tests and lint

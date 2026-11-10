@@ -7,6 +7,7 @@ pub const MANIFEST_REL: &str = "config/quickshell/components.tsv";
 pub const CONSTANTS_REL: &str = "config/quickshell/Core/Constants.qml";
 pub const PACKAGES_REL: &str = "packages.txt";
 pub const PACKAGES_AUR_REL: &str = "packages-aur.txt";
+pub const REPO_MARKER_REL: &str = "minflair/repo";
 
 pub fn home_dir() -> Result<PathBuf> {
     env::var_os("HOME")
@@ -22,14 +23,45 @@ pub fn config_dir() -> Result<PathBuf> {
     Ok(home_dir()?.join(".config"))
 }
 
+pub fn data_dir() -> Result<PathBuf> {
+    if let Some(value) = env::var_os("XDG_DATA_HOME").filter(|value| !value.is_empty()) {
+        return Ok(PathBuf::from(value));
+    }
+    Ok(home_dir()?.join(".local/share"))
+}
+
 pub fn is_repo(path: &Path) -> bool {
     path.join(MANIFEST_REL).is_file()
+}
+
+/// Read the repository path saved by `bootstrap.sh`.
+fn repo_marker(config: &Path) -> Option<PathBuf> {
+    let content = fs::read_to_string(config.join(REPO_MARKER_REL)).ok()?;
+    content
+        .lines()
+        .map(str::trim)
+        .find(|line| !line.is_empty())
+        .map(PathBuf::from)
+}
+
+/// Usual repository locations, tried after the current directory and the
+/// executable location.
+fn default_candidates(home: &Path, data: &Path) -> Vec<PathBuf> {
+    vec![
+        data.join("minflair"),
+        data.join("minflair/repo"),
+        PathBuf::from("/usr/share/minflair"),
+        PathBuf::from("/usr/local/share/minflair"),
+        home.join(".minflair"),
+        home.join(".dotfiles"),
+    ]
 }
 
 /// Locate the Minflair repository.
 ///
 /// Resolution order: explicit `--repo`, `MINFLAIR_REPO`, the current directory
-/// and its ancestors, the executable location, and the usual clone names.
+/// and its ancestors, the executable location, the path saved by the bootstrap
+/// script, and the usual installation directories.
 pub fn find(explicit: Option<PathBuf>) -> Result<PathBuf> {
     if let Some(path) = explicit {
         let path = fs::canonicalize(&path)
@@ -56,9 +88,14 @@ pub fn find(explicit: Option<PathBuf>) -> Result<PathBuf> {
             candidates.extend(parent.ancestors().take(6).map(Path::to_path_buf));
         }
     }
+    if let Ok(config) = config_dir() {
+        if let Some(marker) = repo_marker(&config) {
+            candidates.push(marker);
+        }
+    }
     if let Ok(home) = home_dir() {
-        candidates.push(home.join(".minflair"));
-        candidates.push(home.join(".dotfiles"));
+        let data = data_dir().unwrap_or_else(|_| home.join(".local/share"));
+        candidates.extend(default_candidates(&home, &data));
     }
 
     for candidate in candidates {
@@ -140,5 +177,42 @@ mod tests {
         let directory = tempfile::tempdir().expect("tempdir");
         let error = find(Some(directory.path().to_path_buf())).expect_err("must fail");
         assert!(format!("{error:#}").contains(MANIFEST_REL));
+    }
+
+    #[test]
+    fn reads_the_repository_marker() {
+        let directory = tempfile::tempdir().expect("tempdir");
+        let marker = directory.path().join(REPO_MARKER_REL);
+        fs::create_dir_all(marker.parent().expect("parent")).expect("mkdir");
+        fs::write(&marker, "  /opt/minflair  \n\n").expect("write");
+
+        assert_eq!(
+            repo_marker(directory.path()),
+            Some(PathBuf::from("/opt/minflair"))
+        );
+    }
+
+    #[test]
+    fn ignores_a_missing_or_empty_marker() {
+        let directory = tempfile::tempdir().expect("tempdir");
+        assert_eq!(repo_marker(directory.path()), None);
+
+        let marker = directory.path().join(REPO_MARKER_REL);
+        fs::create_dir_all(marker.parent().expect("parent")).expect("mkdir");
+        fs::write(&marker, "\n  \n").expect("write");
+        assert_eq!(repo_marker(directory.path()), None);
+    }
+
+    #[test]
+    fn default_candidates_cover_packages_and_clones() {
+        let home = Path::new("/home/user");
+        let data = Path::new("/home/user/.local/share");
+        let candidates = default_candidates(home, data);
+
+        assert_eq!(candidates[0], data.join("minflair"));
+        assert_eq!(candidates[1], data.join("minflair/repo"));
+        assert!(candidates.contains(&PathBuf::from("/usr/share/minflair")));
+        assert!(candidates.contains(&home.join(".minflair")));
+        assert!(candidates.contains(&home.join(".dotfiles")));
     }
 }

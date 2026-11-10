@@ -20,6 +20,39 @@ rules.
 
 ## First install
 
+### One command
+
+On Arch Linux, from a fresh system:
+
+```bash
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/t4lentles5/minflair/main/bootstrap.sh)"
+```
+
+The bootstrap script:
+
+1. installs `git`, `base-devel` and Rust when they are missing;
+2. clones Minflair into `~/.minflair` (or updates an existing clone);
+3. builds the CLI and installs it in `~/.local/bin/minflair`;
+4. saves the repository path in `~/.config/minflair/repo`;
+5. runs `minflair install` with the flags you pass.
+
+The CLI lands in `~/.local/bin`, which Minflair's zsh configuration adds to
+`PATH`. For other shells, add that directory manually.
+
+Keep the terminal attached. Use `bash -c "$(curl ...)"` instead of
+`curl ... | bash`, because the component selector reads from the terminal. To
+audit the script or pin a version, download it first:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/t4lentles5/minflair/main/bootstrap.sh \
+  -o /tmp/minflair-bootstrap.sh
+MINFLAIR_REF=v2.2.0 bash /tmp/minflair-bootstrap.sh
+```
+
+Useful overrides: `MINFLAIR_DIR` (clone directory), `MINFLAIR_BIN_DIR` (CLI
+destination), `MINFLAIR_REPO_URL` (remote) and `MINFLAIR_REF` (branch or tag).
+See [ADVANCED.md](ADVANCED.md#bootstrap-environment-variables).
+
 ### From git
 
 ```bash
@@ -35,9 +68,9 @@ minflair install
 With no options and an interactive terminal, the component selector opens
 before anything is changed. This is the recommended way to install Minflair.
 
-`minflair` finds the repository automatically when it is in `~/.minflair` (or
-`~/.dotfiles`). For a clone in another location, pass `--repo <path>` or set
-`MINFLAIR_REPO`.
+`minflair` finds the repository automatically from the path saved by
+`bootstrap.sh`, and when it is in `~/.minflair` (or `~/.dotfiles`). For a clone
+in another location, pass `--repo <path>` or set `MINFLAIR_REPO`.
 
 If you prefer not to install the CLI, `./install.sh` remains a compatibility
 entrypoint with the same selector, preferences and flags.
