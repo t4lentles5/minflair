@@ -6,7 +6,6 @@ import Quickshell.Io
 import qs.Core
 import qs.Core.Components
 import qs.Core.Services
-import qs.Modules.Dashboard.Components
 
 Card {
     id: root
