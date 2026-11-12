@@ -104,6 +104,7 @@ Card {
                         icon: "github"
                         iconSize: Constants.sizeLg
                         color: Theme.muted
+                        flat: true
                         visible: userImage.status !== Image.Ready
                     }
 
