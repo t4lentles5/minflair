@@ -952,6 +952,7 @@ fn configure_dunst(ctx: &Ctx, manifest: &Manifest, disabled: &BTreeSet<String>) 
     }
 
     let dbus_service = Path::new("/usr/share/dbus-1/services/org.knopwob.dunst.service");
+    let mut dbus_disabled = true;
     if dbus_service.is_file() {
         let dbus_string = dbus_service.to_string_lossy().to_string();
         let disabled_path = format!("{dbus_string}.disabled");
@@ -960,10 +961,20 @@ fn configure_dunst(ctx: &Ctx, manifest: &Manifest, disabled: &BTreeSet<String>) 
             &strs(["mv", dbus_string.as_str(), disabled_path.as_str()]),
         ) {
             ctx.ok("dunst D-Bus activation disabled.");
+        } else {
+            ctx.warn("Could not disable the dunst D-Bus activation.");
+            dbus_disabled = false;
         }
     }
 
-    ctx.ok("dunst disabled - QuickShell will handle notifications.");
+    // The summary is only printed when the activation file was really
+    // moved, otherwise dunst keeps running and fights Quickshell for the
+    // notification bus while the user is told it was disabled.
+    if dbus_disabled {
+        ctx.ok("dunst disabled - QuickShell will handle notifications.");
+    } else {
+        ctx.warn("dunst may still handle notifications.");
+    }
 }
 
 pub(crate) fn configure_zsh(ctx: &Ctx, manifest: &Manifest, disabled: &BTreeSet<String>) {
