@@ -22,7 +22,6 @@ AppContainer {
     }
 
     onShowingDarkChanged: {
-        darkModeToggle.checked = showingDark;
         if (!Theme.generateFromWallpaper) {
             let t = Theme.themes[0];
             let scheme = showingDark ? t.dark : t.light;
@@ -33,7 +32,6 @@ AppContainer {
     }
     Component.onCompleted: {
         showingDark = ColorUtils.isDark(Theme.bg);
-        darkModeToggle.checked = showingDark;
         if (appearanceRoot.availableFonts.indexOf(appearanceRoot.currentFontName) === -1) {
             let arr = appearanceRoot.availableFonts.slice();
             arr.unshift(appearanceRoot.currentFontName);
@@ -105,10 +103,12 @@ AppContainer {
         SettingToggle {
             label: "Dynamic Colors"
             description: "Generate color scheme from current wallpaper"
-            checked: Theme.generateFromWallpaper
+            bindTarget: Theme
+            bindProperty: "generateFromWallpaper"
             onCheckedChanged: {
-                if (checked !== Theme.generateFromWallpaper) {
-                    Theme.generateFromWallpaper = checked;
+                // The toggle writes generateFromWallpaper itself, so only the
+                // side effect of regenerating the scheme is left to do.
+                if (checked === Theme.generateFromWallpaper) {
                     if (checked) {
                         if (WallpaperManager.currentWallpaperPath !== "")
                             Theme.generateTheme(WallpaperManager.currentWallpaperPath);
@@ -160,15 +160,10 @@ AppContainer {
         }
 
         SettingToggle {
-            id: darkModeToggle
-
             label: "Dark Mode"
             description: "Use dark variant of the selected theme"
-            onCheckedChanged: {
-                if (appearanceRoot.showingDark !== checked)
-                    appearanceRoot.showingDark = checked;
-
-            }
+            bindTarget: appearanceRoot
+            bindProperty: "showingDark"
         }
 
     }
