@@ -222,7 +222,7 @@ AppContainer {
     }
 
     AppGroup {
-        title: "System Fonts"
+        title: "Fonts"
         icon: "font"
 
         ThemedSelect {
@@ -263,33 +263,6 @@ AppContainer {
 
         }
 
-        SettingSpinBox {
-            label: "Global Font Scale"
-            description: "Scales fonts across Quickshell, GTK, Qt and the terminals"
-            from: 0.7
-            to: 2.5
-            stepSize: 0.05
-            value: SettingsService.fontScale
-            suffix: "x"
-            decimals: 2
-            onMoved: (val) => {
-                let newSize = Math.round(11 * val);
-                if (appearanceRoot.currentFontSize !== newSize) {
-                    appearanceRoot.currentFontSize = newSize;
-                    SettingsService.fontScale = val;
-                    appearanceRoot.applyFont();
-                } else {
-                    SettingsService.fontScale = val;
-                }
-            }
-        }
-
-    }
-
-    AppGroup {
-        title: "Terminal Font"
-        icon: "code"
-
         ThemedSelect {
             id: kittyFontSelect
 
@@ -326,6 +299,27 @@ AppContainer {
                 target: SettingsService
             }
 
+        }
+
+        SettingSpinBox {
+            label: "Global Font Scale"
+            description: "Scales fonts across Quickshell, GTK, Qt and the terminals"
+            from: 0.7
+            to: 2.5
+            stepSize: 0.05
+            value: SettingsService.fontScale
+            suffix: "x"
+            decimals: 2
+            onMoved: (val) => {
+                let newSize = Math.round(11 * val);
+                if (appearanceRoot.currentFontSize !== newSize) {
+                    appearanceRoot.currentFontSize = newSize;
+                    SettingsService.fontScale = val;
+                    appearanceRoot.applyFont();
+                } else {
+                    SettingsService.fontScale = val;
+                }
+            }
         }
 
     }

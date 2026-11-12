@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.3.0] - 2026-11-11
+## [2.3.0] - 2026-11-12
 
 ### Added
 
@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - The version shown in Settings → System Information is now `2.3.0`.
+- The GitHub widget draws the user image without a frame, so it matches the flat style of the rest of the dashboard.
 
 ### Fixed
 
@@ -42,6 +43,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `ThemedTextField` and `ThemedButton` are generic widgets but lived in the Settings and Dashboard module folders. They now live in `Core/Components`, where `CONTRIBUTING.md` asks generic UI elements to be.
 - `SettingToggle` gained a `bindTarget` and `bindProperty` pair, replacing the repeated checked binding, change handler and `Binding` object in 15 toggles across 6 panels.
 - The sidebar section headers and the disabled rows in the settings panels now use the same letter spacing and the same dimming as the rest of the interface.
+- **The Clipboard and Launcher lists were resized**: both show one row less and are 60 px narrower, the app icons are loaded at half the size, and the row text uses the default size instead of a smaller one. The text no longer has to be shrunk by hand to fit the row.
 
 ## [2.2.0] - 2026-11-10
 
