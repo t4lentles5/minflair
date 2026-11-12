@@ -569,21 +569,21 @@ pub(crate) fn configure_battery(
     }
 
     ctx.info("Configuring sudoers for battery charge limit script...");
-    let rule = format!(
-        "{} ALL=(ALL) NOPASSWD: {}/.config/quickshell/Scripts/system/toggle_battery_limit.sh\n",
-        ctx.user,
-        ctx.home.display()
-    );
-    if ctx.write_sudo_file("/etc/sudoers.d/quickshell-battery", &rule)
-        && ctx.run(
-            "sudo",
-            &strs(["chmod", "0440", "/etc/sudoers.d/quickshell-battery"]),
-        )
-    {
+    let rule = battery_sudoers_rule(&ctx.user, &ctx.home);
+    if ctx.write_sudo_file("/etc/sudoers.d/quickshell-battery", &rule) {
         ctx.ok("Battery charge limit support and sudoers configured.");
     } else {
         ctx.warn("Could not configure the battery sudoers rule.");
     }
+}
+
+/// Build the sudoers rule that lets the battery script run without a
+/// password. The command path is quoted so a home directory with a space
+/// still produces a valid rule; an unquoted path breaks the rule and sudo
+/// then refuses to run for every user on the machine.
+fn battery_sudoers_rule(user: &str, home: &Path) -> String {
+    let script = home.join(".config/quickshell/Scripts/system/toggle_battery_limit.sh");
+    format!("{user} ALL=(ALL) NOPASSWD: \"{}\"\n", script.display())
 }
 
 fn backup_dotfiles(ctx: &Ctx, manifest: &Manifest, disabled: &BTreeSet<String>) -> Result<()> {
@@ -1431,14 +1431,33 @@ impl Ctx {
         }
     }
 
+    /// Write a file that root owns, atomically.
+    ///
+    /// The contents go to a temporary file first and are only moved into
+    /// place once they are complete. Writing straight to the destination
+    /// truncates it before the data arrives, so a failure in the middle
+    /// would leave a half written file behind. That matters for the files
+    /// under /etc, where a broken sudoers rule locks every user out of
+    /// sudo.
     pub(crate) fn write_sudo_file(&self, path: &str, contents: &str) -> bool {
         if self.dry_run {
             println!("[dry-run] would write {path}");
             return true;
         }
 
+        let target = Path::new(path);
+        let temporary = match target.file_name() {
+            Some(name) => {
+                target.with_file_name(format!(".{}.minflair-new", name.to_string_lossy()))
+            }
+            None => {
+                self.warn(&format!("could not write {path}: invalid path"));
+                return false;
+            }
+        };
+
         let mut child = match Command::new("sudo")
-            .args(["tee", path])
+            .args(["tee", temporary.to_string_lossy().as_ref()])
             .stdin(Stdio::piped())
             .stdout(Stdio::null())
             .spawn()
@@ -1450,12 +1469,76 @@ impl Ctx {
             }
         };
 
-        if let Some(stdin) = child.stdin.as_mut() {
-            if stdin.write_all(contents.as_bytes()).is_err() {
-                return false;
-            }
+        let written = match child.stdin.as_mut() {
+            Some(stdin) => stdin.write_all(contents.as_bytes()).is_ok(),
+            None => false,
+        };
+        // Dropping stdin closes the pipe so tee can finish and exit.
+        drop(child.stdin.take());
+
+        if !written {
+            let _ = child.wait();
+            let _ = Command::new("sudo")
+                .args(["rm", "-f", temporary.to_string_lossy().as_ref()])
+                .stdout(Stdio::null())
+                .stderr(Stdio::null())
+                .status();
+            self.warn(&format!("could not write {path}: the write failed"));
+            return false;
         }
-        child.wait().map(|status| status.success()).unwrap_or(false)
+
+        if !child.wait().map(|status| status.success()).unwrap_or(false) {
+            let _ = Command::new("sudo")
+                .args(["rm", "-f", temporary.to_string_lossy().as_ref()])
+                .stdout(Stdio::null())
+                .stderr(Stdio::null())
+                .status();
+            self.warn(&format!("could not write {path}"));
+            return false;
+        }
+
+        // The mode is set on the temporary file, so the file is never
+        // readable by other users even for an instant.
+        let mode = if path.starts_with("/etc/sudoers.d/") {
+            "0440"
+        } else {
+            "0644"
+        };
+        if !Command::new("sudo")
+            .args(["chmod", mode, temporary.to_string_lossy().as_ref()])
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .status()
+            .map(|status| status.success())
+            .unwrap_or(false)
+        {
+            let _ = Command::new("sudo")
+                .args(["rm", "-f", temporary.to_string_lossy().as_ref()])
+                .stdout(Stdio::null())
+                .stderr(Stdio::null())
+                .status();
+            self.warn(&format!("could not set the permissions of {path}"));
+            return false;
+        }
+
+        let moved = Command::new("sudo")
+            .args(["mv", "-f", temporary.to_string_lossy().as_ref(), path])
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .status()
+            .map(|status| status.success())
+            .unwrap_or(false);
+
+        if !moved {
+            let _ = Command::new("sudo")
+                .args(["rm", "-f", temporary.to_string_lossy().as_ref()])
+                .stdout(Stdio::null())
+                .stderr(Stdio::null())
+                .status();
+            self.warn(&format!("could not move the new file into {path}"));
+        }
+
+        moved
     }
 }
 
@@ -1472,6 +1555,28 @@ mod tests {
         let disabled: BTreeSet<String> = ["nvim".to_string()].into_iter().collect();
         let filtered = filtered_packages(&packages, &disabled);
         assert_eq!(filtered, vec!["kitty", "btop"]);
+    }
+
+    #[test]
+    fn the_sudoers_rule_quotes_the_script_path() {
+        let rule = battery_sudoers_rule("octo", Path::new("/home/john doe"));
+        assert_eq!(
+            rule,
+            "octo ALL=(ALL) NOPASSWD: \"/home/john doe/.config/quickshell/Scripts/system/toggle_battery_limit.sh\"\n"
+        );
+    }
+
+    #[test]
+    fn the_sudoers_rule_is_a_single_command() {
+        // An unquoted path with a space is parsed by sudo as the command
+        // "/home/john" plus the argument "doe/...", which is not the script.
+        let rule = battery_sudoers_rule("octo", Path::new("/home/john doe"));
+        let command = rule.split("NOPASSWD: ").nth(1).expect("command");
+        let command = command.trim().trim_matches('"');
+        assert_eq!(
+            command,
+            "/home/john doe/.config/quickshell/Scripts/system/toggle_battery_limit.sh"
+        );
     }
 
     #[test]
