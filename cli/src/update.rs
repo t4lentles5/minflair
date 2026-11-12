@@ -261,7 +261,10 @@ fn backup_system_files(ctx: &Ctx, manifest: &Manifest, disabled: &BTreeSet<Strin
                 install::SDDM_THEME_DIR
             );
         } else {
-            let _ = fs::copy(theme_conf, ctx.backup_dir.join("sddm-theme.conf.bak"));
+            // The theme is overwritten further down, so a missing backup
+            // would leave the user without a way back.
+            fs::copy(theme_conf, ctx.backup_dir.join("sddm-theme.conf.bak"))
+                .context("could not back up the SDDM theme configuration")?;
         }
     }
 
