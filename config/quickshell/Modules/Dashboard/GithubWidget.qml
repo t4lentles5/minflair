@@ -238,7 +238,7 @@ Card {
             contentPadding: Constants.sizeSm
             visible: GithubService.topRepoName !== "..." && GithubService.topRepoName !== "None"
             scale: repoHover.hovered ? 1.02 : 1
-            radius: Constants.sizeSm
+            radius: Constants.sizeXs
             useBorder: false
 
             TapHandler {

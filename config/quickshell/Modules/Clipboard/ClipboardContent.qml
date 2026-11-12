@@ -14,7 +14,7 @@ Item {
     property var widget: null
     property string searchText: ""
     property alias initialFocusItem: searchField
-    property int maxVisibleItems: 8
+    property int maxVisibleItems: 7
     readonly property bool isSearching: searchField.text.trim() !== ""
     readonly property int currentItemCount: ClipboardService.filteredModel ? ClipboardService.filteredModel.count : 0
     readonly property int targetVisibleItems: {
@@ -27,7 +27,7 @@ Item {
         return Math.min(currentItemCount, maxVisibleItems);
     }
     property int visibleItems: targetVisibleItems
-    property int preferredContentWidth: 700
+    property int preferredContentWidth: 640
     readonly property int searchBarHeight: Constants.size4Xl
     readonly property int itemHeight: 44
     readonly property int listSpacing: Constants.sizeXs
@@ -305,7 +305,6 @@ Item {
             onSearchRequested: (text) => {
                 return ClipboardService.filterClipboard(text);
             }
-            customSize: Constants.sizeMd
             textField.Keys.onPressed: function(event) {
                 if (event.key === Qt.Key_Down) {
                     clipboardView.currentIndex = Math.min(clipboardView.currentIndex + 1, ClipboardService.filteredModel.count - 1);
