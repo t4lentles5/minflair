@@ -102,7 +102,20 @@ fn build_report(args: &DoctorArgs) -> Report {
         }
         disabled
     } else {
-        load_disabled()
+        // Without a repository the preferences are still read, but a
+        // failure is reported instead of being silently treated as if
+        // nothing were disabled.
+        match load_disabled() {
+            Ok(disabled) => disabled,
+            Err(error) => {
+                checks.push(Check::new(
+                    "preferences",
+                    Status::Fail,
+                    format!("could not read the preferences: {error:#}"),
+                ));
+                BTreeSet::new()
+            }
+        }
     };
 
     check_desktop(&disabled, &mut checks);
@@ -314,11 +327,14 @@ fn check_config_dir() -> Check {
     }
 }
 
-fn load_disabled() -> BTreeSet<String> {
-    prefs::default_path()
-        .ok()
-        .and_then(|path| prefs::load(&path).ok())
-        .unwrap_or_default()
+/// Read the disabled components from the preferences file.
+///
+/// The error is returned so the caller can report it. Treating an unreadable
+/// file as an empty one would make the desktop checks run as if the user had
+/// disabled nothing.
+fn load_disabled() -> Result<BTreeSet<String>> {
+    let path = prefs::default_path()?;
+    prefs::load(&path)
 }
 
 fn check_repository(root: &Path, checks: &mut Vec<Check>) -> (BTreeSet<String>, Option<Manifest>) {
