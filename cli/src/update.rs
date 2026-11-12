@@ -471,13 +471,16 @@ fn configure_dunst(ctx: &Ctx, manifest: &Manifest, disabled: &BTreeSet<String>) 
         ctx.ok("dunst disabled - QuickShell will handle notifications.");
     } else {
         ctx.info("Restoring dunst (dunst component disabled)...");
-        let _ = Command::new("systemctl")
+        let unmasked = Command::new("systemctl")
             .args(["--user", "unmask", "dunst.service"])
             .stdout(Stdio::null())
             .stderr(Stdio::null())
-            .status();
+            .status()
+            .map(|status| status.success())
+            .unwrap_or(false);
 
         let disabled_path = format!("{DUNST_DBUS_SERVICE}.disabled");
+        let mut restored = unmasked;
         if Path::new(&disabled_path).is_file() {
             if ctx.run(
                 "sudo",
@@ -486,10 +489,18 @@ fn configure_dunst(ctx: &Ctx, manifest: &Manifest, disabled: &BTreeSet<String>) 
                 ctx.ok("dunst D-Bus activation restored.");
             } else {
                 ctx.warn("Could not restore the dunst D-Bus activation.");
+                restored = false;
             }
         }
 
-        ctx.ok("dunst restored.");
+        // The message is only printed when the service was actually
+        // unmasked, otherwise the user is told dunst was restored while it
+        // is still masked.
+        if restored {
+            ctx.ok("dunst restored.");
+        } else {
+            ctx.warn("Could not unmask dunst.service.");
+        }
     }
 }
 
