@@ -21,6 +21,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - **Setting toggles lost their binding after the first click**: the toggles that were bound to a service property with a plain `checked` binding stopped following that property once the user clicked them, so the switch could show a value the service no longer had. All the service-backed toggles now keep the two in sync.
+- **The keyboard layout was never saved**: the layout Hyprland reports was assigned with the synchronisation flag set, so the handler that saves it was skipped. The saved value kept the previous layout and the startup timer put it back on the next run.
+- **The microphone volume and mute were dropped on startup**: both were only applied when the device already existed while the settings were read, but PipeWire creates the source a moment later. The saved values are now applied once the device appears.
+- **A broken sudoers rule could lock every user out of sudo**: the rule was written straight to `/etc/sudoers.d/`, which truncates the file before the data arrives, and the home directory was not quoted. It is now written to a temporary file and moved into place, with the path quoted.
+- **The old GTK theme was destroyed before the new one was in place**: the theme directory was deleted and the removal error ignored, so a failure left the user without a theme. The old one is now moved aside and restored when the new one cannot be installed.
+- **The cursor theme name could break `envs.lua`**: the name came from the saved settings and was interpolated into a regular expression replacement, where a backslash is an escape sequence and a quote ends the string. It is now escaped as a Lua string.
+- **The settings file was briefly readable by other users**: it holds the GitHub token and was created with the default umask before being tightened. It is now created with a restrictive umask.
+- **An empty settings file skipped the cursor theme and the font**: an empty file was handled differently from a missing one. Both are handled the same way now.
+- **`minflair doctor` hid an unreadable preferences file**: without a repository the file was read with the error discarded, so the desktop checks ran as if nothing were disabled. The failure is reported now.
+- **Several installer commands reported success when they failed**: creating the SDDM theme directory, pointing the theme at its remote, stopping the running shell and rebooting all ignored their result. They are checked now.
+- **A failed SDDM backup was silent**: the theme configuration was overwritten right after a backup whose error was discarded. The failure is reported now.
+- **The SDDM theme was reported as disabled while it was running**: the summary was printed even when the D-Bus activation file could not be moved, leaving dunst to fight Quickshell for the notification bus.
+- **`/etc/sddm.conf` was written in place**: a failure in the middle left the login manager with a truncated configuration. It is written to a temporary path and moved into place.
 
 ### Refactored
 
