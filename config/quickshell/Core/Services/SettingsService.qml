@@ -261,13 +261,17 @@ Item {
                 "fontFamily": settingsService.fontFamily
             };
             settingsSaver.running = false;
-            settingsSaver.command = ["sh", "-c", "mkdir -p ~/.cache/quickshell && cat << 'EOF' > ~/.cache/quickshell/settings_prefs.json.tmp
+            // The file holds the GitHub token, so it is created with a
+            // restrictive umask instead of being tightened afterwards. The
+            // umask applies to the temporary file as well, so the token is
+            // never readable by another user, not even for an instant.
+            settingsSaver.command = ["sh", "-c", "umask 077 && mkdir -p ~/.cache/quickshell && cat << 'EOF' > ~/.cache/quickshell/settings_prefs.json.tmp
 " + JSON.stringify(data) + "
 EOF
 mv -f ~/.cache/quickshell/settings_prefs.json.tmp ~/.cache/quickshell/settings_prefs.json
 chmod 600 ~/.cache/quickshell/settings_prefs.json
 if ! grep -qxF sddm \"$HOME/.config/minflair/preferences.conf\" 2>/dev/null; then
-  mkdir -p /var/tmp/sddm-theme
+  umask 022 && mkdir -p /var/tmp/sddm-theme
   cat << 'EOF' > /var/tmp/sddm-theme/settings_prefs.json.tmp
 " + JSON.stringify(sddmData) + "
 EOF
@@ -436,6 +440,10 @@ fi"];
                 } else {
                     SystemInfoService.applyProfile("balanced");
                     settingsService.saveSettings();
+                    // An empty file is handled like a missing one, so the
+                    // cursor theme and the font are applied either way.
+                    settingsService.applyCursor(settingsService.cursorTheme, settingsService.cursorSize);
+                    settingsService.applyFont(settingsService.fontFamily, Math.round(11 * settingsService.fontScale));
                 }
             } else {
                 SystemInfoService.applyProfile("balanced");
