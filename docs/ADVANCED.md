@@ -178,7 +178,7 @@ CLI before running `minflair install`. These variables override its defaults:
 
 ```bash
 # Pin a release and install the CLI in a custom directory
-MINFLAIR_REF=v2.2.0 MINFLAIR_BIN_DIR="$HOME/bin" bash bootstrap.sh
+MINFLAIR_REF=v2.3.0 MINFLAIR_BIN_DIR="$HOME/bin" bash bootstrap.sh
 ```
 
 The script keeps the terminal attached so the selector works. Without a

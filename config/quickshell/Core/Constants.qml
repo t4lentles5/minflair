@@ -5,7 +5,7 @@ pragma Singleton
 QtObject {
     // Single source of truth for the version shown in the UI (sidebar footer,
     // Settings → System Info). Keep it in sync with the release changelog.
-    readonly property string appVersion: "2.2.0"
+    readonly property string appVersion: "2.3.0"
     property string fontFamily: SettingsService.fontFamily
     property int size3Xs: 2
     property int size2Xs: 4

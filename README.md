@@ -86,7 +86,7 @@ To audit the script or pin a version:
 ```bash
 curl -fsSL https://raw.githubusercontent.com/t4lentles5/minflair/main/bootstrap.sh \
   -o /tmp/minflair-bootstrap.sh
-MINFLAIR_REF=v2.2.0 bash /tmp/minflair-bootstrap.sh
+MINFLAIR_REF=v2.3.0 bash /tmp/minflair-bootstrap.sh
 ```
 
 `MINFLAIR_DIR`, `MINFLAIR_BIN_DIR`, `MINFLAIR_REPO_URL` and `MINFLAIR_REF`
