@@ -171,6 +171,90 @@ class FontGatingTests(unittest.TestCase):
         mocks["update_quickshell"].assert_called_once_with(home, "Geist")
 
 
+class KittyFontGatingTests(unittest.TestCase):
+    """The terminal font only reaches Kitty when both components allow it."""
+
+    def _home(self, tmp, kitty_conf=None):
+        home = Path(tmp)
+        kitty = home / ".config" / "kitty"
+        kitty.mkdir(parents=True)
+        (kitty / "kitty.conf").write_text(
+            kitty_conf if kitty_conf is not None else "font_family JetbrainsMono NF\n",
+            encoding="utf-8",
+        )
+        return home
+
+    def test_font_sync_disabled_does_not_reach_kitty(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            home = self._home(tmp)
+            with mock.patch.object(apply_font, "update_kitty_font") as update:
+                apply_font.apply_kitty_font(
+                    "New Font", home=home, is_enabled=lambda cid: cid != "font-sync"
+                )
+            update.assert_not_called()
+
+    def test_kitty_disabled_does_not_reach_kitty(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            home = self._home(tmp)
+            with mock.patch.object(apply_font, "update_kitty_font") as update:
+                apply_font.apply_kitty_font(
+                    "New Font", home=home, is_enabled=lambda cid: cid != "kitty"
+                )
+            update.assert_not_called()
+
+    def test_both_enabled_reaches_kitty(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            home = self._home(tmp)
+            with mock.patch.object(apply_font, "update_kitty_font") as update:
+                apply_font.apply_kitty_font(
+                    "New Font", home=home, is_enabled=lambda _cid: True
+                )
+            update.assert_called_once_with(home, "New Font")
+
+
+class KittyFontNameTests(unittest.TestCase):
+    """The font family is written into kitty.conf as it is."""
+
+    def _apply(self, tmp, name, initial="font_family JetbrainsMono NF\nfont_size 11\n"):
+        home = Path(tmp)
+        kitty = home / ".config" / "kitty"
+        kitty.mkdir(parents=True)
+        (kitty / "kitty.conf").write_text(initial, encoding="utf-8")
+        with mock.patch.object(apply_font.subprocess, "run"):
+            apply_font.update_kitty_font(home, name)
+        return (kitty / "kitty.conf").read_text(encoding="utf-8")
+
+    def test_the_family_is_replaced(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            content = self._apply(tmp, "JetBrainsMono Nerd Font")
+            self.assertIn("font_family JetBrainsMono Nerd Font\n", content)
+            self.assertIn("font_size 11\n", content)
+
+    def test_a_backslash_is_written_literally(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            content = self._apply(tmp, r"Bad\Name")
+            self.assertIn(r"font_family Bad\Name", content)
+
+    def test_a_newline_cannot_add_a_setting(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            content = self._apply(tmp, "Evil\nfont_size 99")
+            self.assertIn("font_family Evil font_size 99\n", content)
+            # The original setting is still the only font_size in the file.
+            self.assertEqual(content.count("font_size"), 2)
+
+    def test_the_family_is_added_when_it_is_missing(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            content = self._apply(tmp, "Added Font", initial="font_size 11\n")
+            self.assertIn("font_family Added Font\n", content)
+
+    def test_a_missing_kitty_conf_is_ignored(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            home = Path(tmp)
+            with mock.patch.object(apply_font.subprocess, "run") as run:
+                apply_font.update_kitty_font(home, "New Font")
+            run.assert_not_called()
+
+
 class CursorGatingTests(unittest.TestCase):
     def test_disabled_cursor_does_nothing(self):
         with tempfile.TemporaryDirectory() as tmp:
