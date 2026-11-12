@@ -376,11 +376,11 @@ fi"];
                         if (prefs.wpCropGravity !== undefined)
                             HyprlandService.wpCropGravity = prefs.wpCropGravity;
 
-                        if (prefs.micVolume !== undefined && AudioService.hasPhysicalMic)
-                            AudioService.setMicVolume(prefs.micVolume);
-
-                        if (prefs.micMuted !== undefined && AudioService.hasPhysicalMic)
-                            AudioService.setMicMuted(prefs.micMuted);
+                        // The microphone can appear after the settings were
+                        // read, so the values are handed over and applied
+                        // as soon as the device exists.
+                        if (prefs.micVolume !== undefined || prefs.micMuted !== undefined)
+                            AudioService.restoreMic(prefs.micVolume, prefs.micMuted);
 
                         if (prefs.quoteCategory !== undefined)
                             settingsService.quoteCategory = prefs.quoteCategory;
