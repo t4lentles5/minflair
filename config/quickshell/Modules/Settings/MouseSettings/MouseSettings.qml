@@ -213,6 +213,13 @@ AppContainer {
             }
         }
 
+        SettingToggle {
+            label: "Disable Cursor Warping"
+            description: "Stop the cursor from jumping to the center of a window when it opens"
+            bindTarget: HyprlandService
+            bindProperty: "cursorNoWarps"
+        }
+
     }
 
     AppGroup {
