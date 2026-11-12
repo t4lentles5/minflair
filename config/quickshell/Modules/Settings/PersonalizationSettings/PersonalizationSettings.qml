@@ -13,12 +13,25 @@ AppContainer {
 
     property bool showingDark: true
     property var availableFonts: ["Geist"]
+    property var availableMonoFonts: []
     property string currentFontName: SettingsService.fontFamily || "Geist"
     property int currentFontSize: Math.round(11 * SettingsService.fontScale) || 11
 
     function applyFont() {
         SettingsService.fontFamily = appearanceRoot.currentFontName;
         SettingsService.applyFont(appearanceRoot.currentFontName, appearanceRoot.currentFontSize);
+    }
+
+    // The terminal font only reaches Kitty when the components that carry it
+    // are enabled, so the reason is shown when it will not be applied.
+    function kittyFontDescription() {
+        if (!ComponentService.isEnabled("font-sync"))
+            return "Not applied: the font synchronization component is disabled";
+
+        if (!ComponentService.isEnabled("kitty"))
+            return "Not applied: the kitty component is disabled";
+
+        return "Font used by the terminal";
     }
 
     onShowingDarkChanged: {
@@ -91,6 +104,46 @@ AppContainer {
                         appearanceRoot.availableFonts = arr;
 
                 }
+            }
+        }
+
+    }
+
+    Process {
+        id: fetchMonoFontsProc
+
+        // A terminal needs a monospace font, so only those are offered.
+        command: ["sh", "-c", "fc-list :spacing=100 family | cut -d, -f1 | sort -u"]
+        Component.onCompleted: running = true
+
+        stdout: SplitParser {
+            onRead: (data) => {
+                if (!data)
+                    return ;
+
+                let lines = data.split('\n').map((x) => {
+                    return x.trim();
+                }).filter((x) => {
+                    return x !== "";
+                });
+                let arr = appearanceRoot.availableMonoFonts.slice();
+                let changed = false;
+                lines.forEach((l) => {
+                    if (arr.indexOf(l) === -1) {
+                        arr.push(l);
+                        changed = true;
+                    }
+                });
+                // The font in use is always offered, even when fontconfig
+                // does not know it.
+                let current = SettingsService.kittyFontFamily;
+                if (current && arr.indexOf(current) === -1) {
+                    arr.unshift(current);
+                    changed = true;
+                }
+                if (changed)
+                    appearanceRoot.availableMonoFonts = arr;
+
             }
         }
 
@@ -212,7 +265,7 @@ AppContainer {
 
         SettingSpinBox {
             label: "Global Font Scale"
-            description: "Scales fonts across Quickshell, GTK and Qt"
+            description: "Scales fonts across Quickshell, GTK, Qt and the terminals"
             from: 0.7
             to: 2.5
             stepSize: 0.05
@@ -229,6 +282,50 @@ AppContainer {
                     SettingsService.fontScale = val;
                 }
             }
+        }
+
+    }
+
+    AppGroup {
+        title: "Terminal Font"
+        icon: "code"
+
+        ThemedSelect {
+            id: kittyFontSelect
+
+            function updateSelection() {
+                for (let i = 0; i < appearanceRoot.availableMonoFonts.length; i++) {
+                    if (appearanceRoot.availableMonoFonts[i] === SettingsService.kittyFontFamily) {
+                        kittyFontSelect.currentIndex = i;
+                        return ;
+                    }
+                }
+                kittyFontSelect.currentIndex = 0;
+            }
+
+            label: "Terminal Font"
+            description: appearanceRoot.kittyFontDescription()
+            comboWidth: 260
+            searchable: true
+            model: appearanceRoot.availableMonoFonts
+            Component.onCompleted: updateSelection()
+            onModelChanged: updateSelection()
+            onActivated: (index) => {
+                let newFont = model[index];
+                if (SettingsService.kittyFontFamily !== newFont) {
+                    SettingsService.kittyFontFamily = newFont;
+                    SettingsService.applyKittyFont(newFont);
+                }
+            }
+
+            Connections {
+                function onKittyFontFamilyChanged() {
+                    kittyFontSelect.updateSelection();
+                }
+
+                target: SettingsService
+            }
+
         }
 
     }
