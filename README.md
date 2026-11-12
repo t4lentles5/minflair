@@ -18,7 +18,7 @@
 ## ✨ Features
 
 - **Unique shell styles** — Switch between **Convex** (organic curved frames) and **Island** (a floating pill bar with expandable widgets).
-- **Adaptive wallpaper theming** — Your bar, terminals, Neovim, GTK, Qt, SDDM, Obsidian and supported apps follow the active wallpaper in real time.
+- **Adaptive wallpaper theming** — Your bar, terminals, Neovim, GTK, Qt, SDDM, Obsidian and supported apps follow the active wallpaper in real time. On colorful wallpapers you can pick which of the dominant colors drives the accent.
 - **Unified OSD and hardware controls** — Volume, microphone, brightness, keyboard locks, touchpad toggles and power alerts, integrated into the active bar style.
 - **Settings center and wallpaper tools** — Crop, align and preview wallpapers, and tune mouse, touchpad, fonts and bar appearance without editing config files.
 - **Music, notifications and calendar** — Media controls with a live visualizer, grouped notifications and a calendar shared by both shell styles.

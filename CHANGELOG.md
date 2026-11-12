@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Cursor warping toggle**: the Settings → Mouse & Touchpad panel can now turn off the cursor warping that Hyprland applies when a window opens. The behaviour was already implemented, applied and stored in the Hyprland preferences, but there was no way to reach it without editing those files by hand.
 - **Terminal font setting**: the font of the terminals can now be picked in the Settings → Appearance panel, with only the monospace fonts offered, because a terminal needs one while the system font does not have to be one. The font only reaches Kitty when the `font-sync` and `kitty` components are enabled, and the panel says so when it will not be applied.
+- **Wallpaper accent variants**: colorful wallpapers can now drive the theme with any of up to five accents taken from their dominant colors. The Appearance panel shows them as swatches, the previous accent remains the default, and the choice is kept while the same wallpaper is active. Every variant shares the same background and foreground, so contrast does not change.
 - **Version drift detection**:
   - `minflair doctor` now compares the version of the binary with the version the configuration reports and warns when they differ, pointing at `minflair update --pull` to rebuild the binary.
   - A new test compares the version in the Quickshell constants, the CLI crate manifest and the lockfile, so a release can no longer ship with the shell and the CLI reporting different numbers.
