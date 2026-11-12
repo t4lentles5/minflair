@@ -113,6 +113,12 @@ that applier is skipped as well.
 propagation to external applications. The shell's own font preference is
 always updated, because it is part of the shell and not an external app.
 
+The terminal font is a setting of its own and needs both the `font-sync`
+and the `kitty` component to be enabled: the first one allows the
+propagation to external applications and the second one says whether
+Kitty is managed by Minflair at all. The appearance panel says so when
+the font will not be applied.
+
 `apply_cursor.py` returns early when the `cursor` component is disabled.
 
 The SDDM runtime cache under `/var/tmp/sddm-theme` is only written when the

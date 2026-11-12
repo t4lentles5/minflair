@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - **Cursor warping toggle**: the Settings → Mouse & Touchpad panel can now turn off the cursor warping that Hyprland applies when a window opens. The behaviour was already implemented, applied and stored in the Hyprland preferences, but there was no way to reach it without editing those files by hand.
+- **Terminal font setting**: the font of the terminals can now be picked in the Settings → Appearance panel, with only the monospace fonts offered, because a terminal needs one while the system font does not have to be one. The font only reaches Kitty when the `font-sync` and `kitty` components are enabled, and the panel says so when it will not be applied.
 - **Version drift detection**:
   - `minflair doctor` now compares the version of the binary with the version the configuration reports and warns when they differ, pointing at `minflair update --pull` to rebuild the binary.
   - A new test compares the version in the Quickshell constants, the CLI crate manifest and the lockfile, so a release can no longer ship with the shell and the CLI reporting different numbers.
@@ -33,6 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **A failed SDDM backup was silent**: the theme configuration was overwritten right after a backup whose error was discarded. The failure is reported now.
 - **The SDDM theme was reported as disabled while it was running**: the summary was printed even when the D-Bus activation file could not be moved, leaving dunst to fight Quickshell for the notification bus.
 - **`/etc/sddm.conf` was written in place**: a failure in the middle left the login manager with a truncated configuration. It is written to a temporary path and moved into place.
+- **The terminal font was lost on every update**: an update copies the repository configuration over the one of the user, which put back the font the repository ships. The saved font is applied again when the shell starts, like the cursor theme and the global font already were.
 
 ### Refactored
 
