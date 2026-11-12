@@ -182,6 +182,17 @@ AppContainer {
             }
         }
 
+        ColorVariantPicker {
+            visible: Theme.generateFromWallpaper && Theme.wallpaperVariants.length > 1
+            label: "Wallpaper Color"
+            description: "Accent color taken from the current wallpaper"
+            variants: Theme.wallpaperVariants
+            currentIndex: Theme.wallpaperVariant
+            onActivated: (index) => {
+                Theme.selectWallpaperVariant(index);
+            }
+        }
+
         ThemedSelect {
             label: "Static Theme"
             description: "Color scheme when dynamic colors are off"
