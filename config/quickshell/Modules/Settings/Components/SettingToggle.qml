@@ -99,7 +99,7 @@ SettingRowTemplate {
                 }
 
                 Behavior on color {
-                    NumberAnimation {
+                    ColorAnimation {
                         duration: Constants.animFast
                     }
 
@@ -108,14 +108,14 @@ SettingRowTemplate {
             }
 
             Behavior on color {
-                NumberAnimation {
+                ColorAnimation {
                     duration: Constants.animFast
                 }
 
             }
 
             Behavior on border.color {
-                NumberAnimation {
+                ColorAnimation {
                     duration: Constants.animFast
                 }
 
