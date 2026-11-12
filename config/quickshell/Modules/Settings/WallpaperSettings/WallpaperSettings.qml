@@ -111,7 +111,7 @@ AppContainer {
                 HyprlandService.wpTransitionPos = model[index];
             }
             enabled: HyprlandService.wpEnableTransitions && HyprlandService.wpTransitionType !== "random"
-            opacity: enabled ? 1 : 0.4
+            opacity: enabled ? 1 : 0.5
 
             Behavior on opacity {
                 NumberAnimation {
@@ -126,7 +126,7 @@ AppContainer {
             spacing: Constants.sizeLg
             Layout.fillWidth: true
             enabled: HyprlandService.wpEnableTransitions
-            opacity: enabled ? 1 : 0.4
+            opacity: enabled ? 1 : 0.5
 
             SettingSegmented {
                 label: "Transition Speed"

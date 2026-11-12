@@ -12,7 +12,7 @@ ThemedText {
 
     customSize: Constants.sizeXs + 2
     font.weight: Font.Bold
-    font.letterSpacing: 0.8
+    font.letterSpacing: 0.9
     color: Theme.muted
     Layout.leftMargin: Constants.sizeLg
     Layout.topMargin: root.sectionTopMargin
