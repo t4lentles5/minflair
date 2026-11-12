@@ -179,8 +179,17 @@ Item {
         }
     }
     onKeyboardLayoutChanged: {
-        if (SettingsService.settingsLoaded && !isSyncing) {
-            SettingsService.saveSettings();
+        if (!SettingsService.settingsLoaded)
+            return ;
+
+        // The layout can change from Hyprland itself, when the user presses
+        // the keybind, and that path sets isSyncing to avoid pushing the
+        // value back to Hyprland. The saved value still has to be updated,
+        // otherwise the startup timer would restore the previous layout on
+        // the next run.
+        SettingsService.saveSettings();
+
+        if (!isSyncing) {
             changeLayoutProc.command = ["hyprctl", "eval", "hl.config({ input = { kb_layout = '" + keyboardLayout + "' } })"];
             changeLayoutProc.running = false;
             changeLayoutProc.running = true;
