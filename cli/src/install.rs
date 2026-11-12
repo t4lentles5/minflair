@@ -153,7 +153,14 @@ pub fn run(root: &Path, args: InstallArgs) -> Result<u8> {
         ctx.warn("Please remember to reboot later for all changes to take effect.");
     } else if ui::confirm("Reboot now?", false) {
         ctx.info("Rebooting system...");
-        let _ = Command::new("sudo").arg("reboot").status();
+        let rebooted = Command::new("sudo")
+            .arg("reboot")
+            .status()
+            .map(|status| status.success())
+            .unwrap_or(false);
+        if !rebooted {
+            ctx.warn("Could not reboot, please reboot manually for all changes to take effect.");
+        }
     } else {
         ctx.warn("Please remember to reboot later for all changes to take effect.");
     }
@@ -823,24 +830,31 @@ fn configure_sddm(ctx: &Ctx, manifest: &Manifest, disabled: &BTreeSet<String>) -
     ctx.info("Configuring SDDM theme...");
     let theme_dir = Path::new(SDDM_THEME_DIR);
     if !theme_dir.is_dir() {
-        ctx.run("sudo", &strs(["mkdir", "-p", "/usr/share/sddm/themes"]));
-        if ctx.run(
-            "sudo",
-            &strs([
-                "git",
-                "clone",
-                "--depth",
-                "1",
-                SDDM_THEME_URL,
-                SDDM_THEME_DIR,
-            ]),
-        ) {
+        let created = ctx.run("sudo", &strs(["mkdir", "-p", "/usr/share/sddm/themes"]));
+        if !created {
+            ctx.warn("Could not create the SDDM themes directory.");
+        }
+        if created
+            && ctx.run(
+                "sudo",
+                &strs([
+                    "git",
+                    "clone",
+                    "--depth",
+                    "1",
+                    SDDM_THEME_URL,
+                    SDDM_THEME_DIR,
+                ]),
+            )
+        {
             ctx.ok("SDDM theme (minflair-sddm) installed.");
-        } else {
+        } else if created {
             ctx.warn("Failed to clone SDDM theme.");
         }
     } else if theme_dir.join(".git").is_dir() {
-        let _ = ctx.run(
+        // The remote is set before the pull, so a failure here would make the
+        // pull fetch from whatever remote was there before.
+        let remote_set = ctx.run(
             "sudo",
             &strs([
                 "git",
@@ -852,12 +866,17 @@ fn configure_sddm(ctx: &Ctx, manifest: &Manifest, disabled: &BTreeSet<String>) -
                 SDDM_THEME_URL,
             ]),
         );
-        if ctx.run(
-            "sudo",
-            &strs(["git", "-C", SDDM_THEME_DIR, "pull", "--ff-only"]),
-        ) {
+        if !remote_set {
+            ctx.warn("Could not point the SDDM theme at its remote, skipping the update.");
+        }
+        if remote_set
+            && ctx.run(
+                "sudo",
+                &strs(["git", "-C", SDDM_THEME_DIR, "pull", "--ff-only"]),
+            )
+        {
             ctx.ok("SDDM theme (minflair-sddm) updated.");
-        } else {
+        } else if remote_set {
             ctx.ok("SDDM theme (minflair-sddm) already up to date.");
         }
     } else {
@@ -899,10 +918,25 @@ fn configure_sddm(ctx: &Ctx, manifest: &Manifest, disabled: &BTreeSet<String>) -
     }
 
     let repo_config_string = repo_config.to_string_lossy().to_string();
-    if ctx.run(
+    // The file is written to a temporary path and moved into place, so a
+    // failure in the middle does not leave the login manager with a
+    // truncated configuration.
+    let temporary = "/etc/.sddm.conf.minflair-new";
+    let copied = ctx.run(
         "sudo",
-        &strs(["cp", repo_config_string.as_str(), "/etc/sddm.conf"]),
-    ) {
+        &strs(["cp", repo_config_string.as_str(), temporary]),
+    );
+    let moved = copied && ctx.run("sudo", &strs(["mv", "-f", temporary, "/etc/sddm.conf"]));
+
+    if copied && !moved {
+        let _ = Command::new("sudo")
+            .args(["rm", "-f", temporary])
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .status();
+    }
+
+    if moved {
         ctx.ok("SDDM theme set to minflair-sddm.");
     } else {
         ctx.warn("Could not write /etc/sddm.conf.");

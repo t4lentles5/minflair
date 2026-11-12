@@ -556,11 +556,19 @@ fn reload_desktop(ctx: &Ctx) {
     if !ctx.run("hyprctl", &install::strs(["reload"])) {
         ctx.warn("Could not reload Hyprland.");
     }
-    let _ = Command::new("killall")
+    // The running shell is stopped so the new one can take the singleton
+    // lock. When it cannot be stopped the new shell would fail to start,
+    // so the user is told about it.
+    let stopped = Command::new("killall")
         .arg("qs")
         .stdout(Stdio::null())
         .stderr(Stdio::null())
-        .status();
+        .status()
+        .map(|status| status.success())
+        .unwrap_or(false);
+    if !stopped {
+        ctx.warn("Could not stop the running shell, the new one may not start.");
+    }
     thread::sleep(Duration::from_millis(500));
     if !ctx.run(
         "hyprctl",
