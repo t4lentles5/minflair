@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.0] - 2026-11-11
+
+### Added
+
+- **Cursor warping toggle**: the Settings → Mouse & Touchpad panel can now turn off the cursor warping that Hyprland applies when a window opens. The behaviour was already implemented, applied and stored in the Hyprland preferences, but there was no way to reach it without editing those files by hand.
+- **Version drift detection**:
+  - `minflair doctor` now compares the version of the binary with the version the configuration reports and warns when they differ, pointing at `minflair update --pull` to rebuild the binary.
+  - A new test compares the version in the Quickshell constants, the CLI crate manifest and the lockfile, so a release can no longer ship with the shell and the CLI reporting different numbers.
+
+### Changed
+
+- The version shown in Settings → System Information is now `2.3.0`.
+
+### Fixed
+
+- **Setting toggles lost their binding after the first click**: the toggles that were bound to a service property with a plain `checked` binding stopped following that property once the user clicked them, so the switch could show a value the service no longer had. All the service-backed toggles now keep the two in sync.
+
+### Refactored
+
+- The Settings, Keybinds and Package Manager sidebars shared the same navigation row and section header markup, copied 15 and 7 times. They now use the new `SidebarNavItem` and `SidebarSectionLabel` components in `Core/Components`.
+- `ThemedTextField` and `ThemedButton` are generic widgets but lived in the Settings and Dashboard module folders. They now live in `Core/Components`, where `CONTRIBUTING.md` asks generic UI elements to be.
+- `SettingToggle` gained a `bindTarget` and `bindProperty` pair, replacing the repeated checked binding, change handler and `Binding` object in 15 toggles across 6 panels.
+- The sidebar section headers and the disabled rows in the settings panels now use the same letter spacing and the same dimming as the rest of the interface.
+
 ## [2.2.0] - 2026-11-10
 
 ### Added
