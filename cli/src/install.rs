@@ -780,10 +780,32 @@ pub(crate) fn install_gtk_theme(ctx: &Ctx, theme_dir: &Path, theme_url: &str) ->
         return false;
     }
 
-    if theme_dir.exists() {
-        let _ = fs::remove_dir_all(theme_dir);
+    // The old theme is moved aside instead of being deleted, so it can be
+    // restored when the new one cannot be put in place.
+    let backup = theme_dir.with_extension("minflair-old");
+    if backup.exists() {
+        let _ = fs::remove_dir_all(&backup);
     }
-    fs::rename(&clone_target, theme_dir).is_ok()
+    let had_previous = theme_dir.exists();
+    if had_previous && fs::rename(theme_dir, &backup).is_err() {
+        // Without the backup there is no safe way to replace the theme.
+        return false;
+    }
+
+    match fs::rename(&clone_target, theme_dir) {
+        Ok(()) => {
+            if had_previous {
+                let _ = fs::remove_dir_all(&backup);
+            }
+            true
+        }
+        Err(_) => {
+            if had_previous {
+                let _ = fs::rename(&backup, theme_dir);
+            }
+            false
+        }
+    }
 }
 
 fn configure_sddm(ctx: &Ctx, manifest: &Manifest, disabled: &BTreeSet<String>) -> Result<()> {
