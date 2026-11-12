@@ -11,53 +11,28 @@ AppSidebar {
     title: "KEYBINDS"
     subtitle: "HYPRLAND SHORTCUT REFERENCE"
 
-    ThemedText {
+    SidebarSectionLabel {
         text: "CATEGORIES"
-        customSize: Constants.sizeXs + 2
-        font.weight: Font.Bold
-        font.letterSpacing: 0.8
-        color: Theme.muted
-        Layout.leftMargin: Constants.sizeLg
-        Layout.topMargin: Constants.size2Xs
-        Layout.bottomMargin: Constants.size2Xs
     }
 
     // All Keybinds (Tab)
-    Item {
-        Layout.fillWidth: true
-        Layout.leftMargin: Constants.sizeSm
-        Layout.rightMargin: Constants.sizeSm
-        Layout.preferredHeight: 34
-
-        SidebarNavRow {
-            anchors.fill: parent
-            iconName: "keyboard"
-            labelText: "All Keybinds"
-            statusText: keybindsRoot.totalKeybinds > 0 ? (keybindsRoot.totalKeybinds + "") : ""
-            isActive: keybindsRoot.selectedCategory === "All"
-            onRowClicked: keybindsRoot.selectCategory("All")
-        }
-
+    SidebarNavItem {
+        iconName: "keyboard"
+        labelText: "All Keybinds"
+        statusText: keybindsRoot.totalKeybinds > 0 ? (keybindsRoot.totalKeybinds + "") : ""
+        isActive: keybindsRoot.selectedCategory === "All"
+        onRowClicked: keybindsRoot.selectCategory("All")
     }
 
     Repeater {
         model: keybindsRoot.hyprlandData
 
-        Item {
-            Layout.fillWidth: true
-            Layout.leftMargin: Constants.sizeSm
-            Layout.rightMargin: Constants.sizeSm
-            Layout.preferredHeight: 34
-
-            SidebarNavRow {
-                anchors.fill: parent
-                iconName: keybindsRoot.categoryIcon(modelData.section)
-                labelText: modelData.section
-                statusText: modelData.bindCount > 0 ? (modelData.bindCount + "") : ""
-                isActive: keybindsRoot.selectedCategory === modelData.section
-                onRowClicked: keybindsRoot.selectCategory(modelData.section)
-            }
-
+        SidebarNavItem {
+            iconName: keybindsRoot.categoryIcon(modelData.section)
+            labelText: modelData.section
+            statusText: modelData.bindCount > 0 ? (modelData.bindCount + "") : ""
+            isActive: keybindsRoot.selectedCategory === modelData.section
+            onRowClicked: keybindsRoot.selectCategory(modelData.section)
         }
 
     }
