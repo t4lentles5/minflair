@@ -85,11 +85,7 @@ fn build_report(args: &DoctorArgs) -> Report {
 
     let disabled = if let Ok(root) = &repo_result {
         match &config_version {
-            Some(version) => checks.push(Check::new(
-                "version",
-                Status::Ok,
-                format!("binary {}, config {}", env!("CARGO_PKG_VERSION"), version),
-            )),
+            Some(version) => checks.push(check_version(version)),
             None => checks.push(Check::new(
                 "version",
                 Status::Warn,
@@ -135,6 +131,30 @@ fn build_report(args: &DoctorArgs) -> Report {
             .map(|root| root.display().to_string()),
         checks,
         summary,
+    }
+}
+
+/// Compare the version of the installed binary with the version the
+/// configuration reports. A mismatch means the binary is out of date with
+/// the configuration, which happens after an update that skipped the
+/// rebuild or when the binary was installed from another release.
+fn check_version(config_version: &str) -> Check {
+    let binary_version = env!("CARGO_PKG_VERSION");
+    if binary_version == config_version {
+        Check::new(
+            "version",
+            Status::Ok,
+            format!("binary {binary_version}, config {config_version}"),
+        )
+    } else {
+        Check::new(
+            "version",
+            Status::Warn,
+            format!(
+                "binary {binary_version}, config {config_version}; \
+                 the binary is out of date, rebuild it with `minflair update --pull`"
+            ),
+        )
     }
 }
 
@@ -659,5 +679,21 @@ mod tests {
     fn summarize_keeps_short_lists_intact() {
         let items = vec!["one".to_string(), "two".to_string()];
         assert_eq!(summarize(&items), "one; two");
+    }
+
+    #[test]
+    fn matching_versions_are_ok() {
+        let check = check_version(env!("CARGO_PKG_VERSION"));
+        assert_eq!(check.status, Status::Ok);
+        assert!(check.detail.contains("binary"));
+        assert!(check.detail.contains("config"));
+    }
+
+    #[test]
+    fn a_different_config_version_warns() {
+        let check = check_version("0.0.1");
+        assert_eq!(check.status, Status::Warn);
+        assert!(check.detail.contains("0.0.1"));
+        assert!(check.detail.contains("out of date"));
     }
 }

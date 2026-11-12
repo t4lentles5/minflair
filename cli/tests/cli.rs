@@ -383,3 +383,53 @@ hyprland\tHyprland\tcore\t1\tconfig/hypr\thyprland\t\t\t\tHyprland
     assert!(stdout.contains("2 components"));
     assert!(stdout.contains("\"name\": \"core components\""));
 }
+
+#[test]
+fn doctor_warns_when_the_config_version_differs_from_the_binary() {
+    let directory = tempfile::tempdir().expect("tempdir");
+    let manifest = directory.path().join("config/quickshell/components.tsv");
+    std::fs::create_dir_all(manifest.parent().expect("parent")).expect("mkdir");
+    std::fs::write(
+        &manifest,
+        "\
+id\tlabel\tcategory\tcore\tpaths\tpackages\ttheme\tfont\treload\tdescription
+quickshell\tQuickshell shell\tcore\t1\tconfig/quickshell\tquickshell\t\t\t\tCore shell
+hyprland\tHyprland\tcore\t1\tconfig/hypr\thyprland\t\t\t\tHyprland
+",
+    )
+    .expect("write");
+
+    // A configuration from a different release than the binary.
+    let constants = directory
+        .path()
+        .join("config/quickshell/Core/Constants.qml");
+    std::fs::create_dir_all(constants.parent().expect("parent")).expect("mkdir");
+    std::fs::write(
+        &constants,
+        "Item {\n    readonly property string appVersion: \"0.0.1\"\n}\n",
+    )
+    .expect("write");
+
+    let prefs = directory.path().join("preferences.conf");
+    let output = binary()
+        .args(["doctor", "--json", "--repo"])
+        .arg(directory.path())
+        .env("MINFLAIR_PREFS", &prefs)
+        .env_remove("MINFLAIR_REPO")
+        .output()
+        .expect("run minflair");
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let report: serde_json::Value = serde_json::from_str(&stdout).expect("doctor JSON");
+    let checks = report["checks"].as_array().expect("checks");
+    let version = checks
+        .iter()
+        .find(|check| check["name"] == "version")
+        .expect("version check");
+
+    assert_eq!(version["status"], "warn");
+    assert!(version["detail"]
+        .as_str()
+        .expect("detail")
+        .contains("out of date"));
+}
