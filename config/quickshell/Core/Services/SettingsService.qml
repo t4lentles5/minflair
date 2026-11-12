@@ -22,6 +22,9 @@ Item {
     property string quoteCategory: "All"
     property string fontFamily: "Geist"
     property real fontScale: 1
+    // The terminal font is a setting of its own, because a terminal needs a
+    // monospace font while the system font does not have to be one.
+    property string kittyFontFamily: "JetbrainsMono NF"
     property real hyprScale: 1
     property bool clock24h: true
     property bool clockSeconds: false
@@ -62,6 +65,15 @@ Item {
         applyFontProc.command = ["python3", Quickshell.shellDir + "/Scripts/theme/apply_font.py", f, s.toString()];
         applyFontProc.running = false;
         applyFontProc.running = true;
+    }
+
+    // The terminal font is a setting of its own, so it is applied on its own
+    // instead of together with the global font.
+    function applyKittyFont(family) {
+        let f = family !== undefined ? family : kittyFontFamily;
+        applyKittyFontProc.command = ["python3", Quickshell.shellDir + "/Scripts/theme/apply_font.py", "--kitty", f];
+        applyKittyFontProc.running = false;
+        applyKittyFontProc.running = true;
     }
 
     // Drops a saved browser that is no longer installed, falling back to the
@@ -138,6 +150,11 @@ Item {
             saveSettings();
             applyFont(fontFamily, Math.round(11 * fontScale));
         }
+    }
+    onKittyFontFamilyChanged: {
+        if (settingsLoaded)
+            saveSettings();
+
     }
     onHyprScaleChanged: {
         if (settingsLoaded)
@@ -241,6 +258,7 @@ Item {
                 "quoteCategory": settingsService.quoteCategory,
                 "fontFamily": settingsService.fontFamily,
                 "fontScale": settingsService.fontScale,
+                "kittyFontFamily": settingsService.kittyFontFamily,
                 "hyprScale": settingsService.hyprScale,
                 "clock24h": settingsService.clock24h,
                 "clockSeconds": settingsService.clockSeconds,
@@ -391,6 +409,9 @@ fi"];
                         if (prefs.fontScale !== undefined)
                             settingsService.fontScale = prefs.fontScale;
 
+                        if (prefs.kittyFontFamily !== undefined)
+                            settingsService.kittyFontFamily = prefs.kittyFontFamily;
+
                         if (prefs.hyprScale !== undefined) {
                             settingsService.hyprScale = prefs.hyprScale;
                             hyprScaleApplyProc.running = true;
@@ -519,6 +540,10 @@ fi"];
 
     Process {
         id: applyFontProc
+    }
+
+    Process {
+        id: applyKittyFontProc
     }
 
 }
