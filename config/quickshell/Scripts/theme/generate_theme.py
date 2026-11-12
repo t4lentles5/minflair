@@ -8,10 +8,80 @@ import os
 
 from theme_extractors.image_utils import prepare_image
 from theme_extractors.magick_utils import extract_histogram_colors, get_brightness
-from theme_extractors.palette import generate_palette
+from theme_extractors.palette import generate_palettes
+
+
+def cache_dir():
+    return os.path.join(os.path.expanduser("~"), ".cache", "quickshell")
+
+
+def variants_path(directory):
+    return os.path.join(directory, "wallpaper_variants.json")
+
+
+def load_variant_state(directory):
+    try:
+        with open(variants_path(directory), "r") as f:
+            data = json.load(f)
+        if isinstance(data, dict):
+            return data
+    except Exception:
+        pass
+    return {}
+
+
+def write_json(path, data):
+    path = os.fspath(path)
+    directory = os.path.dirname(path)
+    if directory:
+        os.makedirs(directory, exist_ok=True)
+
+    tmp_path = path + ".tmp"
+    with open(tmp_path, "w") as f:
+        json.dump(data, f, indent=2)
+    os.replace(tmp_path, path)
+
+
+def select_variant(directory, index):
+    """Persist the chosen variant without decoding the wallpaper again."""
+    state = load_variant_state(directory)
+    variants = state.get("variants") or []
+    if not variants:
+        raise ValueError("no wallpaper variants available")
+
+    try:
+        selected = int(index)
+    except (TypeError, ValueError):
+        raise ValueError(f"invalid variant index: {index}")
+
+    selected = max(0, min(selected, len(variants) - 1))
+    variant = variants[selected]
+    if not isinstance(variant, dict) or "dark" not in variant or "light" not in variant:
+        raise ValueError("wallpaper variant data is incomplete")
+
+    state["selected"] = selected
+    write_json(variants_path(directory), state)
+    write_json(
+        os.path.join(directory, "wallpaper_colorscheme_dark.json"), variant["dark"]
+    )
+    write_json(
+        os.path.join(directory, "wallpaper_colorscheme_light.json"), variant["light"]
+    )
+    return selected
 
 
 def main():
+    if len(sys.argv) >= 2 and sys.argv[1] == "--select":
+        if len(sys.argv) < 3:
+            print("Usage: generate_theme.py --select <index>", file=sys.stderr)
+            sys.exit(1)
+        try:
+            select_variant(cache_dir(), sys.argv[2])
+        except Exception as e:
+            print(f"Error selecting wallpaper variant: {e}", file=sys.stderr)
+            sys.exit(1)
+        return
+
     if len(sys.argv) < 2:
         print("Usage: generate_theme.py <image_path>")
         sys.exit(1)
@@ -30,24 +100,37 @@ def main():
         print("Error: ImageMagick returned no colors.")
         sys.exit(1)
 
-    generated_dark, generated_light = generate_palette(histogram_colors)
-    if not generated_dark:
+    variants = generate_palettes(histogram_colors)
+    if not variants:
         print("Error processing colors.")
         sys.exit(1)
 
-    home = os.path.expanduser("~")
-    cache_dir = os.path.join(home, ".cache", "quickshell")
-    os.makedirs(cache_dir, exist_ok=True)
+    directory = cache_dir()
+    state = load_variant_state(directory)
+    selected = 0
+    if state.get("source") == image_path:
+        try:
+            selected = int(state.get("selected", 0))
+        except (TypeError, ValueError):
+            selected = 0
+    selected = max(0, min(selected, len(variants) - 1))
 
-    wallpaper_file_dark = os.path.join(cache_dir, "wallpaper_colorscheme_dark.json")
-    with open(wallpaper_file_dark, "w") as f:
-        json.dump(generated_dark, f, indent=2)
+    active_variant = variants[selected]
+    generated_dark = active_variant["dark"]
+    generated_light = active_variant["light"]
 
-    wallpaper_file_light = os.path.join(cache_dir, "wallpaper_colorscheme_light.json")
-    with open(wallpaper_file_light, "w") as f:
-        json.dump(generated_light, f, indent=2)
+    write_json(
+        os.path.join(directory, "wallpaper_colorscheme_dark.json"), generated_dark
+    )
+    write_json(
+        os.path.join(directory, "wallpaper_colorscheme_light.json"), generated_light
+    )
+    write_json(
+        variants_path(directory),
+        {"source": image_path, "selected": selected, "variants": variants},
+    )
 
-    active_file = os.path.join(cache_dir, "colorscheme.json")
+    active_file = os.path.join(directory, "colorscheme.json")
     should_write_active = True
     user_is_dark = is_dark
 
@@ -67,13 +150,10 @@ def main():
     active_generated = dict(generated_dark if user_is_dark else generated_light)
     active_generated["wallpaperIsDark"] = user_is_dark
 
-    wallpaper_file = os.path.join(cache_dir, "wallpaper_colorscheme.json")
-    with open(wallpaper_file, "w") as f:
-        json.dump(active_generated, f, indent=2)
+    write_json(os.path.join(directory, "wallpaper_colorscheme.json"), active_generated)
 
     if should_write_active:
-        with open(active_file, "w") as f:
-            json.dump(active_generated, f, indent=2)
+        write_json(active_file, active_generated)
         print("Success: Generated colorscheme.json and wallpaper variants")
     else:
         print("Success: Generated wallpaper variants (active colorscheme preserved)")
@@ -85,6 +165,8 @@ def main():
                 "dark": generated_dark,
                 "light": generated_light,
                 "activeIsDark": user_is_dark,
+                "selected": selected,
+                "variants": variants,
             }
         )
     )

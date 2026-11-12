@@ -46,7 +46,7 @@ Environment:
 
 Examples:
   bash bootstrap.sh --exclude kitty,nvim
-  MINFLAIR_REF=v2.2.0 bash bootstrap.sh
+  MINFLAIR_REF=v2.3.0 bash bootstrap.sh
 EOF
 }
 

@@ -151,11 +151,11 @@ mod tests {
         fs::create_dir_all(constants.parent().expect("parent")).expect("mkdir");
         fs::write(
             &constants,
-            "Item {\n    readonly property string appVersion: \"2.2.0\"\n}\n",
+            "Item {\n    readonly property string appVersion: \"9.9.9\"\n}\n",
         )
         .expect("write");
 
-        assert_eq!(app_version(directory.path()), Some("2.2.0".to_string()));
+        assert_eq!(app_version(directory.path()), Some("9.9.9".to_string()));
     }
 
     #[test]

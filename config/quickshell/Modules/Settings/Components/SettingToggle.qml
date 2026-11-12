@@ -11,8 +11,33 @@ SettingRowTemplate {
     id: root
 
     property alias checked: settingSwitch.checked
+    // Optional two-way binding to a service property. When both are set the
+    // toggle shows the property value, writes user changes back to it, and
+    // keeps following it when it changes elsewhere. Without it the binding
+    // is dropped as soon as the user clicks, and the toggle stops tracking
+    // the property.
+    property var bindTarget: null
+    property string bindProperty: ""
 
     signal toggled(bool checked)
+
+    Binding {
+        target: root
+        property: "checked"
+        value: root.bindTarget !== null && root.bindProperty !== ""
+            ? root.bindTarget[root.bindProperty]
+            : root.checked
+        when: root.bindTarget !== null && root.bindProperty !== ""
+    }
+
+    onCheckedChanged: {
+        if (root.bindTarget !== null && root.bindProperty !== "") {
+            let current = root.bindTarget[root.bindProperty];
+            if (current !== root.checked)
+                root.bindTarget[root.bindProperty] = root.checked;
+
+        }
+    }
 
     Switch {
         id: settingSwitch

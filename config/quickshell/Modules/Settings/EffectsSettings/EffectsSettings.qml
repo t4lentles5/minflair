@@ -61,20 +61,10 @@ AppContainer {
         }
 
         SettingToggle {
-            id: blurToggle
-
             label: "Enable Window & Panel Blur"
             description: "Off by default: blurring the shell surfaces costs frame time on integrated GPUs"
-            onCheckedChanged: {
-                if (checked !== HyprlandService.hyprBlur)
-                    HyprlandService.hyprBlur = checked;
-
-            }
-
-            Binding on checked {
-                value: HyprlandService.hyprBlur
-            }
-
+            bindTarget: HyprlandService
+            bindProperty: "hyprBlur"
         }
 
         ColumnLayout {
@@ -110,19 +100,9 @@ AppContainer {
         }
 
         SettingToggle {
-            id: shadowToggle
-
             label: "Enable Window & Shell Shadows"
-            onCheckedChanged: {
-                if (checked !== HyprlandService.hyprShadow)
-                    HyprlandService.hyprShadow = checked;
-
-            }
-
-            Binding on checked {
-                value: HyprlandService.hyprShadow
-            }
-
+            bindTarget: HyprlandService
+            bindProperty: "hyprShadow"
         }
 
         ColumnLayout {

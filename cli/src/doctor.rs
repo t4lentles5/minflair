@@ -85,11 +85,7 @@ fn build_report(args: &DoctorArgs) -> Report {
 
     let disabled = if let Ok(root) = &repo_result {
         match &config_version {
-            Some(version) => checks.push(Check::new(
-                "version",
-                Status::Ok,
-                format!("binary {}, config {}", env!("CARGO_PKG_VERSION"), version),
-            )),
+            Some(version) => checks.push(check_version(version)),
             None => checks.push(Check::new(
                 "version",
                 Status::Warn,
@@ -106,7 +102,20 @@ fn build_report(args: &DoctorArgs) -> Report {
         }
         disabled
     } else {
-        load_disabled()
+        // Without a repository the preferences are still read, but a
+        // failure is reported instead of being silently treated as if
+        // nothing were disabled.
+        match load_disabled() {
+            Ok(disabled) => disabled,
+            Err(error) => {
+                checks.push(Check::new(
+                    "preferences",
+                    Status::Fail,
+                    format!("could not read the preferences: {error:#}"),
+                ));
+                BTreeSet::new()
+            }
+        }
     };
 
     check_desktop(&disabled, &mut checks);
@@ -135,6 +144,30 @@ fn build_report(args: &DoctorArgs) -> Report {
             .map(|root| root.display().to_string()),
         checks,
         summary,
+    }
+}
+
+/// Compare the version of the installed binary with the version the
+/// configuration reports. A mismatch means the binary is out of date with
+/// the configuration, which happens after an update that skipped the
+/// rebuild or when the binary was installed from another release.
+fn check_version(config_version: &str) -> Check {
+    let binary_version = env!("CARGO_PKG_VERSION");
+    if binary_version == config_version {
+        Check::new(
+            "version",
+            Status::Ok,
+            format!("binary {binary_version}, config {config_version}"),
+        )
+    } else {
+        Check::new(
+            "version",
+            Status::Warn,
+            format!(
+                "binary {binary_version}, config {config_version}; \
+                 the binary is out of date, rebuild it with `minflair update --pull`"
+            ),
+        )
     }
 }
 
@@ -294,11 +327,14 @@ fn check_config_dir() -> Check {
     }
 }
 
-fn load_disabled() -> BTreeSet<String> {
-    prefs::default_path()
-        .ok()
-        .and_then(|path| prefs::load(&path).ok())
-        .unwrap_or_default()
+/// Read the disabled components from the preferences file.
+///
+/// The error is returned so the caller can report it. Treating an unreadable
+/// file as an empty one would make the desktop checks run as if the user had
+/// disabled nothing.
+fn load_disabled() -> Result<BTreeSet<String>> {
+    let path = prefs::default_path()?;
+    prefs::load(&path)
 }
 
 fn check_repository(root: &Path, checks: &mut Vec<Check>) -> (BTreeSet<String>, Option<Manifest>) {
@@ -659,5 +695,21 @@ mod tests {
     fn summarize_keeps_short_lists_intact() {
         let items = vec!["one".to_string(), "two".to_string()];
         assert_eq!(summarize(&items), "one; two");
+    }
+
+    #[test]
+    fn matching_versions_are_ok() {
+        let check = check_version(env!("CARGO_PKG_VERSION"));
+        assert_eq!(check.status, Status::Ok);
+        assert!(check.detail.contains("binary"));
+        assert!(check.detail.contains("config"));
+    }
+
+    #[test]
+    fn a_different_config_version_warns() {
+        let check = check_version("0.0.1");
+        assert_eq!(check.status, Status::Warn);
+        assert!(check.detail.contains("0.0.1"));
+        assert!(check.detail.contains("out of date"));
     }
 }

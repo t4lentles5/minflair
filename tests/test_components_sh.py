@@ -1,10 +1,17 @@
 import os
 import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+
+sys_path = os.path.dirname(os.path.abspath(__file__))
+if sys_path not in sys.path:
+    sys.path.insert(0, sys_path)
+
+from test_version_sync import read_app_version  # noqa: E402
 
 
 class BashComponentTests(unittest.TestCase):
@@ -172,7 +179,10 @@ class BashComponentTests(unittest.TestCase):
     def test_minflair_version_matches_the_manifest(self):
         result = self.run_bash("minflair_version")
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual(result.stdout.strip(), "2.2.0")
+        # The version is checked against the crate in test_version_sync.py,
+        # so it does not have to be updated here on every release.
+        expected = read_app_version()
+        self.assertEqual(result.stdout.strip(), expected)
 
     def test_reloads_respect_component_state(self):
         enabled = self.run_bash(

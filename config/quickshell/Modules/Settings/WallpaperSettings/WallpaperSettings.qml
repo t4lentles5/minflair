@@ -47,21 +47,9 @@ AppContainer {
         icon: "sparkles"
 
         SettingToggle {
-            id: autoShuffleToggle
-
             label: "Auto-shuffle Wallpapers"
-            onCheckedChanged: {
-                if (checked !== HyprlandService.wpAutoShuffle)
-                    HyprlandService.wpAutoShuffle = checked;
-
-            }
-
-            Binding {
-                target: autoShuffleToggle
-                property: "checked"
-                value: HyprlandService.wpAutoShuffle
-            }
-
+            bindTarget: HyprlandService
+            bindProperty: "wpAutoShuffle"
         }
 
         SettingSpinBox {
@@ -111,7 +99,7 @@ AppContainer {
                 HyprlandService.wpTransitionPos = model[index];
             }
             enabled: HyprlandService.wpEnableTransitions && HyprlandService.wpTransitionType !== "random"
-            opacity: enabled ? 1 : 0.4
+            opacity: enabled ? 1 : 0.5
 
             Behavior on opacity {
                 NumberAnimation {
@@ -126,7 +114,7 @@ AppContainer {
             spacing: Constants.sizeLg
             Layout.fillWidth: true
             enabled: HyprlandService.wpEnableTransitions
-            opacity: enabled ? 1 : 0.4
+            opacity: enabled ? 1 : 0.5
 
             SettingSegmented {
                 label: "Transition Speed"

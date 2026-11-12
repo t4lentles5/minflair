@@ -56,7 +56,6 @@ Item {
                 text: delegateRoot.itemText
                 color: delegateRoot.isCurrent ? Theme.accent : Theme.fg
                 font.bold: delegateRoot.isCurrent
-                customSize: Constants.sizeMd
                 Layout.fillWidth: true
                 Layout.alignment: Qt.AlignVCenter
                 elide: Text.ElideRight

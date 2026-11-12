@@ -48,7 +48,7 @@ Item {
             anchors.fill: parent
             anchors.leftMargin: Constants.sizeLg
             anchors.rightMargin: Constants.sizeLg
-            spacing: Constants.sizeLg
+            spacing: Constants.sizeSm
 
             Item {
                 Layout.preferredWidth: Constants.size2Xl
@@ -59,7 +59,7 @@ Item {
                     id: appIcon
 
                     anchors.fill: parent
-                    sourceSize: Qt.size(64, 64)
+                    sourceSize: Qt.size(48, 48)
                     source: {
                         if (!modelData.icon)
                             return "";
@@ -94,7 +94,6 @@ Item {
                 text: modelData.name
                 color: isCurrent ? Theme.accent : Theme.fg
                 font.bold: isCurrent
-                customSize: Constants.sizeMd
                 Layout.fillWidth: true
                 elide: Text.ElideRight
                 scale: isCurrent ? 1.02 : 1
@@ -121,7 +120,6 @@ Item {
                 text: delegateRoot.subtitle
                 visible: text !== ""
                 color: Theme.muted
-                customSize: Constants.sizeSm
                 Layout.alignment: Qt.AlignVCenter
                 Layout.maximumWidth: mainContent.width / 3
                 elide: Text.ElideRight
@@ -266,7 +264,6 @@ Item {
                         Layout.fillWidth: true
                         text: modelData.name
                         color: ((delegateRoot.isExpanded && delegateRoot.currentActionIndex === index) || actionMouseArea.containsMouse) ? Theme.accent : Theme.fg
-                        customSize: Constants.sizeMd
                         Layout.alignment: Qt.AlignVCenter
 
                         Behavior on color {

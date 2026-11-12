@@ -261,7 +261,10 @@ fn backup_system_files(ctx: &Ctx, manifest: &Manifest, disabled: &BTreeSet<Strin
                 install::SDDM_THEME_DIR
             );
         } else {
-            let _ = fs::copy(theme_conf, ctx.backup_dir.join("sddm-theme.conf.bak"));
+            // The theme is overwritten further down, so a missing backup
+            // would leave the user without a way back.
+            fs::copy(theme_conf, ctx.backup_dir.join("sddm-theme.conf.bak"))
+                .context("could not back up the SDDM theme configuration")?;
         }
     }
 
@@ -471,13 +474,16 @@ fn configure_dunst(ctx: &Ctx, manifest: &Manifest, disabled: &BTreeSet<String>) 
         ctx.ok("dunst disabled - QuickShell will handle notifications.");
     } else {
         ctx.info("Restoring dunst (dunst component disabled)...");
-        let _ = Command::new("systemctl")
+        let unmasked = Command::new("systemctl")
             .args(["--user", "unmask", "dunst.service"])
             .stdout(Stdio::null())
             .stderr(Stdio::null())
-            .status();
+            .status()
+            .map(|status| status.success())
+            .unwrap_or(false);
 
         let disabled_path = format!("{DUNST_DBUS_SERVICE}.disabled");
+        let mut restored = unmasked;
         if Path::new(&disabled_path).is_file() {
             if ctx.run(
                 "sudo",
@@ -486,10 +492,18 @@ fn configure_dunst(ctx: &Ctx, manifest: &Manifest, disabled: &BTreeSet<String>) 
                 ctx.ok("dunst D-Bus activation restored.");
             } else {
                 ctx.warn("Could not restore the dunst D-Bus activation.");
+                restored = false;
             }
         }
 
-        ctx.ok("dunst restored.");
+        // The message is only printed when the service was actually
+        // unmasked, otherwise the user is told dunst was restored while it
+        // is still masked.
+        if restored {
+            ctx.ok("dunst restored.");
+        } else {
+            ctx.warn("Could not unmask dunst.service.");
+        }
     }
 }
 
@@ -542,11 +556,19 @@ fn reload_desktop(ctx: &Ctx) {
     if !ctx.run("hyprctl", &install::strs(["reload"])) {
         ctx.warn("Could not reload Hyprland.");
     }
-    let _ = Command::new("killall")
+    // The running shell is stopped so the new one can take the singleton
+    // lock. When it cannot be stopped the new shell would fail to start,
+    // so the user is told about it.
+    let stopped = Command::new("killall")
         .arg("qs")
         .stdout(Stdio::null())
         .stderr(Stdio::null())
-        .status();
+        .status()
+        .map(|status| status.success())
+        .unwrap_or(false);
+    if !stopped {
+        ctx.warn("Could not stop the running shell, the new one may not start.");
+    }
     thread::sleep(Duration::from_millis(500));
     if !ctx.run(
         "hyprctl",

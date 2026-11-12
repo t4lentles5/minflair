@@ -6,7 +6,6 @@ import Quickshell.Io
 import qs.Core
 import qs.Core.Components
 import qs.Core.Services
-import qs.Modules.Dashboard.Components
 
 Card {
     id: root
@@ -105,6 +104,7 @@ Card {
                         icon: "github"
                         iconSize: Constants.sizeLg
                         color: Theme.muted
+                        flat: true
                         visible: userImage.status !== Image.Ready
                     }
 
@@ -239,7 +239,7 @@ Card {
             contentPadding: Constants.sizeSm
             visible: GithubService.topRepoName !== "..." && GithubService.topRepoName !== "None"
             scale: repoHover.hovered ? 1.02 : 1
-            radius: Constants.sizeSm
+            radius: Constants.sizeXs
             useBorder: false
 
             TapHandler {

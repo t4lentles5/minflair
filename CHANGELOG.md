@@ -5,6 +5,47 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.0] - 2026-11-12
+
+### Added
+
+- **Cursor warping toggle**: the Settings → Mouse & Touchpad panel can now turn off the cursor warping that Hyprland applies when a window opens. The behaviour was already implemented, applied and stored in the Hyprland preferences, but there was no way to reach it without editing those files by hand.
+- **Terminal font setting**: the font of the terminals can now be picked in the Settings → Appearance panel, with only the monospace fonts offered, because a terminal needs one while the system font does not have to be one. The font only reaches Kitty when the `font-sync` and `kitty` components are enabled, and the panel says so when it will not be applied.
+- **Wallpaper accent variants**: colorful wallpapers can now drive the theme with any of up to five accents taken from their dominant colors. The Appearance panel shows them as swatches, the previous accent remains the default, and the choice is kept while the same wallpaper is active. Every variant shares the same background and foreground, so contrast does not change.
+- **Version drift detection**:
+  - `minflair doctor` now compares the version of the binary with the version the configuration reports and warns when they differ, pointing at `minflair update --pull` to rebuild the binary.
+  - A new test compares the version in the Quickshell constants, the CLI crate manifest and the lockfile, so a release can no longer ship with the shell and the CLI reporting different numbers.
+
+### Changed
+
+- The version shown in Settings → System Information is now `2.3.0`.
+- The GitHub widget draws the user image without a frame, so it matches the flat style of the rest of the dashboard.
+
+### Fixed
+
+- **Setting toggles lost their binding after the first click**: the toggles that were bound to a service property with a plain `checked` binding stopped following that property once the user clicked them, so the switch could show a value the service no longer had. All the service-backed toggles now keep the two in sync.
+- **The keyboard layout was never saved**: the layout Hyprland reports was assigned with the synchronisation flag set, so the handler that saves it was skipped. The saved value kept the previous layout and the startup timer put it back on the next run.
+- **The microphone volume and mute were dropped on startup**: both were only applied when the device already existed while the settings were read, but PipeWire creates the source a moment later. The saved values are now applied once the device appears.
+- **A broken sudoers rule could lock every user out of sudo**: the rule was written straight to `/etc/sudoers.d/`, which truncates the file before the data arrives, and the home directory was not quoted. It is now written to a temporary file and moved into place, with the path quoted.
+- **The old GTK theme was destroyed before the new one was in place**: the theme directory was deleted and the removal error ignored, so a failure left the user without a theme. The old one is now moved aside and restored when the new one cannot be installed.
+- **The cursor theme name could break `envs.lua`**: the name came from the saved settings and was interpolated into a regular expression replacement, where a backslash is an escape sequence and a quote ends the string. It is now escaped as a Lua string.
+- **The settings file was briefly readable by other users**: it holds the GitHub token and was created with the default umask before being tightened. It is now created with a restrictive umask.
+- **An empty settings file skipped the cursor theme and the font**: an empty file was handled differently from a missing one. Both are handled the same way now.
+- **`minflair doctor` hid an unreadable preferences file**: without a repository the file was read with the error discarded, so the desktop checks ran as if nothing were disabled. The failure is reported now.
+- **Several installer commands reported success when they failed**: creating the SDDM theme directory, pointing the theme at its remote, stopping the running shell and rebooting all ignored their result. They are checked now.
+- **A failed SDDM backup was silent**: the theme configuration was overwritten right after a backup whose error was discarded. The failure is reported now.
+- **The SDDM theme was reported as disabled while it was running**: the summary was printed even when the D-Bus activation file could not be moved, leaving dunst to fight Quickshell for the notification bus.
+- **`/etc/sddm.conf` was written in place**: a failure in the middle left the login manager with a truncated configuration. It is written to a temporary path and moved into place.
+- **The terminal font was lost on every update**: an update copies the repository configuration over the one of the user, which put back the font the repository ships. The saved font is applied again when the shell starts, like the cursor theme and the global font already were.
+
+### Refactored
+
+- The Settings, Keybinds and Package Manager sidebars shared the same navigation row and section header markup, copied 15 and 7 times. They now use the new `SidebarNavItem` and `SidebarSectionLabel` components in `Core/Components`.
+- `ThemedTextField` and `ThemedButton` are generic widgets but lived in the Settings and Dashboard module folders. They now live in `Core/Components`, where `CONTRIBUTING.md` asks generic UI elements to be.
+- `SettingToggle` gained a `bindTarget` and `bindProperty` pair, replacing the repeated checked binding, change handler and `Binding` object in 15 toggles across 6 panels.
+- The sidebar section headers and the disabled rows in the settings panels now use the same letter spacing and the same dimming as the rest of the interface.
+- **The Clipboard and Launcher lists were resized**: both show one row less and are 60 px narrower, the app icons are loaded at half the size, and the row text uses the default size instead of a smaller one. The text no longer has to be shrunk by hand to fit the row.
+
 ## [2.2.0] - 2026-11-10
 
 ### Added

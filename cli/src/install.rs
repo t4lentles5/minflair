@@ -153,7 +153,14 @@ pub fn run(root: &Path, args: InstallArgs) -> Result<u8> {
         ctx.warn("Please remember to reboot later for all changes to take effect.");
     } else if ui::confirm("Reboot now?", false) {
         ctx.info("Rebooting system...");
-        let _ = Command::new("sudo").arg("reboot").status();
+        let rebooted = Command::new("sudo")
+            .arg("reboot")
+            .status()
+            .map(|status| status.success())
+            .unwrap_or(false);
+        if !rebooted {
+            ctx.warn("Could not reboot, please reboot manually for all changes to take effect.");
+        }
     } else {
         ctx.warn("Please remember to reboot later for all changes to take effect.");
     }
@@ -569,21 +576,21 @@ pub(crate) fn configure_battery(
     }
 
     ctx.info("Configuring sudoers for battery charge limit script...");
-    let rule = format!(
-        "{} ALL=(ALL) NOPASSWD: {}/.config/quickshell/Scripts/system/toggle_battery_limit.sh\n",
-        ctx.user,
-        ctx.home.display()
-    );
-    if ctx.write_sudo_file("/etc/sudoers.d/quickshell-battery", &rule)
-        && ctx.run(
-            "sudo",
-            &strs(["chmod", "0440", "/etc/sudoers.d/quickshell-battery"]),
-        )
-    {
+    let rule = battery_sudoers_rule(&ctx.user, &ctx.home);
+    if ctx.write_sudo_file("/etc/sudoers.d/quickshell-battery", &rule) {
         ctx.ok("Battery charge limit support and sudoers configured.");
     } else {
         ctx.warn("Could not configure the battery sudoers rule.");
     }
+}
+
+/// Build the sudoers rule that lets the battery script run without a
+/// password. The command path is quoted so a home directory with a space
+/// still produces a valid rule; an unquoted path breaks the rule and sudo
+/// then refuses to run for every user on the machine.
+fn battery_sudoers_rule(user: &str, home: &Path) -> String {
+    let script = home.join(".config/quickshell/Scripts/system/toggle_battery_limit.sh");
+    format!("{user} ALL=(ALL) NOPASSWD: \"{}\"\n", script.display())
 }
 
 fn backup_dotfiles(ctx: &Ctx, manifest: &Manifest, disabled: &BTreeSet<String>) -> Result<()> {
@@ -780,10 +787,32 @@ pub(crate) fn install_gtk_theme(ctx: &Ctx, theme_dir: &Path, theme_url: &str) ->
         return false;
     }
 
-    if theme_dir.exists() {
-        let _ = fs::remove_dir_all(theme_dir);
+    // The old theme is moved aside instead of being deleted, so it can be
+    // restored when the new one cannot be put in place.
+    let backup = theme_dir.with_extension("minflair-old");
+    if backup.exists() {
+        let _ = fs::remove_dir_all(&backup);
     }
-    fs::rename(&clone_target, theme_dir).is_ok()
+    let had_previous = theme_dir.exists();
+    if had_previous && fs::rename(theme_dir, &backup).is_err() {
+        // Without the backup there is no safe way to replace the theme.
+        return false;
+    }
+
+    match fs::rename(&clone_target, theme_dir) {
+        Ok(()) => {
+            if had_previous {
+                let _ = fs::remove_dir_all(&backup);
+            }
+            true
+        }
+        Err(_) => {
+            if had_previous {
+                let _ = fs::rename(&backup, theme_dir);
+            }
+            false
+        }
+    }
 }
 
 fn configure_sddm(ctx: &Ctx, manifest: &Manifest, disabled: &BTreeSet<String>) -> Result<()> {
@@ -801,24 +830,31 @@ fn configure_sddm(ctx: &Ctx, manifest: &Manifest, disabled: &BTreeSet<String>) -
     ctx.info("Configuring SDDM theme...");
     let theme_dir = Path::new(SDDM_THEME_DIR);
     if !theme_dir.is_dir() {
-        ctx.run("sudo", &strs(["mkdir", "-p", "/usr/share/sddm/themes"]));
-        if ctx.run(
-            "sudo",
-            &strs([
-                "git",
-                "clone",
-                "--depth",
-                "1",
-                SDDM_THEME_URL,
-                SDDM_THEME_DIR,
-            ]),
-        ) {
+        let created = ctx.run("sudo", &strs(["mkdir", "-p", "/usr/share/sddm/themes"]));
+        if !created {
+            ctx.warn("Could not create the SDDM themes directory.");
+        }
+        if created
+            && ctx.run(
+                "sudo",
+                &strs([
+                    "git",
+                    "clone",
+                    "--depth",
+                    "1",
+                    SDDM_THEME_URL,
+                    SDDM_THEME_DIR,
+                ]),
+            )
+        {
             ctx.ok("SDDM theme (minflair-sddm) installed.");
-        } else {
+        } else if created {
             ctx.warn("Failed to clone SDDM theme.");
         }
     } else if theme_dir.join(".git").is_dir() {
-        let _ = ctx.run(
+        // The remote is set before the pull, so a failure here would make the
+        // pull fetch from whatever remote was there before.
+        let remote_set = ctx.run(
             "sudo",
             &strs([
                 "git",
@@ -830,12 +866,17 @@ fn configure_sddm(ctx: &Ctx, manifest: &Manifest, disabled: &BTreeSet<String>) -
                 SDDM_THEME_URL,
             ]),
         );
-        if ctx.run(
-            "sudo",
-            &strs(["git", "-C", SDDM_THEME_DIR, "pull", "--ff-only"]),
-        ) {
+        if !remote_set {
+            ctx.warn("Could not point the SDDM theme at its remote, skipping the update.");
+        }
+        if remote_set
+            && ctx.run(
+                "sudo",
+                &strs(["git", "-C", SDDM_THEME_DIR, "pull", "--ff-only"]),
+            )
+        {
             ctx.ok("SDDM theme (minflair-sddm) updated.");
-        } else {
+        } else if remote_set {
             ctx.ok("SDDM theme (minflair-sddm) already up to date.");
         }
     } else {
@@ -877,10 +918,25 @@ fn configure_sddm(ctx: &Ctx, manifest: &Manifest, disabled: &BTreeSet<String>) -
     }
 
     let repo_config_string = repo_config.to_string_lossy().to_string();
-    if ctx.run(
+    // The file is written to a temporary path and moved into place, so a
+    // failure in the middle does not leave the login manager with a
+    // truncated configuration.
+    let temporary = "/etc/.sddm.conf.minflair-new";
+    let copied = ctx.run(
         "sudo",
-        &strs(["cp", repo_config_string.as_str(), "/etc/sddm.conf"]),
-    ) {
+        &strs(["cp", repo_config_string.as_str(), temporary]),
+    );
+    let moved = copied && ctx.run("sudo", &strs(["mv", "-f", temporary, "/etc/sddm.conf"]));
+
+    if copied && !moved {
+        let _ = Command::new("sudo")
+            .args(["rm", "-f", temporary])
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .status();
+    }
+
+    if moved {
         ctx.ok("SDDM theme set to minflair-sddm.");
     } else {
         ctx.warn("Could not write /etc/sddm.conf.");
@@ -930,6 +986,7 @@ fn configure_dunst(ctx: &Ctx, manifest: &Manifest, disabled: &BTreeSet<String>) 
     }
 
     let dbus_service = Path::new("/usr/share/dbus-1/services/org.knopwob.dunst.service");
+    let mut dbus_disabled = true;
     if dbus_service.is_file() {
         let dbus_string = dbus_service.to_string_lossy().to_string();
         let disabled_path = format!("{dbus_string}.disabled");
@@ -938,10 +995,20 @@ fn configure_dunst(ctx: &Ctx, manifest: &Manifest, disabled: &BTreeSet<String>) 
             &strs(["mv", dbus_string.as_str(), disabled_path.as_str()]),
         ) {
             ctx.ok("dunst D-Bus activation disabled.");
+        } else {
+            ctx.warn("Could not disable the dunst D-Bus activation.");
+            dbus_disabled = false;
         }
     }
 
-    ctx.ok("dunst disabled - QuickShell will handle notifications.");
+    // The summary is only printed when the activation file was really
+    // moved, otherwise dunst keeps running and fights Quickshell for the
+    // notification bus while the user is told it was disabled.
+    if dbus_disabled {
+        ctx.ok("dunst disabled - QuickShell will handle notifications.");
+    } else {
+        ctx.warn("dunst may still handle notifications.");
+    }
 }
 
 pub(crate) fn configure_zsh(ctx: &Ctx, manifest: &Manifest, disabled: &BTreeSet<String>) {
@@ -1431,14 +1498,33 @@ impl Ctx {
         }
     }
 
+    /// Write a file that root owns, atomically.
+    ///
+    /// The contents go to a temporary file first and are only moved into
+    /// place once they are complete. Writing straight to the destination
+    /// truncates it before the data arrives, so a failure in the middle
+    /// would leave a half written file behind. That matters for the files
+    /// under /etc, where a broken sudoers rule locks every user out of
+    /// sudo.
     pub(crate) fn write_sudo_file(&self, path: &str, contents: &str) -> bool {
         if self.dry_run {
             println!("[dry-run] would write {path}");
             return true;
         }
 
+        let target = Path::new(path);
+        let temporary = match target.file_name() {
+            Some(name) => {
+                target.with_file_name(format!(".{}.minflair-new", name.to_string_lossy()))
+            }
+            None => {
+                self.warn(&format!("could not write {path}: invalid path"));
+                return false;
+            }
+        };
+
         let mut child = match Command::new("sudo")
-            .args(["tee", path])
+            .args(["tee", temporary.to_string_lossy().as_ref()])
             .stdin(Stdio::piped())
             .stdout(Stdio::null())
             .spawn()
@@ -1450,12 +1536,76 @@ impl Ctx {
             }
         };
 
-        if let Some(stdin) = child.stdin.as_mut() {
-            if stdin.write_all(contents.as_bytes()).is_err() {
-                return false;
-            }
+        let written = match child.stdin.as_mut() {
+            Some(stdin) => stdin.write_all(contents.as_bytes()).is_ok(),
+            None => false,
+        };
+        // Dropping stdin closes the pipe so tee can finish and exit.
+        drop(child.stdin.take());
+
+        if !written {
+            let _ = child.wait();
+            let _ = Command::new("sudo")
+                .args(["rm", "-f", temporary.to_string_lossy().as_ref()])
+                .stdout(Stdio::null())
+                .stderr(Stdio::null())
+                .status();
+            self.warn(&format!("could not write {path}: the write failed"));
+            return false;
         }
-        child.wait().map(|status| status.success()).unwrap_or(false)
+
+        if !child.wait().map(|status| status.success()).unwrap_or(false) {
+            let _ = Command::new("sudo")
+                .args(["rm", "-f", temporary.to_string_lossy().as_ref()])
+                .stdout(Stdio::null())
+                .stderr(Stdio::null())
+                .status();
+            self.warn(&format!("could not write {path}"));
+            return false;
+        }
+
+        // The mode is set on the temporary file, so the file is never
+        // readable by other users even for an instant.
+        let mode = if path.starts_with("/etc/sudoers.d/") {
+            "0440"
+        } else {
+            "0644"
+        };
+        if !Command::new("sudo")
+            .args(["chmod", mode, temporary.to_string_lossy().as_ref()])
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .status()
+            .map(|status| status.success())
+            .unwrap_or(false)
+        {
+            let _ = Command::new("sudo")
+                .args(["rm", "-f", temporary.to_string_lossy().as_ref()])
+                .stdout(Stdio::null())
+                .stderr(Stdio::null())
+                .status();
+            self.warn(&format!("could not set the permissions of {path}"));
+            return false;
+        }
+
+        let moved = Command::new("sudo")
+            .args(["mv", "-f", temporary.to_string_lossy().as_ref(), path])
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .status()
+            .map(|status| status.success())
+            .unwrap_or(false);
+
+        if !moved {
+            let _ = Command::new("sudo")
+                .args(["rm", "-f", temporary.to_string_lossy().as_ref()])
+                .stdout(Stdio::null())
+                .stderr(Stdio::null())
+                .status();
+            self.warn(&format!("could not move the new file into {path}"));
+        }
+
+        moved
     }
 }
 
@@ -1472,6 +1622,28 @@ mod tests {
         let disabled: BTreeSet<String> = ["nvim".to_string()].into_iter().collect();
         let filtered = filtered_packages(&packages, &disabled);
         assert_eq!(filtered, vec!["kitty", "btop"]);
+    }
+
+    #[test]
+    fn the_sudoers_rule_quotes_the_script_path() {
+        let rule = battery_sudoers_rule("octo", Path::new("/home/john doe"));
+        assert_eq!(
+            rule,
+            "octo ALL=(ALL) NOPASSWD: \"/home/john doe/.config/quickshell/Scripts/system/toggle_battery_limit.sh\"\n"
+        );
+    }
+
+    #[test]
+    fn the_sudoers_rule_is_a_single_command() {
+        // An unquoted path with a space is parsed by sudo as the command
+        // "/home/john" plus the argument "doe/...", which is not the script.
+        let rule = battery_sudoers_rule("octo", Path::new("/home/john doe"));
+        let command = rule.split("NOPASSWD: ").nth(1).expect("command");
+        let command = command.trim().trim_matches('"');
+        assert_eq!(
+            command,
+            "/home/john doe/.config/quickshell/Scripts/system/toggle_battery_limit.sh"
+        );
     }
 
     #[test]

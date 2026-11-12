@@ -82,23 +82,10 @@ AppContainer {
         }
 
         SettingToggle {
-            id: leftHandedToggle
-
             label: "Left-Handed Mouse"
             description: "Swap primary left and right click buttons"
-            checked: HyprlandService.mouseLeftHanded
-            onCheckedChanged: {
-                if (checked !== HyprlandService.mouseLeftHanded)
-                    HyprlandService.mouseLeftHanded = checked;
-
-            }
-
-            Binding {
-                target: leftHandedToggle
-                property: "checked"
-                value: HyprlandService.mouseLeftHanded
-            }
-
+            bindTarget: HyprlandService
+            bindProperty: "mouseLeftHanded"
         }
 
     }
@@ -108,23 +95,10 @@ AppContainer {
         icon: "reload"
 
         SettingToggle {
-            id: naturalScrollToggle
-
             label: "Natural Scrolling"
             description: "Invert scroll wheel direction"
-            checked: HyprlandService.mouseNaturalScroll
-            onCheckedChanged: {
-                if (checked !== HyprlandService.mouseNaturalScroll)
-                    HyprlandService.mouseNaturalScroll = checked;
-
-            }
-
-            Binding {
-                target: naturalScrollToggle
-                property: "checked"
-                value: HyprlandService.mouseNaturalScroll
-            }
-
+            bindTarget: HyprlandService
+            bindProperty: "mouseNaturalScroll"
         }
 
         SettingSpinBox {
@@ -239,6 +213,13 @@ AppContainer {
             }
         }
 
+        SettingToggle {
+            label: "Disable Cursor Warping"
+            description: "Stop the cursor from jumping to the center of a window when it opens"
+            bindTarget: HyprlandService
+            bindProperty: "cursorNoWarps"
+        }
+
     }
 
     AppGroup {
@@ -246,63 +227,24 @@ AppContainer {
         icon: "touchpad"
 
         SettingToggle {
-            id: tapToClickToggle
-
             label: "Tap to Click"
             description: "Tap the surface with one finger to click"
-            checked: HyprlandService.touchpadTapToClick
-            onCheckedChanged: {
-                if (checked !== HyprlandService.touchpadTapToClick)
-                    HyprlandService.touchpadTapToClick = checked;
-
-            }
-
-            Binding {
-                target: tapToClickToggle
-                property: "checked"
-                value: HyprlandService.touchpadTapToClick
-            }
-
+            bindTarget: HyprlandService
+            bindProperty: "touchpadTapToClick"
         }
 
         SettingToggle {
-            id: touchpadNaturalScrollToggle
-
             label: "Touchpad Natural Scroll"
             description: "Two-finger scrolling moves content in finger direction"
-            checked: HyprlandService.touchpadNaturalScroll
-            onCheckedChanged: {
-                if (checked !== HyprlandService.touchpadNaturalScroll)
-                    HyprlandService.touchpadNaturalScroll = checked;
-
-            }
-
-            Binding {
-                target: touchpadNaturalScrollToggle
-                property: "checked"
-                value: HyprlandService.touchpadNaturalScroll
-            }
-
+            bindTarget: HyprlandService
+            bindProperty: "touchpadNaturalScroll"
         }
 
         SettingToggle {
-            id: disableWhileTypingToggle
-
             label: "Disable While Typing"
             description: "Prevent accidental touchpad clicks while typing on keyboard"
-            checked: HyprlandService.touchpadDisableWhileTyping
-            onCheckedChanged: {
-                if (checked !== HyprlandService.touchpadDisableWhileTyping)
-                    HyprlandService.touchpadDisableWhileTyping = checked;
-
-            }
-
-            Binding {
-                target: disableWhileTypingToggle
-                property: "checked"
-                value: HyprlandService.touchpadDisableWhileTyping
-            }
-
+            bindTarget: HyprlandService
+            bindProperty: "touchpadDisableWhileTyping"
         }
 
     }

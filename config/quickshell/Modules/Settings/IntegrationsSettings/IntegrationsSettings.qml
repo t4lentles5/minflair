@@ -3,7 +3,6 @@ import QtQuick.Layouts
 import qs.Core
 import qs.Core.Components
 import qs.Core.Services
-import qs.Modules.Settings.Components
 
 AppContainer {
     id: root

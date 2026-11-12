@@ -109,6 +109,35 @@ def update_kitty(home: Path, font_size: str) -> None:
         print(f"Warning: Failed to update Kitty font: {exc}", file=sys.stderr)
 
 
+def update_kitty_font(home: Path, font_family: str) -> None:
+    """Update the Kitty font family and ask running instances to reload.
+
+    The family is a setting the user picks, so it is written as it is. The
+    replacement is a function, because a backslash in the name would
+    otherwise be treated as an escape sequence by re.sub.
+    """
+    kitty_conf = home / ".config" / "kitty" / "kitty.conf"
+    if not kitty_conf.is_file():
+        return
+    try:
+        # A newline would end the setting and break the file.
+        family = " ".join(str(font_family).split())
+        content = kitty_conf.read_text(encoding="utf-8")
+        if re.search(r"^font_family\s+", content, flags=re.MULTILINE):
+            new_content = re.sub(
+                r"^font_family\s+.*$",
+                lambda _: f"font_family {family}",
+                content,
+                flags=re.MULTILINE,
+            )
+        else:
+            new_content = f"font_family {family}\n" + content
+        kitty_conf.write_text(new_content, encoding="utf-8")
+        subprocess.run(["killall", "-USR1", "kitty"], stderr=subprocess.DEVNULL)
+    except Exception as exc:
+        print(f"Warning: Failed to update the Kitty font family: {exc}", file=sys.stderr)
+
+
 def update_sddm(font_name: str) -> None:
     """Update the SDDM runtime font preferences."""
     # Only the keys the login theme consumes are written, so credentials never
@@ -177,13 +206,43 @@ def apply_font(font_name, font_size, home=None, is_enabled=None):
     update_quickshell(home, font_name)
 
 
+def apply_kitty_font(kitty_font, home=None, is_enabled=None):
+    """Apply the terminal font family to Kitty.
+
+    The ``font-sync`` component controls the propagation to external
+    applications and the ``kitty`` component says whether Kitty is managed
+    by Minflair at all. Both have to be enabled for the font to reach
+    Kitty.
+    """
+    home = home or Path.home()
+    if is_enabled is None:
+        is_enabled = components.enabled
+
+    if is_enabled("font-sync") and is_enabled("kitty"):
+        update_kitty_font(home, kitty_font)
+
+
 def main():
-    if len(sys.argv) < 3:
-        print("Usage: apply_font.py <FontName> <FontSize>")
+    arguments = sys.argv[1:]
+
+    if arguments and arguments[0] == "--kitty":
+        if len(arguments) < 2:
+            print("Usage: apply_font.py --kitty <FontFamily>", file=sys.stderr)
+            sys.exit(1)
+
+        try:
+            apply_kitty_font(arguments[1])
+        except components.ComponentError as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            sys.exit(1)
+        return
+
+    if len(arguments) < 2:
+        print("Usage: apply_font.py <FontName> <FontSize>", file=sys.stderr)
         sys.exit(1)
 
     try:
-        apply_font(sys.argv[1], sys.argv[2])
+        apply_font(arguments[0], arguments[1])
     except components.ComponentError as exc:
         print(f"error: {exc}", file=sys.stderr)
         sys.exit(1)

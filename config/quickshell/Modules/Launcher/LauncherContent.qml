@@ -20,7 +20,7 @@ Item {
     property var allApps: []
     property var results: []
     property alias initialFocusItem: searchField
-    property int maxVisibleItems: 8
+    property int maxVisibleItems: 7
     readonly property bool isSearching: searchField.text.trim() !== ""
     readonly property string emptyStateText: {
         let engine = engineForQuery(searchField.text);
@@ -61,7 +61,7 @@ Item {
         return Math.min(currentResultsCount, maxVisibleItems);
     }
     property int visibleItems: targetVisibleItems
-    property int preferredContentWidth: 700
+    property int preferredContentWidth: 640
     readonly property int searchBarHeight: Constants.size4Xl
     readonly property int itemHeight: 44
     readonly property int listSpacing: Constants.sizeXs
@@ -138,11 +138,11 @@ Item {
             }
             if (matched)
                 out.push({
-                    "type": "command",
-                    "name": command.name,
-                    "subtitle": command.subtitle,
-                    "widgetId": command.widgetId
-                });
+                "type": "command",
+                "name": command.name,
+                "subtitle": command.subtitle,
+                "widgetId": command.widgetId
+            });
 
         }
         return out;
@@ -192,11 +192,11 @@ Item {
             out = matchingCommands(term);
             if (out.length === 0 && term.length > 0)
                 out.push({
-                    "type": "run",
-                    "name": term,
-                    "subtitle": "Run in kitty",
-                    "command": term
-                });
+                "type": "run",
+                "name": term,
+                "subtitle": "Run in kitty",
+                "command": term
+            });
 
         } else {
             // Calculator: only real expressions, never a bare number.
@@ -204,11 +204,11 @@ Item {
                 let formatted = MathEval.format(MathEval.evaluate(text));
                 if (formatted !== "")
                     out.push({
-                        "type": "calculator",
-                        "name": text + " = " + formatted,
-                        "subtitle": "Copy result",
-                        "value": formatted
-                    });
+                    "type": "calculator",
+                    "name": text + " = " + formatted,
+                    "subtitle": "Copy result",
+                    "value": formatted
+                });
 
             }
             // Web search only through an explicit prefix (g, yt, w, gh, ddg).
@@ -564,7 +564,6 @@ Item {
         onSearchRequested: (text) => {
             return root.buildResults(text);
         }
-        customSize: Constants.sizeMd
         textField.Keys.onPressed: function(event) {
             root.handleKeyPress(event, true);
         }

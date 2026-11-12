@@ -51,10 +51,14 @@ QtObject {
     property var wallpaperLightScheme: null
     property bool wallpaperDarkLoaded: false
     property bool wallpaperLightLoaded: false
+    property var wallpaperVariants: []
+    property int wallpaperVariant: 0
     property Process saver
     property Process loader
     property Process wallpaperDarkLoader
     property Process wallpaperLightLoader
+    property Process wallpaperVariantsLoader
+    property Process variantSelectProc
     property Process generatorProc
     property Process applyThemeProc
     property Connections wpConn
@@ -86,6 +90,32 @@ QtObject {
             "accentComplementary": activeScheme.accentComplementary,
             "shadow": activeScheme.shadow || "#000000"
         });
+    }
+
+    function selectWallpaperVariant(index) {
+        if (!generateFromWallpaper)
+            return ;
+        if (index < 0 || index >= wallpaperVariants.length)
+            return ;
+        if (index === wallpaperVariant)
+            return ;
+
+        let variant = wallpaperVariants[index];
+        if (!variant || !variant.dark || !variant.light)
+            return ;
+
+        wallpaperVariant = index;
+        wallpaperColors = {
+            "dark": variant.dark,
+            "light": variant.light
+        };
+        applyWallpaperTheme(wallpaperIsDark);
+
+        // Keep the cached dark/light pair in sync so the choice survives a
+        // restart. The active colorscheme.json is written by saveScheme above.
+        variantSelectProc.running = false;
+        variantSelectProc.command = ["python3", Quickshell.shellDir + "/Scripts/theme/generate_theme.py", "--select", String(index)];
+        variantSelectProc.running = true;
     }
 
     function saveScheme() {
@@ -134,6 +164,10 @@ QtObject {
         wallpaperDarkLoader.running = true;
         wallpaperLightLoader.running = false;
         wallpaperLightLoader.running = true;
+        // The list only feeds the picker; the cached pair above still owns the
+        // colours that are applied, so an old cache without variants is fine.
+        wallpaperVariantsLoader.running = false;
+        wallpaperVariantsLoader.running = true;
     }
 
     function parseSchemeText(text, exitCode) {
@@ -193,6 +227,11 @@ QtObject {
                     try {
                         let colors = JSON.parse(colorsLine);
                         root.wallpaperColors = colors;
+                        root.wallpaperVariants = colors.variants || [];
+                        root.wallpaperVariant = colors.selected !== undefined ? colors.selected : 0;
+                        if (root.wallpaperVariant < 0 || root.wallpaperVariant >= root.wallpaperVariants.length)
+                            root.wallpaperVariant = 0;
+
                         if (colors.activeIsDark !== undefined)
                             root.wallpaperIsDark = colors.activeIsDark;
 
@@ -297,6 +336,35 @@ QtObject {
             id: wallpaperLightOutput
         }
 
+    }
+
+    wallpaperVariantsLoader: Process {
+        command: ["cat", Quickshell.env("HOME") + "/.cache/quickshell/wallpaper_variants.json"]
+        onExited: function(exitCode) {
+            if (exitCode !== 0) {
+                root.wallpaperVariants = [];
+                root.wallpaperVariant = 0;
+                return ;
+            }
+            try {
+                let data = JSON.parse(variantsOutput.text);
+                let variants = data.variants || [];
+                root.wallpaperVariants = variants;
+                let selected = data.selected !== undefined ? data.selected : 0;
+                root.wallpaperVariant = (selected >= 0 && selected < variants.length) ? selected : 0;
+            } catch (e) {
+                root.wallpaperVariants = [];
+                root.wallpaperVariant = 0;
+            }
+        }
+
+        stdout: StdioCollector {
+            id: variantsOutput
+        }
+
+    }
+
+    variantSelectProc: Process {
     }
 
     applyThemeProc: Process {

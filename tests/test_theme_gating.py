@@ -60,6 +60,58 @@ class ThemeGatingTests(unittest.TestCase):
         self.assertTrue(set(apply_theme.APPLIERS).issubset(mapped))
 
 
+class CursorThemeNameTests(unittest.TestCase):
+    """The theme name comes from the saved settings and is written into
+    envs.lua, so it has to be escaped or it breaks the file."""
+
+    def test_a_plain_name_is_unchanged(self):
+        self.assertEqual(apply_cursor.lua_string("Bibata"), '"Bibata"')
+
+    def test_a_backslash_is_escaped(self):
+        self.assertEqual(apply_cursor.lua_string(r"Bibata\Modern"), r'"Bibata\\Modern"')
+
+    def test_a_quote_is_escaped(self):
+        self.assertEqual(apply_cursor.lua_string('Bibata"Modern'), r'"Bibata\"Modern"')
+
+    def test_a_newline_is_escaped(self):
+        self.assertEqual(apply_cursor.lua_string("a\nb"), r'"a\nb"')
+
+    def test_the_escaped_value_is_never_multiline(self):
+        for value in ["a\nb", "a\rb", 'a"b', r"a\b"]:
+            self.assertNotIn("\n", apply_cursor.lua_string(value))
+            self.assertNotIn("\r", apply_cursor.lua_string(value))
+
+    def test_envs_lua_survives_a_hostile_theme_name(self):
+        with tempfile.TemporaryDirectory() as directory:
+            home = Path(directory)
+            hypr = home / ".config" / "hypr"
+            hypr.mkdir(parents=True)
+            envs = hypr / "envs.lua"
+            envs.write_text(
+                'hl.env("XCURSOR_THEME", "Old")\n'
+                'hl.env("HYPRCURSOR_THEME", "Old")\n'
+                'hl.env("XCURSOR_SIZE", "24")\n'
+                'hl.env("HYPRCURSOR_SIZE", "24")\n',
+                encoding="utf-8",
+            )
+
+            with mock.patch.object(apply_cursor.subprocess, "run"):
+                apply_cursor.apply_cursor(
+                    r'Bad"Name\With', 32, home=home, is_enabled=lambda _cid: True
+                )
+
+            content = envs.read_text(encoding="utf-8")
+            # Every line still holds a single, complete Lua call. The quotes
+            # are counted ignoring the escaped ones, so an unescaped quote
+            # in the theme name is caught.
+            for line in content.strip().splitlines():
+                self.assertTrue(line.startswith("hl.env("), line)
+                self.assertTrue(line.endswith(")"), line)
+                unescaped = line.replace('\\"', "").replace("\\\\", "")
+                self.assertEqual(unescaped.count('"') % 2, 0, line)
+            self.assertIn(r'Bad\"Name\\With', content)
+
+
 class FontGatingTests(unittest.TestCase):
     def _patch_updates(self):
         return mock.patch.multiple(
@@ -117,6 +169,90 @@ class FontGatingTests(unittest.TestCase):
         mocks["update_kitty"].assert_called_once_with(home, "10")
         mocks["update_sddm"].assert_called_once_with("Geist")
         mocks["update_quickshell"].assert_called_once_with(home, "Geist")
+
+
+class KittyFontGatingTests(unittest.TestCase):
+    """The terminal font only reaches Kitty when both components allow it."""
+
+    def _home(self, tmp, kitty_conf=None):
+        home = Path(tmp)
+        kitty = home / ".config" / "kitty"
+        kitty.mkdir(parents=True)
+        (kitty / "kitty.conf").write_text(
+            kitty_conf if kitty_conf is not None else "font_family JetbrainsMono NF\n",
+            encoding="utf-8",
+        )
+        return home
+
+    def test_font_sync_disabled_does_not_reach_kitty(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            home = self._home(tmp)
+            with mock.patch.object(apply_font, "update_kitty_font") as update:
+                apply_font.apply_kitty_font(
+                    "New Font", home=home, is_enabled=lambda cid: cid != "font-sync"
+                )
+            update.assert_not_called()
+
+    def test_kitty_disabled_does_not_reach_kitty(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            home = self._home(tmp)
+            with mock.patch.object(apply_font, "update_kitty_font") as update:
+                apply_font.apply_kitty_font(
+                    "New Font", home=home, is_enabled=lambda cid: cid != "kitty"
+                )
+            update.assert_not_called()
+
+    def test_both_enabled_reaches_kitty(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            home = self._home(tmp)
+            with mock.patch.object(apply_font, "update_kitty_font") as update:
+                apply_font.apply_kitty_font(
+                    "New Font", home=home, is_enabled=lambda _cid: True
+                )
+            update.assert_called_once_with(home, "New Font")
+
+
+class KittyFontNameTests(unittest.TestCase):
+    """The font family is written into kitty.conf as it is."""
+
+    def _apply(self, tmp, name, initial="font_family JetbrainsMono NF\nfont_size 11\n"):
+        home = Path(tmp)
+        kitty = home / ".config" / "kitty"
+        kitty.mkdir(parents=True)
+        (kitty / "kitty.conf").write_text(initial, encoding="utf-8")
+        with mock.patch.object(apply_font.subprocess, "run"):
+            apply_font.update_kitty_font(home, name)
+        return (kitty / "kitty.conf").read_text(encoding="utf-8")
+
+    def test_the_family_is_replaced(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            content = self._apply(tmp, "JetBrainsMono Nerd Font")
+            self.assertIn("font_family JetBrainsMono Nerd Font\n", content)
+            self.assertIn("font_size 11\n", content)
+
+    def test_a_backslash_is_written_literally(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            content = self._apply(tmp, r"Bad\Name")
+            self.assertIn(r"font_family Bad\Name", content)
+
+    def test_a_newline_cannot_add_a_setting(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            content = self._apply(tmp, "Evil\nfont_size 99")
+            self.assertIn("font_family Evil font_size 99\n", content)
+            # The original setting is still the only font_size in the file.
+            self.assertEqual(content.count("font_size"), 2)
+
+    def test_the_family_is_added_when_it_is_missing(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            content = self._apply(tmp, "Added Font", initial="font_size 11\n")
+            self.assertIn("font_family Added Font\n", content)
+
+    def test_a_missing_kitty_conf_is_ignored(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            home = Path(tmp)
+            with mock.patch.object(apply_font.subprocess, "run") as run:
+                apply_font.update_kitty_font(home, "New Font")
+            run.assert_not_called()
 
 
 class CursorGatingTests(unittest.TestCase):

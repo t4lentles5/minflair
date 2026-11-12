@@ -22,6 +22,9 @@ Item {
     property string quoteCategory: "All"
     property string fontFamily: "Geist"
     property real fontScale: 1
+    // The terminal font is a setting of its own, because a terminal needs a
+    // monospace font while the system font does not have to be one.
+    property string kittyFontFamily: "JetbrainsMono NF"
     property real hyprScale: 1
     property bool clock24h: true
     property bool clockSeconds: false
@@ -62,6 +65,15 @@ Item {
         applyFontProc.command = ["python3", Quickshell.shellDir + "/Scripts/theme/apply_font.py", f, s.toString()];
         applyFontProc.running = false;
         applyFontProc.running = true;
+    }
+
+    // The terminal font is a setting of its own, so it is applied on its own
+    // instead of together with the global font.
+    function applyKittyFont(family) {
+        let f = family !== undefined ? family : kittyFontFamily;
+        applyKittyFontProc.command = ["python3", Quickshell.shellDir + "/Scripts/theme/apply_font.py", "--kitty", f];
+        applyKittyFontProc.running = false;
+        applyKittyFontProc.running = true;
     }
 
     // Drops a saved browser that is no longer installed, falling back to the
@@ -138,6 +150,11 @@ Item {
             saveSettings();
             applyFont(fontFamily, Math.round(11 * fontScale));
         }
+    }
+    onKittyFontFamilyChanged: {
+        if (settingsLoaded)
+            saveSettings();
+
     }
     onHyprScaleChanged: {
         if (settingsLoaded)
@@ -241,6 +258,7 @@ Item {
                 "quoteCategory": settingsService.quoteCategory,
                 "fontFamily": settingsService.fontFamily,
                 "fontScale": settingsService.fontScale,
+                "kittyFontFamily": settingsService.kittyFontFamily,
                 "hyprScale": settingsService.hyprScale,
                 "clock24h": settingsService.clock24h,
                 "clockSeconds": settingsService.clockSeconds,
@@ -261,13 +279,17 @@ Item {
                 "fontFamily": settingsService.fontFamily
             };
             settingsSaver.running = false;
-            settingsSaver.command = ["sh", "-c", "mkdir -p ~/.cache/quickshell && cat << 'EOF' > ~/.cache/quickshell/settings_prefs.json.tmp
+            // The file holds the GitHub token, so it is created with a
+            // restrictive umask instead of being tightened afterwards. The
+            // umask applies to the temporary file as well, so the token is
+            // never readable by another user, not even for an instant.
+            settingsSaver.command = ["sh", "-c", "umask 077 && mkdir -p ~/.cache/quickshell && cat << 'EOF' > ~/.cache/quickshell/settings_prefs.json.tmp
 " + JSON.stringify(data) + "
 EOF
 mv -f ~/.cache/quickshell/settings_prefs.json.tmp ~/.cache/quickshell/settings_prefs.json
 chmod 600 ~/.cache/quickshell/settings_prefs.json
 if ! grep -qxF sddm \"$HOME/.config/minflair/preferences.conf\" 2>/dev/null; then
-  mkdir -p /var/tmp/sddm-theme
+  umask 022 && mkdir -p /var/tmp/sddm-theme
   cat << 'EOF' > /var/tmp/sddm-theme/settings_prefs.json.tmp
 " + JSON.stringify(sddmData) + "
 EOF
@@ -372,11 +394,11 @@ fi"];
                         if (prefs.wpCropGravity !== undefined)
                             HyprlandService.wpCropGravity = prefs.wpCropGravity;
 
-                        if (prefs.micVolume !== undefined && AudioService.hasPhysicalMic)
-                            AudioService.setMicVolume(prefs.micVolume);
-
-                        if (prefs.micMuted !== undefined && AudioService.hasPhysicalMic)
-                            AudioService.setMicMuted(prefs.micMuted);
+                        // The microphone can appear after the settings were
+                        // read, so the values are handed over and applied
+                        // as soon as the device exists.
+                        if (prefs.micVolume !== undefined || prefs.micMuted !== undefined)
+                            AudioService.restoreMic(prefs.micVolume, prefs.micMuted);
 
                         if (prefs.quoteCategory !== undefined)
                             settingsService.quoteCategory = prefs.quoteCategory;
@@ -386,6 +408,9 @@ fi"];
 
                         if (prefs.fontScale !== undefined)
                             settingsService.fontScale = prefs.fontScale;
+
+                        if (prefs.kittyFontFamily !== undefined)
+                            settingsService.kittyFontFamily = prefs.kittyFontFamily;
 
                         if (prefs.hyprScale !== undefined) {
                             settingsService.hyprScale = prefs.hyprScale;
@@ -408,6 +433,7 @@ fi"];
 
                         applyCursor(settingsService.cursorTheme, settingsService.cursorSize);
                         applyFont(settingsService.fontFamily, Math.round(11 * settingsService.fontScale));
+                        applyKittyFont(settingsService.kittyFontFamily);
                         if (prefs.barStyle !== undefined) {
                             if (prefs.barStyle === "island")
                                 settingsService.barStyle = "island";
@@ -436,12 +462,18 @@ fi"];
                 } else {
                     SystemInfoService.applyProfile("balanced");
                     settingsService.saveSettings();
+                    // An empty file is handled like a missing one, so the
+                    // cursor theme and the fonts are applied either way.
+                    settingsService.applyCursor(settingsService.cursorTheme, settingsService.cursorSize);
+                    settingsService.applyFont(settingsService.fontFamily, Math.round(11 * settingsService.fontScale));
+                    settingsService.applyKittyFont(settingsService.kittyFontFamily);
                 }
             } else {
                 SystemInfoService.applyProfile("balanced");
                 settingsService.saveSettings();
                 settingsService.applyCursor(settingsService.cursorTheme, settingsService.cursorSize);
                 settingsService.applyFont(settingsService.fontFamily, Math.round(11 * settingsService.fontScale));
+                settingsService.applyKittyFont(settingsService.kittyFontFamily);
             }
             settingsService.settingsLoaded = true;
             settingsService.syncLauncherBrowser();
@@ -511,6 +543,10 @@ fi"];
 
     Process {
         id: applyFontProc
+    }
+
+    Process {
+        id: applyKittyFontProc
     }
 
 }
