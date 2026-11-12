@@ -145,8 +145,8 @@ AppContainer {
 
         SettingToggle {
             label: "Auto-check System Updates"
-            checked: UpdateService.packageManagerChecksEnabled
-            onCheckedChanged: UpdateService.packageManagerChecksEnabled = checked
+            bindTarget: UpdateService
+            bindProperty: "packageManagerChecksEnabled"
         }
 
         ThemedSelect {

@@ -47,21 +47,9 @@ AppContainer {
         icon: "sparkles"
 
         SettingToggle {
-            id: autoShuffleToggle
-
             label: "Auto-shuffle Wallpapers"
-            onCheckedChanged: {
-                if (checked !== HyprlandService.wpAutoShuffle)
-                    HyprlandService.wpAutoShuffle = checked;
-
-            }
-
-            Binding {
-                target: autoShuffleToggle
-                property: "checked"
-                value: HyprlandService.wpAutoShuffle
-            }
-
+            bindTarget: HyprlandService
+            bindProperty: "wpAutoShuffle"
         }
 
         SettingSpinBox {
