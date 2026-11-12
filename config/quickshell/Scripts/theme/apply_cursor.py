@@ -12,6 +12,23 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import minflair_components as components
 
 
+def lua_string(value):
+    """Quote a value so it can be used as a Lua string literal.
+
+    The theme name comes from the saved settings and is written into
+    envs.lua, so a quote or a backslash in it would otherwise produce a
+    broken file.
+    """
+    escaped = (
+        str(value)
+        .replace("\\", "\\\\")
+        .replace('"', '\\"')
+        .replace("\n", "\\n")
+        .replace("\r", "\\r")
+    )
+    return f'"{escaped}"'
+
+
 def apply_cursor(theme_name, size, home=None, is_enabled=None):
     """Apply the cursor theme when the cursor component is enabled."""
     if is_enabled is None:
@@ -44,24 +61,29 @@ def apply_cursor(theme_name, size, home=None, is_enabled=None):
     if envs_lua.is_file():
         try:
             content = envs_lua.read_text(encoding="utf-8")
+            # The replacement is a function so the value is inserted literally.
+            # A backslash or a quote in the theme name would otherwise be
+            # treated as an escape sequence by re.sub and break the file.
+            theme_literal = lua_string(theme_name)
+            size_literal = lua_string(size)
             content = re.sub(
                 r'hl\.env\("XCURSOR_THEME", ".*?"\)',
-                f'hl.env("XCURSOR_THEME", "{theme_name}")',
+                lambda _: f"hl.env(\"XCURSOR_THEME\", {theme_literal})",
                 content,
             )
             content = re.sub(
                 r'hl\.env\("HYPRCURSOR_THEME", ".*?"\)',
-                f'hl.env("HYPRCURSOR_THEME", "{theme_name}")',
+                lambda _: f"hl.env(\"HYPRCURSOR_THEME\", {theme_literal})",
                 content,
             )
             content = re.sub(
                 r'hl\.env\("XCURSOR_SIZE", ".*?"\)',
-                f'hl.env("XCURSOR_SIZE", "{size}")',
+                lambda _: f"hl.env(\"XCURSOR_SIZE\", {size_literal})",
                 content,
             )
             content = re.sub(
                 r'hl\.env\("HYPRCURSOR_SIZE", ".*?"\)',
-                f'hl.env("HYPRCURSOR_SIZE", "{size}")',
+                lambda _: f"hl.env(\"HYPRCURSOR_SIZE\", {size_literal})",
                 content,
             )
             envs_lua.write_text(content, encoding="utf-8")

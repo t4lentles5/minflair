@@ -60,6 +60,58 @@ class ThemeGatingTests(unittest.TestCase):
         self.assertTrue(set(apply_theme.APPLIERS).issubset(mapped))
 
 
+class CursorThemeNameTests(unittest.TestCase):
+    """The theme name comes from the saved settings and is written into
+    envs.lua, so it has to be escaped or it breaks the file."""
+
+    def test_a_plain_name_is_unchanged(self):
+        self.assertEqual(apply_cursor.lua_string("Bibata"), '"Bibata"')
+
+    def test_a_backslash_is_escaped(self):
+        self.assertEqual(apply_cursor.lua_string(r"Bibata\Modern"), r'"Bibata\\Modern"')
+
+    def test_a_quote_is_escaped(self):
+        self.assertEqual(apply_cursor.lua_string('Bibata"Modern'), r'"Bibata\"Modern"')
+
+    def test_a_newline_is_escaped(self):
+        self.assertEqual(apply_cursor.lua_string("a\nb"), r'"a\nb"')
+
+    def test_the_escaped_value_is_never_multiline(self):
+        for value in ["a\nb", "a\rb", 'a"b', r"a\b"]:
+            self.assertNotIn("\n", apply_cursor.lua_string(value))
+            self.assertNotIn("\r", apply_cursor.lua_string(value))
+
+    def test_envs_lua_survives_a_hostile_theme_name(self):
+        with tempfile.TemporaryDirectory() as directory:
+            home = Path(directory)
+            hypr = home / ".config" / "hypr"
+            hypr.mkdir(parents=True)
+            envs = hypr / "envs.lua"
+            envs.write_text(
+                'hl.env("XCURSOR_THEME", "Old")\n'
+                'hl.env("HYPRCURSOR_THEME", "Old")\n'
+                'hl.env("XCURSOR_SIZE", "24")\n'
+                'hl.env("HYPRCURSOR_SIZE", "24")\n',
+                encoding="utf-8",
+            )
+
+            with mock.patch.object(apply_cursor.subprocess, "run"):
+                apply_cursor.apply_cursor(
+                    r'Bad"Name\With', 32, home=home, is_enabled=lambda _cid: True
+                )
+
+            content = envs.read_text(encoding="utf-8")
+            # Every line still holds a single, complete Lua call. The quotes
+            # are counted ignoring the escaped ones, so an unescaped quote
+            # in the theme name is caught.
+            for line in content.strip().splitlines():
+                self.assertTrue(line.startswith("hl.env("), line)
+                self.assertTrue(line.endswith(")"), line)
+                unescaped = line.replace('\\"', "").replace("\\\\", "")
+                self.assertEqual(unescaped.count('"') % 2, 0, line)
+            self.assertIn(r'Bad\"Name\\With', content)
+
+
 class FontGatingTests(unittest.TestCase):
     def _patch_updates(self):
         return mock.patch.multiple(
