@@ -433,6 +433,7 @@ fi"];
 
                         applyCursor(settingsService.cursorTheme, settingsService.cursorSize);
                         applyFont(settingsService.fontFamily, Math.round(11 * settingsService.fontScale));
+                        applyKittyFont(settingsService.kittyFontFamily);
                         if (prefs.barStyle !== undefined) {
                             if (prefs.barStyle === "island")
                                 settingsService.barStyle = "island";
@@ -462,15 +463,17 @@ fi"];
                     SystemInfoService.applyProfile("balanced");
                     settingsService.saveSettings();
                     // An empty file is handled like a missing one, so the
-                    // cursor theme and the font are applied either way.
+                    // cursor theme and the fonts are applied either way.
                     settingsService.applyCursor(settingsService.cursorTheme, settingsService.cursorSize);
                     settingsService.applyFont(settingsService.fontFamily, Math.round(11 * settingsService.fontScale));
+                    settingsService.applyKittyFont(settingsService.kittyFontFamily);
                 }
             } else {
                 SystemInfoService.applyProfile("balanced");
                 settingsService.saveSettings();
                 settingsService.applyCursor(settingsService.cursorTheme, settingsService.cursorSize);
                 settingsService.applyFont(settingsService.fontFamily, Math.round(11 * settingsService.fontScale));
+                settingsService.applyKittyFont(settingsService.kittyFontFamily);
             }
             settingsService.settingsLoaded = true;
             settingsService.syncLauncherBrowser();
