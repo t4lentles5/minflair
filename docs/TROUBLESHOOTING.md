@@ -12,12 +12,31 @@ qs log
 This prints real-time QML errors, warnings, missing components and script
 failures.
 
+## `sudo` fails with "expected a fully-qualified path name"
+
+Older releases wrote the battery rule with quotes, which sudoers cannot parse,
+so every `sudo` command fails with a message pointing at
+`/etc/sudoers.d/quickshell-battery`. Current releases remove that rule through
+`pkexec` on the next install or update, before asking for the sudo password.
+
+If the installed CLI is still the old one, pull the repository first and run
+the updater; `git pull` does not need `sudo`:
+
+```bash
+git pull
+./update.sh
+```
+
 ## Battery charge limit toggle not working
 
 Ensure your laptop vendor supports charging thresholds via the Linux kernel.
 Check if your vendor's kernel module is loaded (for example `asus_wmi`,
 `ideapad_laptop` or `thinkpad_acpi`). For Acer laptops, the installer
 automatically configures `acer-wmi-battery-dkms`.
+
+The toggle runs `/usr/local/bin/minflair-battery-limit` through a passwordless
+sudoers rule. If either the helper or the rule is missing, re-run the installer
+with the battery component enabled.
 
 ## Brightness slider has no effect on an external monitor
 

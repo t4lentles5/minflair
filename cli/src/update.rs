@@ -103,7 +103,7 @@ pub fn run(root: &Path, args: UpdateArgs) -> Result<u8> {
     if ctx.dry_run {
         ctx.info("Dry run: sudo and package changes are skipped.");
     } else {
-        install::authenticate_sudo()?;
+        install::authenticate_sudo(&ctx)?;
     }
 
     ui::section("Backup");

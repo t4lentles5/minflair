@@ -38,6 +38,32 @@ ok() { ui_ok "$1"; }
 warn() { ui_warn "$1"; }
 error() { ui_error "$1"; }
 
+# Older releases wrote the battery rule with quotes, which sudoers cannot
+# parse, so every sudo call fails. Remove that rule with pkexec before asking
+# for the password.
+repair_broken_sudoers() {
+  local broken rm
+  broken="$(sudo -n -l 2>&1 >/dev/null |
+    sed -n 's#^\(/etc/sudoers[^:]*\):[0-9][0-9]*:.*#\1#p' | head -n 1)" || true
+  [ -n "$broken" ] || return 0
+  if [ "$broken" != /etc/sudoers.d/quickshell-battery ]; then
+    warn "sudo cannot parse $broken; fix it with visudo and run Minflair again."
+    return 1
+  fi
+  warn "sudo is disabled by the old battery rule; removing it..."
+  rm="$(command -v rm)"
+  if command -v pkexec >/dev/null 2>&1; then
+    pkexec "$rm" -f "$broken" || {
+      warn "Could not remove $broken. Run: sudo visudo -f $broken"
+      return 1
+    }
+  elif ! su -c "$rm -f $broken"; then
+    warn "Could not remove $broken. Run as root: rm -f $broken"
+    return 1
+  fi
+  ok "The broken battery rule was removed; sudo works again."
+}
+
 usage() {
   cat <<'EOF'
 Usage: ./update.sh [options]
@@ -231,6 +257,7 @@ fi
 if ((DRY_RUN)); then
   log "Dry run: sudo and package changes are skipped."
 else
+  repair_broken_sudoers || error "Sudo is not usable."
   sudo -v || error "Sudo authentication failed."
 fi
 
@@ -379,11 +406,22 @@ else
       fi
     fi
 
-    log "Configuring sudoers for battery charge limit script..."
-    echo "$USER ALL=(ALL) NOPASSWD: $HOME/.config/quickshell/Scripts/system/toggle_battery_limit.sh" |
-      sudo tee /etc/sudoers.d/quickshell-battery >/dev/null
-    sudo chmod 0440 /etc/sudoers.d/quickshell-battery
-    ok "Battery charge limit support and sudoers configured."
+    # The passwordless rule must point at a root-owned copy: a script inside
+    # the home directory can be edited by the user and would hand them root.
+    BATTERY_HELPER=/usr/local/bin/minflair-battery-limit
+    log "Installing the battery charge limit helper..."
+    if sudo install -o root -g root -m 0755 \
+      "$REPO_DIR/config/quickshell/Scripts/system/toggle_battery_limit.sh" \
+      "$BATTERY_HELPER.minflair-new" &&
+      sudo mv -f "$BATTERY_HELPER.minflair-new" "$BATTERY_HELPER"; then
+      printf '%s ALL=(ALL) NOPASSWD: %s\n' "$USER" "$BATTERY_HELPER" |
+        sudo tee /etc/sudoers.d/quickshell-battery >/dev/null
+      sudo chmod 0440 /etc/sudoers.d/quickshell-battery
+      ok "Battery charge limit support and sudoers configured."
+    else
+      sudo rm -f "$BATTERY_HELPER.minflair-new" || true
+      warn "Could not install the battery charge limit helper."
+    fi
   fi
 fi
 

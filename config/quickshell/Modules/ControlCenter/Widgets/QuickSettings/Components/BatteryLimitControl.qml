@@ -12,6 +12,9 @@ QuickSettingsTile {
     property bool isLimitActive: false
     property bool isVisible: true
     property bool disabled: false
+    // Root-owned copy installed by Minflair, and the only path the
+    // passwordless sudoers rule allows.
+    readonly property string helper: "/usr/local/bin/minflair-battery-limit"
     readonly property string batteryStateText: {
         if (!SystemInfoService.hasBattery)
             return "No battery";
@@ -76,7 +79,7 @@ QuickSettingsTile {
     Process {
         id: toggleProcess
 
-        command: ["sudo", Quickshell.shellDir + "/Scripts/system/toggle_battery_limit.sh", "toggle"]
+        command: ["sudo", root.helper, "toggle"]
         onRunningChanged: {
             if (!running)
                 statusProcess.running = true;

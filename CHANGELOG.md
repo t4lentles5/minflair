@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- **A quoted sudoers rule disabled `sudo` for the whole machine**: the battery rule wrapped the command path in double quotes, but sudoers has no quoting, so `sudo` read the quote as part of the path and refused to run every command with `expected a fully-qualified path name`. The rule now points at a fixed path with no quoting, and the CLI checks it with `visudo` before it replaces the installed one.
+- **A rule broken by an older release repairs itself**: `minflair install`, `minflair update`, `install.sh` and `update.sh` now detect a sudoers syntax error, and when it is the battery rule this project owns they remove it through `pkexec` before asking for the password, so `sudo` works again without a manual root console.
+- **The passwordless battery rule pointed into the home directory**: the script the rule allowed was writable by the user, so editing it was a way to run anything as root. The installer now copies the script to `/usr/local/bin/minflair-battery-limit` as `root:root` and points the rule there. `install.sh` and `update.sh` do the same.
+
 ## [2.3.0] - 2026-11-14
 
 ### Added
@@ -26,7 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Setting toggles lost their binding after the first click**: the toggles that were bound to a service property with a plain `checked` binding stopped following that property once the user clicked them, so the switch could show a value the service no longer had. All the service-backed toggles now keep the two in sync.
 - **The keyboard layout was never saved**: the layout Hyprland reports was assigned with the synchronisation flag set, so the handler that saves it was skipped. The saved value kept the previous layout and the startup timer put it back on the next run.
 - **The microphone volume and mute were dropped on startup**: both were only applied when the device already existed while the settings were read, but PipeWire creates the source a moment later. The saved values are now applied once the device appears.
-- **A broken sudoers rule could lock every user out of sudo**: the rule was written straight to `/etc/sudoers.d/`, which truncates the file before the data arrives, and the home directory was not quoted. It is now written to a temporary file and moved into place, with the path quoted.
+- **A broken sudoers rule could lock every user out of sudo**: the rule was written straight to `/etc/sudoers.d/`, which truncates the file before the data arrives. It is now written to a temporary file and moved into place.
 - **The old GTK theme was destroyed before the new one was in place**: the theme directory was deleted and the removal error ignored, so a failure left the user without a theme. The old one is now moved aside and restored when the new one cannot be installed.
 - **The cursor theme name could break `envs.lua`**: the name came from the saved settings and was interpolated into a regular expression replacement, where a backslash is an escape sequence and a quote ends the string. It is now escaped as a Lua string.
 - **The settings file was briefly readable by other users**: it holds the GitHub token and was created with the default umask before being tightened. It is now created with a restrictive umask.

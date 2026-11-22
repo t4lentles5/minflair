@@ -27,6 +27,15 @@ const SERVICES: [&str; 3] = [
     "power-profiles-daemon.service",
 ];
 
+/// Root-owned copy of the battery script, and the only path the passwordless
+/// sudoers rule allows. It must live outside the home directory: a rule that
+/// points at a file the user can edit hands them root.
+const BATTERY_HELPER_PATH: &str = "/usr/local/bin/minflair-battery-limit";
+
+/// The sudoers rule this project owns. It is rewritten on install and update,
+/// and removed when an older release left it in a state sudo cannot parse.
+const BATTERY_RULE_PATH: &str = "/etc/sudoers.d/quickshell-battery";
+
 pub fn run(root: &Path, args: InstallArgs) -> Result<u8> {
     // SAFETY: geteuid has no preconditions and cannot fail.
     if unsafe { libc::geteuid() } == 0 {
@@ -277,12 +286,14 @@ fn preflight(ctx: &Ctx) -> Result<()> {
         return Ok(());
     }
 
-    authenticate_sudo()
+    authenticate_sudo(ctx)
 }
 
 /// Ask for the sudo password once and keep the timestamp alive while long
 /// package installations run.
-pub(crate) fn authenticate_sudo() -> Result<()> {
+pub(crate) fn authenticate_sudo(ctx: &Ctx) -> Result<()> {
+    repair_broken_sudoers(ctx)?;
+
     let status = Command::new("sudo")
         .arg("-v")
         .status()
@@ -301,6 +312,82 @@ pub(crate) fn authenticate_sudo() -> Result<()> {
     });
 
     Ok(())
+}
+
+/// Remove the rule this project owns when it stops sudo from parsing, so a
+/// bad rule from an older release does not leave every sudo call broken.
+///
+/// sudo cannot run while the configuration is broken, so the removal goes
+/// through pkexec (or su when pkexec is not installed).
+fn repair_broken_sudoers(ctx: &Ctx) -> Result<()> {
+    let Some(path) = broken_sudoers_file() else {
+        return Ok(());
+    };
+    if path != BATTERY_RULE_PATH {
+        bail!("sudo cannot parse {path}; fix it with visudo and run Minflair again");
+    }
+
+    ctx.warn(&format!(
+        "sudo is disabled by the old battery rule in {path}; removing it..."
+    ));
+    remove_file_as_root(&path)?;
+
+    if let Some(path) = broken_sudoers_file() {
+        bail!("sudo is still broken by {path}; fix it with visudo and run Minflair again");
+    }
+    ctx.ok("The broken battery rule was removed; sudo works again.");
+    Ok(())
+}
+
+/// The sudoers file sudo cannot parse, if it fails on a syntax error instead
+/// of on a missing password. sudo reports the file as
+/// `path:line:column: message`.
+fn broken_sudoers_file() -> Option<String> {
+    let output = Command::new("sudo").args(["-n", "-l"]).output().ok()?;
+    if output.status.success() {
+        return None;
+    }
+    sudoers_error_path(&String::from_utf8_lossy(&output.stderr))
+}
+
+/// Pick the sudoers path out of sudo's error output. Lines that do not start
+/// with a path, such as `sudo: a password is required`, mean the
+/// configuration itself is fine.
+fn sudoers_error_path(stderr: &str) -> Option<String> {
+    stderr.lines().find_map(|line| {
+        let path = line.trim().split(':').next()?;
+        path.starts_with("/etc/sudoers").then(|| path.to_string())
+    })
+}
+
+/// Remove a root-owned file without sudo, which cannot run while the
+/// configuration is broken.
+fn remove_file_as_root(path: &str) -> Result<()> {
+    let rm = process::which("rm").unwrap_or_else(|| PathBuf::from("/usr/bin/rm"));
+
+    if let Some(pkexec) = process::which("pkexec") {
+        let status = Command::new(pkexec)
+            .arg(&rm)
+            .args(["-f", path])
+            .status()
+            .context("could not run pkexec")?;
+        if status.success() {
+            return Ok(());
+        }
+        bail!("could not remove {path}; run: sudo visudo -f {path}");
+    }
+
+    if process::which("su").is_some() {
+        let status = Command::new("su")
+            .args(["-c", &format!("{} -f {path}", rm.display())])
+            .status()
+            .context("could not run su")?;
+        if status.success() {
+            return Ok(());
+        }
+    }
+
+    bail!("could not remove {path}; run as root: rm -f {path}");
 }
 
 fn resolve_aur_helper(ctx: &Ctx, args: &InstallArgs) -> Result<String> {
@@ -468,7 +555,7 @@ pub(crate) fn configure_ddc(ctx: &Ctx, manifest: &Manifest, disabled: &BTreeSet<
         return;
     }
 
-    if ctx.write_sudo_file("/etc/modules-load.d/i2c-dev.conf", "i2c-dev\n") {
+    if ctx.write_root_file("/etc/modules-load.d/i2c-dev.conf", "i2c-dev\n", "0644") {
         ctx.ok("i2c-dev will be loaded on boot.");
     } else {
         ctx.warn("Could not write /etc/modules-load.d/i2c-dev.conf.");
@@ -575,22 +662,36 @@ pub(crate) fn configure_battery(
         }
     }
 
+    ctx.info("Installing the battery charge limit helper...");
+    let script = ctx
+        .root
+        .join("config/quickshell/Scripts/system/toggle_battery_limit.sh");
+    let installed = match fs::read_to_string(&script) {
+        Ok(contents) => ctx.write_root_file(BATTERY_HELPER_PATH, &contents, "0755"),
+        Err(error) => {
+            ctx.warn(&format!("Could not read {}: {error}", script.display()));
+            false
+        }
+    };
+    if !installed {
+        ctx.warn("Could not install the battery helper, skipping the sudoers rule.");
+        return;
+    }
+
     ctx.info("Configuring sudoers for battery charge limit script...");
-    let rule = battery_sudoers_rule(&ctx.user, &ctx.home);
-    if ctx.write_sudo_file("/etc/sudoers.d/quickshell-battery", &rule) {
+    let rule = battery_sudoers_rule(&ctx.user);
+    if ctx.write_root_file(BATTERY_RULE_PATH, &rule, "0440") {
         ctx.ok("Battery charge limit support and sudoers configured.");
     } else {
         ctx.warn("Could not configure the battery sudoers rule.");
     }
 }
 
-/// Build the sudoers rule that lets the battery script run without a
-/// password. The command path is quoted so a home directory with a space
-/// still produces a valid rule; an unquoted path breaks the rule and sudo
-/// then refuses to run for every user on the machine.
-fn battery_sudoers_rule(user: &str, home: &Path) -> String {
-    let script = home.join(".config/quickshell/Scripts/system/toggle_battery_limit.sh");
-    format!("{user} ALL=(ALL) NOPASSWD: \"{}\"\n", script.display())
+/// Build the sudoers rule that lets the battery helper run without a
+/// password. The path is the fixed, root-owned copy rather than one inside
+/// the home directory, so the rule cannot be turned into root access.
+fn battery_sudoers_rule(user: &str) -> String {
+    format!("{user} ALL=(ALL) NOPASSWD: {BATTERY_HELPER_PATH}\n")
 }
 
 fn backup_dotfiles(ctx: &Ctx, manifest: &Manifest, disabled: &BTreeSet<String>) -> Result<()> {
@@ -1506,7 +1607,10 @@ impl Ctx {
     /// would leave a half written file behind. That matters for the files
     /// under /etc, where a broken sudoers rule locks every user out of
     /// sudo.
-    pub(crate) fn write_sudo_file(&self, path: &str, contents: &str) -> bool {
+    ///
+    /// A file under /etc/sudoers.d is also parsed with `visudo` before it
+    /// replaces the installed one.
+    pub(crate) fn write_root_file(&self, path: &str, contents: &str, mode: &str) -> bool {
         if self.dry_run {
             println!("[dry-run] would write {path}");
             return true;
@@ -1566,11 +1670,6 @@ impl Ctx {
 
         // The mode is set on the temporary file, so the file is never
         // readable by other users even for an instant.
-        let mode = if path.starts_with("/etc/sudoers.d/") {
-            "0440"
-        } else {
-            "0644"
-        };
         if !Command::new("sudo")
             .args(["chmod", mode, temporary.to_string_lossy().as_ref()])
             .stdout(Stdio::null())
@@ -1586,6 +1685,40 @@ impl Ctx {
                 .status();
             self.warn(&format!("could not set the permissions of {path}"));
             return false;
+        }
+
+        // Parse the rule before it replaces the live one. A sudoers file
+        // with a syntax error makes every sudo invocation fail, so an
+        // invalid rule must never reach /etc/sudoers.d.
+        if path.starts_with("/etc/sudoers.d/") {
+            let validation = Command::new("sudo")
+                .args(["visudo", "-c", "-f", temporary.to_string_lossy().as_ref()])
+                .output();
+            let valid = validation
+                .as_ref()
+                .map(|output| output.status.success())
+                .unwrap_or(false);
+            if !valid {
+                let _ = Command::new("sudo")
+                    .args(["rm", "-f", temporary.to_string_lossy().as_ref()])
+                    .stdout(Stdio::null())
+                    .stderr(Stdio::null())
+                    .status();
+                let reason = validation.ok().and_then(|output| {
+                    let stderr = String::from_utf8_lossy(&output.stderr);
+                    let stderr = stderr.trim();
+                    (!stderr.is_empty()).then(|| stderr.to_string())
+                });
+                match reason {
+                    Some(reason) => self.warn(&format!(
+                        "could not validate {path}, the new rule was discarded: {reason}"
+                    )),
+                    None => self.warn(&format!(
+                        "could not validate {path}, the new rule was discarded"
+                    )),
+                }
+                return false;
+            }
         }
 
         let moved = Command::new("sudo")
@@ -1625,24 +1758,39 @@ mod tests {
     }
 
     #[test]
-    fn the_sudoers_rule_quotes_the_script_path() {
-        let rule = battery_sudoers_rule("octo", Path::new("/home/john doe"));
+    fn finds_the_sudoers_file_that_breaks_sudo() {
+        let stderr =
+            "/etc/sudoers.d/quickshell-battery:1:107: expected a fully-qualified path name\n";
         assert_eq!(
-            rule,
-            "octo ALL=(ALL) NOPASSWD: \"/home/john doe/.config/quickshell/Scripts/system/toggle_battery_limit.sh\"\n"
+            sudoers_error_path(stderr).as_deref(),
+            Some("/etc/sudoers.d/quickshell-battery")
         );
     }
 
     #[test]
-    fn the_sudoers_rule_is_a_single_command() {
-        // An unquoted path with a space is parsed by sudo as the command
-        // "/home/john" plus the argument "doe/...", which is not the script.
-        let rule = battery_sudoers_rule("octo", Path::new("/home/john doe"));
-        let command = rule.split("NOPASSWD: ").nth(1).expect("command");
-        let command = command.trim().trim_matches('"');
+    fn ignores_sudo_errors_that_are_not_a_broken_file() {
+        assert_eq!(sudoers_error_path("sudo: a password is required\n"), None);
         assert_eq!(
-            command,
-            "/home/john doe/.config/quickshell/Scripts/system/toggle_battery_limit.sh"
+            sudoers_error_path("sudo: 3 incorrect password attempts\n"),
+            None
+        );
+        assert_eq!(sudoers_error_path(""), None);
+    }
+
+    #[test]
+    fn the_sudoers_rule_allows_only_the_root_owned_helper() {
+        let rule = battery_sudoers_rule("octo");
+        assert_eq!(
+            rule,
+            "octo ALL=(ALL) NOPASSWD: /usr/local/bin/minflair-battery-limit\n"
+        );
+        assert!(
+            !rule.contains('"'),
+            "sudoers has no quoting, a quoted path breaks sudo: {rule:?}"
+        );
+        assert!(
+            !rule.contains("/home/"),
+            "the passwordless rule must not point into the home directory: {rule:?}"
         );
     }
 
