@@ -95,6 +95,23 @@ by the installer, the updater and the Package Manager. To change it later:
 minflair install --aur-helper paru
 ```
 
+### From the AUR
+
+The AUR packages install the CLI in `/usr/bin` and the configuration source in
+`/usr/share/minflair`, which the CLI searches by default:
+
+```bash
+yay -S minflair       # builds the CLI from the release source
+yay -S minflair-bin   # prebuilt static binary, no Rust toolchain needed
+yay -S minflair-git   # tracks main
+minflair install
+```
+
+Update these installs with `sudo pacman -Syu` and then `minflair update`
+without `--pull`, because pacman owns the source. If you previously installed
+with `bootstrap.sh`, remove `~/.config/minflair/repo` first so the packaged copy
+is used. See [AUR.md](AUR.md) for migration, uninstall and troubleshooting.
+
 ### Selector controls
 
 | Key | Action |

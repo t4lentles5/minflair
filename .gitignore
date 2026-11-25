@@ -2,3 +2,6 @@ __pycache__/
 *.py[cod]
 .pytest_cache/
 /target/
+packaging/aur/*/src/
+packaging/aur/*/pkg/
+packaging/aur/*/*.pkg.tar.*

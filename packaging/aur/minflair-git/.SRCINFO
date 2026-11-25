@@ -1,0 +1,22 @@
+pkgbase = minflair-git
+	pkgdesc = Modular Hyprland desktop environment powered by Quickshell (git)
+	pkgver = 2.3.0.r0.g63eabc8
+	pkgrel = 1
+	url = https://github.com/t4lentles5/minflair
+	install = minflair-git.install
+	arch = x86_64
+	arch = aarch64
+	license = GPL-3.0-only
+	makedepends = rust
+	depends = git
+	depends = sudo
+	optdepends = quickshell: shell runtime
+	optdepends = hyprland: Wayland compositor
+	provides = minflair
+	conflicts = minflair
+	conflicts = minflair-bin
+	options = !debug
+	source = minflair-git::git+https://github.com/t4lentles5/minflair.git#branch=main
+	sha256sums = SKIP
+
+pkgname = minflair-git

@@ -1,0 +1,33 @@
+# Maintainer: t4lentles5 <t4lentles5@users.noreply.github.com>
+pkgname=minflair-bin
+pkgver=2.3.0
+pkgrel=1
+pkgdesc='Modular Hyprland desktop environment powered by Quickshell (prebuilt)'
+arch=('x86_64' 'aarch64')
+url='https://github.com/t4lentles5/minflair'
+license=('GPL-3.0-only')
+depends=('git' 'sudo')
+options=('!debug')
+optdepends=(
+  'quickshell: shell runtime'
+  'hyprland: Wayland compositor'
+)
+provides=('minflair')
+conflicts=('minflair' 'minflair-git')
+install="$pkgname.install"
+source=("minflair-$pkgver-runtime.tar.gz::$url/releases/download/v$pkgver/minflair-$pkgver-runtime.tar.gz")
+source_x86_64=("minflair-$pkgver-x86_64.tar.gz::$url/releases/download/v$pkgver/minflair-$pkgver-x86_64.tar.gz")
+source_aarch64=("minflair-$pkgver-aarch64.tar.gz::$url/releases/download/v$pkgver/minflair-$pkgver-aarch64.tar.gz")
+sha256sums=('62ac6d596dc4c10c11c6dc7cfc7f6b2cf1645476b1a6b91dbb1863dbac15a8a5')
+# Filled from the release SHA256SUMS after the release workflow runs.
+sha256sums_x86_64=('SKIP')
+sha256sums_aarch64=('SKIP')
+
+package() {
+  install -Dm755 "$srcdir/minflair" "$pkgdir/usr/bin/minflair"
+
+  install -d "$pkgdir/usr/share/minflair"
+  cp -a "$srcdir/minflair-$pkgver/." "$pkgdir/usr/share/minflair/"
+
+  install -Dm644 "$srcdir/minflair-$pkgver/LICENSE" "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+}

@@ -1,0 +1,44 @@
+# Maintainer: t4lentles5 <t4lentles5@users.noreply.github.com>
+pkgname=minflair
+pkgver=2.3.0
+pkgrel=1
+pkgdesc='Modular Hyprland desktop environment powered by Quickshell'
+arch=('x86_64' 'aarch64')
+url='https://github.com/t4lentles5/minflair'
+license=('GPL-3.0-only')
+depends=('git' 'sudo')
+makedepends=('rust')
+options=('!debug')
+optdepends=(
+  'quickshell: shell runtime'
+  'hyprland: Wayland compositor'
+)
+install="$pkgname.install"
+source=("$pkgname-$pkgver-src.tar.gz::$url/releases/download/v$pkgver/minflair-$pkgver-src.tar.gz")
+sha256sums=('84a33315e8993694b3a214ae8dec344bc031251644122a92c88461c4542bb7b3')
+
+build() {
+  cd "$srcdir/$pkgname-$pkgver"
+  cargo build --release --locked
+}
+
+check() {
+  cd "$srcdir/$pkgname-$pkgver"
+  cargo test --release --locked
+}
+
+package() {
+  cd "$srcdir/$pkgname-$pkgver"
+
+  install -Dm755 target/release/minflair "$pkgdir/usr/bin/minflair"
+
+  install -d "$pkgdir/usr/share/minflair"
+  cp -a \
+    config home etc lib docs \
+    packages.txt packages-aur.txt \
+    README.md CHANGELOG.md CONTRIBUTING.md LICENSE \
+    bootstrap.sh install.sh update.sh \
+    "$pkgdir/usr/share/minflair/"
+
+  install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+}
