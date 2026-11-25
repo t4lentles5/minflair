@@ -227,11 +227,14 @@ jobs:
       - name: Upload the assets to the GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
         shell: bash
         run: |
           set -euo pipefail
           tag="${{ needs.version.outputs.tag }}"
           version="${{ needs.version.outputs.version }}"
+          # This job does not check out the repository, so gh needs GH_REPO to
+          # know which repository to publish to.
           if gh release view "$tag" >/dev/null 2>&1; then
             gh release upload "$tag" dist/* --clobber
           else
