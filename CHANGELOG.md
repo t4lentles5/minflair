@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **AUR packages**: `minflair`, `minflair-bin` and `minflair-git` install the CLI and the configuration source under `/usr/share/minflair`, so Arch users can install with `yay -S minflair` and update with `pacman` followed by `minflair update`.
+- **Release workflow**: tags now produce static musl binaries for x86_64 (and aarch64 when the hosted runner is available), deterministic runtime and source tarballs, and a `SHA256SUMS` file.
+- **AUR guide**: `docs/AUR.md` covers installation, updates, migration from `bootstrap.sh`, uninstall and troubleshooting.
+- **Community links**: the README links to Discussions (Q&A, Show and tell, Announcements) and the new-issue page offers the same destinations.
+
+### Changed
+
+- The animated WebP previews are re-encoded to 960 px, with the hero loop trimmed to its first 12 seconds, so the assets drop from 84 MB to 12 MB while keeping their duration and infinite loop.
+
 ### Fixed
 
 - **A quoted sudoers rule disabled `sudo` for the whole machine**: the battery rule wrapped the command path in double quotes, but sudoers has no quoting, so `sudo` read the quote as part of the path and refused to run every command with `expected a fully-qualified path name`. The rule now points at a fixed path with no quoting, and the CLI checks it with `visudo` before it replaces the installed one.

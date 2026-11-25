@@ -7,6 +7,9 @@
 <a href="#gallery">
   <img src="https://img.shields.io/badge/📸_Gallery-Explore_Styles_%26_Widgets-7f65cc?style=for-the-badge&logoColor=white" alt="View Gallery" />
 </a>
+<a href="https://github.com/t4lentles5/minflair/discussions">
+  <img src="https://img.shields.io/badge/💬_Discussions-Ask_and_share-1f6feb?style=for-the-badge&logoColor=white" alt="Join the discussions" />
+</a>
 
 <br />
 <br />
@@ -92,6 +95,36 @@ MINFLAIR_REF=v2.3.0 bash /tmp/minflair-bootstrap.sh
 `MINFLAIR_DIR`, `MINFLAIR_BIN_DIR`, `MINFLAIR_REPO_URL` and `MINFLAIR_REF`
 override the clone directory, the CLI destination, the remote and the branch or
 tag. See [docs/ADVANCED.md](docs/ADVANCED.md#bootstrap-environment-variables).
+
+### AUR
+
+The AUR packages install the CLI and the configuration source under
+`/usr/share/minflair`:
+
+```bash
+yay -S minflair       # builds the CLI from source
+# or
+yay -S minflair-bin   # prebuilt binary, no Rust toolchain needed
+# or
+yay -S minflair-git   # tracks main
+```
+
+Then deploy the desktop configuration as your normal user:
+
+```bash
+minflair install
+```
+
+Update these installs with `sudo pacman -Syu` and then `minflair update`. Do
+**not** pass `--pull`: the source is managed by pacman. If you previously used
+`bootstrap.sh`, remove the saved repository marker so the packaged copy is
+used:
+
+```bash
+rm -f ~/.config/minflair/repo
+```
+
+See [docs/AUR.md](docs/AUR.md) for migration, uninstall and troubleshooting.
 
 ### From git
 
@@ -183,6 +216,11 @@ automatically, so the command stays up to date. Use `--no-build` to skip the
 rebuild. Omitting `--pull` (the default, also available as `--no-pull`) applies
 the source already in the repository.
 
+> [!NOTE]
+> If you installed from the AUR, update with `sudo pacman -Syu` and then
+> `minflair update`. Do not use `--pull`: the source is managed by pacman.
+> See [docs/AUR.md](docs/AUR.md).
+
 To update manually instead:
 
 ```bash
@@ -209,11 +247,21 @@ copies the updated configuration, installs new dependencies, refreshes the
 
 ---
 
+## 💬 Community
+
+- **Questions and installation help** — [Discussions → Q&A](https://github.com/t4lentles5/minflair/discussions/categories/q-a)
+- **Screenshots and customizations** — [Discussions → Show and tell](https://github.com/t4lentles5/minflair/discussions/categories/show-and-tell)
+- **Release notes and launch posts** — [Discussions → Announcements](https://github.com/t4lentles5/minflair/discussions/categories/announcements)
+- **Bugs and feature requests** — [Issues](https://github.com/t4lentles5/minflair/issues)
+
+---
+
 ## 📚 Documentation
 
 | Guide                                      | Contents                                           |
 | ------------------------------------------ | -------------------------------------------------- |
 | [Install and update](docs/INSTALL.md)      | Selector, preferences and partial adoption         |
+| [AUR packages](docs/AUR.md)                | Install, update, migrate and troubleshoot          |
 | [Advanced usage](docs/ADVANCED.md)         | Non-interactive flags, dry runs and automation     |
 | [Components](docs/COMPONENTS.md)           | Manifest format and runtime gating                 |
 | [Post-installation setup](docs/SETUP.md)   | Avatar, wallpapers, monitors, OCR and DDC/CI       |

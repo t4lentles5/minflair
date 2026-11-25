@@ -1,0 +1,11 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Questions and installation help
+    url: https://github.com/t4lentles5/minflair/discussions/categories/q-a
+    about: Ask the community about installation, Hyprland, theming or hardware support.
+  - name: Show your setup
+    url: https://github.com/t4lentles5/minflair/discussions/categories/show-and-tell
+    about: Share screenshots, rices and customizations built on Minflair.
+  - name: AUR packages
+    url: https://github.com/t4lentles5/minflair/blob/main/docs/AUR.md
+    about: Install, update and migrate the minflair, minflair-bin and minflair-git packages.
