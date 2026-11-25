@@ -112,9 +112,11 @@ jobs:
           binary="target/${{ matrix.target }}/release/minflair"
           info="$(file "$binary")"
           echo "$info"
-          # Capture the output instead of piping into grep -q: the pipe would
-          # close early and, with pipefail, fail the step even on a match.
-          if grep -q 'statically linked' <<<"$info"; then
+          # musl links static PIE binaries, so file(1) reports "static-pie
+          # linked" instead of "statically linked". Capture the output instead
+          # of piping into grep -q: the pipe closes early and pipefail would
+          # fail the step even on a match.
+          if grep -Eq 'statically linked|static-pie linked' <<<"$info"; then
             echo "static binary: ok"
           else
             echo "::error::expected a static musl binary"
