@@ -110,8 +110,11 @@ jobs:
         run: |
           set -euo pipefail
           binary="target/${{ matrix.target }}/release/minflair"
-          file "$binary"
-          if ldd "$binary" 2>&1 | grep -q 'not a dynamic executable'; then
+          info="$(file "$binary")"
+          echo "$info"
+          # Capture the output instead of piping into grep -q: the pipe would
+          # close early and, with pipefail, fail the step even on a match.
+          if grep -q 'statically linked' <<<"$info"; then
             echo "static binary: ok"
           else
             echo "::error::expected a static musl binary"
