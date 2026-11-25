@@ -20,8 +20,8 @@ source_x86_64=("minflair-$pkgver-x86_64.tar.gz::$url/releases/download/v$pkgver/
 source_aarch64=("minflair-$pkgver-aarch64.tar.gz::$url/releases/download/v$pkgver/minflair-$pkgver-aarch64.tar.gz")
 sha256sums=('62ac6d596dc4c10c11c6dc7cfc7f6b2cf1645476b1a6b91dbb1863dbac15a8a5')
 # Filled from the release SHA256SUMS after the release workflow runs.
-sha256sums_x86_64=('SKIP')
-sha256sums_aarch64=('SKIP')
+sha256sums_x86_64=('4951ec9b8e76dfd5741a959de1149fd8b9c5bcd0bcff54086f30df8aff0a0a18')
+sha256sums_aarch64=('6bf2a9c53c2f1a16690d010698e3b01ab32ae16a27d93c72076145bcc4afb439')
 
 package() {
   install -Dm755 "$srcdir/minflair" "$pkgdir/usr/bin/minflair"
