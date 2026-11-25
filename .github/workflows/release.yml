@@ -1,0 +1,236 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Existing tag to publish (for example v2.3.0)'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.event.inputs.tag || github.ref_name }}
+  cancel-in-progress: false
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  version:
+    name: Validate version
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.check.outputs.tag }}
+      version: ${{ steps.check.outputs.version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+          fetch-depth: 0
+
+      - name: Check tag, Cargo.toml and Constants.qml
+        id: check
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag="${{ github.event.inputs.tag || github.ref_name }}"
+          if [[ ! "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::tag must look like v1.2.3 (got: $tag)"
+            exit 1
+          fi
+
+          version="${tag#v}"
+          cargo_version="$(sed -n 's/^version = "\(.*\)"/\1/p' cli/Cargo.toml | head -n1)"
+          app_version="$(sed -n 's/.*appVersion: "\(.*\)".*/\1/p' config/quickshell/Core/Constants.qml | head -n1)"
+
+          echo "tag=$tag version=$version cargo=$cargo_version app=$app_version"
+          [[ "$version" == "$cargo_version" ]] || {
+            echo "::error::cli/Cargo.toml version ($cargo_version) does not match $version"
+            exit 1
+          }
+          [[ "$version" == "$app_version" ]] || {
+            echo "::error::Constants.qml appVersion ($app_version) does not match $version"
+            exit 1
+          }
+
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+  build:
+    name: Build ${{ matrix.arch }} binary
+    needs: version
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x86_64
+            target: x86_64-unknown-linux-musl
+            runner: ubuntu-latest
+          # Public repositories can use the arm64 hosted runner. If it is not
+          # available for your account, remove this entry; the release still
+          # publishes the x86_64 binary.
+          - arch: aarch64
+            target: aarch64-unknown-linux-musl
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+    continue-on-error: ${{ matrix.arch == 'aarch64' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.version.outputs.tag }}
+
+      - name: Install musl tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y musl-tools
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Cache Cargo
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.target }}
+
+      - name: Build
+        run: cargo build --release --locked --target "${{ matrix.target }}"
+
+      - name: Verify the binary is static
+        shell: bash
+        run: |
+          set -euo pipefail
+          binary="target/${{ matrix.target }}/release/minflair"
+          file "$binary"
+          if ldd "$binary" 2>&1 | grep -q 'not a dynamic executable'; then
+            echo "static binary: ok"
+          else
+            echo "::error::expected a static musl binary"
+            ldd "$binary" || true
+            exit 1
+          fi
+
+      - name: Package the binary
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="${{ needs.version.outputs.version }}"
+          arch="${{ matrix.arch }}"
+          mkdir -p dist
+          install -Dm755 "target/${{ matrix.target }}/release/minflair" dist/minflair
+          tar -C dist -czf "dist/minflair-${version}-${arch}.tar.gz" minflair
+          rm dist/minflair
+          ls -lh "dist/minflair-${version}-${arch}.tar.gz"
+
+      - name: Upload the binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: binary-${{ matrix.arch }}
+          path: dist/*.tar.gz
+          if-no-files-found: error
+
+  runtime:
+    name: Build runtime and source tarballs
+    needs: version
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.version.outputs.tag }}
+
+      - name: Package the runtime and the source
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="${{ needs.version.outputs.version }}"
+          stage="$(mktemp -d)"
+          root="$stage/minflair-$version"
+          mkdir -p "$root" dist
+
+          runtime=(
+            config home etc lib docs
+            packages.txt packages-aur.txt
+            README.md CHANGELOG.md CONTRIBUTING.md LICENSE
+            bootstrap.sh install.sh update.sh
+          )
+          source=(
+            "${runtime[@]}"
+            cli Cargo.toml Cargo.lock rust-toolchain.toml
+          )
+
+          cp -a "${runtime[@]}" "$root/"
+          tar --sort=name --mtime='UTC 2020-01-01' \
+            --owner=0 --group=0 --numeric-owner \
+            -C "$stage" -cf - "minflair-$version" |
+            gzip -n -9 > "dist/minflair-${version}-runtime.tar.gz"
+
+          cp -a cli Cargo.toml Cargo.lock rust-toolchain.toml "$root/"
+          tar --sort=name --mtime='UTC 2020-01-01' \
+            --owner=0 --group=0 --numeric-owner \
+            -C "$stage" -cf - "minflair-$version" |
+            gzip -n -9 > "dist/minflair-${version}-src.tar.gz"
+
+          rm -rf "$stage"
+          ls -lh dist
+
+      - name: Upload the tarballs
+        uses: actions/upload-artifact@v4
+        with:
+          name: runtime
+          path: dist/*.tar.gz
+          if-no-files-found: error
+
+  release:
+    name: Publish release
+    needs: [version, build, runtime]
+    if: always() && needs.version.result == 'success' && needs.runtime.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download the artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          pattern: '*'
+          merge-multiple: true
+
+      - name: Require the x86_64 binary
+        shell: bash
+        run: |
+          set -euo pipefail
+          compgen -G "dist/minflair-*-x86_64.tar.gz" >/dev/null || {
+            echo "::error::the x86_64 binary is missing"
+            exit 1
+          }
+          ls -lh dist
+
+      - name: Write the checksums
+        run: |
+          cd dist
+          sha256sum * > SHA256SUMS
+          cat SHA256SUMS
+
+      - name: Upload the assets to the GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag="${{ needs.version.outputs.tag }}"
+          version="${{ needs.version.outputs.version }}"
+          if gh release view "$tag" >/dev/null 2>&1; then
+            gh release upload "$tag" dist/* --clobber
+          else
+            gh release create "$tag" dist/* \
+              --title "Minflair $version" \
+              --generate-notes
+          fi
