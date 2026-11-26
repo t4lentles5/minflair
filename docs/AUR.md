@@ -1,6 +1,13 @@
-# Installing Minflair from the AUR
+# Installing Minflair from a package
 
-The AUR packages install the `minflair` CLI and the configuration source under
+> [!IMPORTANT]
+> The packages are ready in [`packaging/aur`](../packaging/aur) but **not
+> published on the AUR yet**: AUR registrations are currently closed. Until they
+> open, build the package from this repository with `makepkg` (see
+> [Install without the AUR](#install-without-the-aur)). The `yay -S` commands
+> will work once the packages are published.
+
+The packages install the `minflair` CLI and the configuration source under
 `/usr/share/minflair`. The installer then copies the selected components into
 your home directory, exactly like the bootstrap and git workflows.
 
@@ -12,20 +19,36 @@ your home directory, exactly like the bootstrap and git workflows.
 
 All three provide `minflair` and conflict with each other.
 
-## Install
+## Install without the AUR
+
+The PKGBUILDs download the release assets from GitHub, so they work before the
+packages are published:
 
 ```bash
-yay -S minflair
-# or
-yay -S minflair-bin
-# or
-yay -S minflair-git
+git clone https://github.com/t4lentles5/minflair.git
+cd minflair/packaging/aur/minflair-bin   # or minflair / minflair-git
+makepkg -si
 ```
+
+`makepkg -si` needs `base-devel`. `minflair-bin` does not need Rust;
+`minflair` and `minflair-git` build the CLI and need the `rust` package.
 
 Then deploy the desktop configuration as your normal user:
 
 ```bash
 minflair install
+```
+
+## Install from the AUR
+
+Once the packages are published:
+
+```bash
+yay -S minflair       # builds the CLI from source
+# or
+yay -S minflair-bin   # prebuilt binary, no Rust toolchain needed
+# or
+yay -S minflair-git   # tracks main
 ```
 
 The component selector works the same as in the bootstrap installer. Reboot
@@ -41,6 +64,16 @@ sudo pacman -Syu
 minflair update
 ```
 
+If you built the package locally, update the clone and rebuild first:
+
+```bash
+cd minflair
+git pull --ff-only
+cd packaging/aur/minflair-bin
+makepkg -si
+minflair update
+```
+
 Do **not** pass `--pull`. That flag runs `git pull` and rebuilds the CLI, which
 does not apply to a package-managed copy. `minflair update` without `--pull`
 uses the source already installed in `/usr/share/minflair`.
@@ -49,7 +82,7 @@ uses the source already installed in `/usr/share/minflair`.
 
 `minflair` looks for the repository in several places. A path saved by
 `bootstrap.sh` in `~/.config/minflair/repo` takes priority over
-`/usr/share/minflair`, so remove the marker when switching to the AUR package:
+`/usr/share/minflair`, so remove the marker when switching to a package:
 
 ```bash
 rm -f ~/.config/minflair/repo
@@ -69,16 +102,21 @@ minflair install --repo /usr/share/minflair
 sudo pacman -Rns minflair
 ```
 
-This removes the CLI and `/usr/share/minflair`. Your deployed configuration in
+Use the name you installed (`minflair`, `minflair-bin` or `minflair-git`). This
+removes the CLI and `/usr/share/minflair`. Your deployed configuration in
 `~/.config`, your backups in `~/.minflair_backup` and the SDDM theme are left
 untouched.
 
 ## Troubleshooting
 
 - `minflair: command not found`: make sure `/usr/bin` is in `PATH`.
+- `makepkg: command not found`: install `base-devel`.
+- `==> ERROR: Missing dependencies` (`-> rust`) while building `minflair` or
+  `minflair-git`: install the `rust` package, or use `minflair-bin`, which needs
+  no toolchain.
 - `could not locate the Minflair repository`: remove a stale
   `~/.config/minflair/repo` marker or pass `--repo /usr/share/minflair`.
 - `not a git checkout`: you passed `--pull` to a package-managed install. Use
-  `sudo pacman -Syu` and then `minflair update`.
+  `sudo pacman -Syu` (or rebuild the local package) and then `minflair update`.
 - `minflair doctor` reports a version mismatch: update the package and run
   `minflair update` so the configuration matches the binary.

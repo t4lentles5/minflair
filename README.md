@@ -96,10 +96,26 @@ MINFLAIR_REF=v2.3.0 bash /tmp/minflair-bootstrap.sh
 override the clone directory, the CLI destination, the remote and the branch or
 tag. See [docs/ADVANCED.md](docs/ADVANCED.md#bootstrap-environment-variables).
 
-### AUR
+### From a package
 
-The AUR packages install the CLI and the configuration source under
-`/usr/share/minflair`:
+The packages in [`packaging/aur`](packaging/aur) install the CLI and the
+configuration source under `/usr/share/minflair`. They are **not published on
+the AUR yet** because registrations are closed; until then, build the package
+from the repository:
+
+```bash
+git clone https://github.com/t4lentles5/minflair.git
+cd minflair/packaging/aur/minflair-bin   # or minflair / minflair-git
+makepkg -si
+```
+
+Then deploy the desktop configuration as your normal user:
+
+```bash
+minflair install
+```
+
+Once the packages are published, the same install is one command:
 
 ```bash
 yay -S minflair       # builds the CLI from source
@@ -109,13 +125,8 @@ yay -S minflair-bin   # prebuilt binary, no Rust toolchain needed
 yay -S minflair-git   # tracks main
 ```
 
-Then deploy the desktop configuration as your normal user:
-
-```bash
-minflair install
-```
-
-Update these installs with `sudo pacman -Syu` and then `minflair update`. Do
+AUR installs update with `sudo pacman -Syu`; local builds need `git pull` in the
+clone and `makepkg -si` again. In both cases, finish with `minflair update`. Do
 **not** pass `--pull`: the source is managed by pacman. If you previously used
 `bootstrap.sh`, remove the saved repository marker so the packaged copy is
 used:
@@ -217,8 +228,9 @@ rebuild. Omitting `--pull` (the default, also available as `--no-pull`) applies
 the source already in the repository.
 
 > [!NOTE]
-> If you installed from the AUR, update with `sudo pacman -Syu` and then
-> `minflair update`. Do not use `--pull`: the source is managed by pacman.
+> If you installed from a package (AUR or a local `makepkg` build), update with
+> `sudo pacman -Syu` — or `git pull` and `makepkg -si` for a local build — and
+> then `minflair update`. Do not use `--pull`: the source is managed by pacman.
 > See [docs/AUR.md](docs/AUR.md).
 
 To update manually instead:
@@ -261,7 +273,7 @@ copies the updated configuration, installs new dependencies, refreshes the
 | Guide                                      | Contents                                           |
 | ------------------------------------------ | -------------------------------------------------- |
 | [Install and update](docs/INSTALL.md)      | Selector, preferences and partial adoption         |
-| [AUR packages](docs/AUR.md)                | Install, update, migrate and troubleshoot          |
+| [Packaged installs](docs/AUR.md)           | Build with makepkg, update and migrate             |
 | [Advanced usage](docs/ADVANCED.md)         | Non-interactive flags, dry runs and automation     |
 | [Components](docs/COMPONENTS.md)           | Manifest format and runtime gating                 |
 | [Post-installation setup](docs/SETUP.md)   | Avatar, wallpapers, monitors, OCR and DDC/CI       |

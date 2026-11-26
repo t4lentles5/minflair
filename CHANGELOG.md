@@ -9,9 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **AUR packages**: `minflair`, `minflair-bin` and `minflair-git` install the CLI and the configuration source under `/usr/share/minflair`, so Arch users can install with `yay -S minflair` and update with `pacman` followed by `minflair update`.
+- **AUR packaging**: `minflair`, `minflair-bin` and `minflair-git` are ready under `packaging/aur` and install the CLI plus the configuration source under `/usr/share/minflair`. Publication is pending AUR registration; until then the packages can be built from the repository with `makepkg -si`.
 - **Release workflow**: tags now produce static musl binaries for x86_64 (and aarch64 when the hosted runner is available), deterministic runtime and source tarballs, and a `SHA256SUMS` file.
-- **AUR guide**: `docs/AUR.md` covers installation, updates, migration from `bootstrap.sh`, uninstall and troubleshooting.
+- **Packaged install guide**: `docs/AUR.md` covers building the packages locally, updates, migration from `bootstrap.sh`, uninstall and troubleshooting.
 - **Community links**: the README links to Discussions (Q&A, Show and tell, Announcements) and the new-issue page offers the same destinations.
 
 ### Changed

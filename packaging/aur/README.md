@@ -1,5 +1,11 @@
 # AUR packaging
 
+> [!IMPORTANT]
+> These packages are not published on the AUR yet: AUR registrations are
+> currently closed. Until they open, users can build them from this directory
+> with `makepkg -si` (the PKGBUILDs download the release assets). Publish them
+> with the checklist below once registration is available again.
+
 This directory contains the AUR packaging for Minflair:
 
 - `minflair/` — builds the CLI from `minflair-<version>-src.tar.gz`.

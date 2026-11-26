@@ -95,22 +95,29 @@ by the installer, the updater and the Package Manager. To change it later:
 minflair install --aur-helper paru
 ```
 
-### From the AUR
+### From a package
 
-The AUR packages install the CLI in `/usr/bin` and the configuration source in
-`/usr/share/minflair`, which the CLI searches by default:
+The packages in [`packaging/aur`](../packaging/aur) install the CLI in
+`/usr/bin` and the configuration source in `/usr/share/minflair`, which the CLI
+searches by default. They are **not published on the AUR yet** (registrations
+are closed), so build one from the repository:
 
 ```bash
-yay -S minflair       # builds the CLI from the release source
-yay -S minflair-bin   # prebuilt static binary, no Rust toolchain needed
-yay -S minflair-git   # tracks main
+git clone https://github.com/t4lentles5/minflair.git
+cd minflair/packaging/aur/minflair-bin   # or minflair / minflair-git
+makepkg -si
 minflair install
 ```
 
-Update these installs with `sudo pacman -Syu` and then `minflair update`
-without `--pull`, because pacman owns the source. If you previously installed
-with `bootstrap.sh`, remove `~/.config/minflair/repo` first so the packaged copy
-is used. See [AUR.md](AUR.md) for migration, uninstall and troubleshooting.
+`minflair-bin` needs no Rust toolchain; `minflair` and `minflair-git` build the
+CLI. Once the packages are published, `yay -S minflair` (or `minflair-bin`,
+`minflair-git`) does the same.
+
+Update with `sudo pacman -Syu` (or `git pull` and `makepkg -si` for a local
+build) and then `minflair update` without `--pull`, because pacman owns the
+source. If you previously installed with `bootstrap.sh`, remove
+`~/.config/minflair/repo` first so the packaged copy is used. See
+[AUR.md](AUR.md) for migration, uninstall and troubleshooting.
 
 ### Selector controls
 
